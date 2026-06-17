@@ -60,3 +60,11 @@ GoogleService-Info.plist
 frontend/android/app/google-services.json
 frontend/ios/Runner/GoogleService-Info.plist
 frontend/ios/Runner/GoogleService-Info-*.plist
+
+# Root-level non-code documentation, reference images, and zip archives
+/*.png
+/*.jpg
+/*.jpeg
+/*.zip
+/*.pdf
+/*.txt
