@@ -1,0 +1,61 @@
+# Windows / OS garbage
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDEs & Editor configs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Archives, Large Files & Local Documentation
+*.zip
+*.rar
+*.tar.gz
+*.pdf
+project_structure.txt
+analysis.txt
+**/analysis.txt
+Finloop Playstore Screenshots/
+temp_original/
+
+# Secure Signin & Private Keystores
+Secure signin files/
+*.jks
+*.keystore
+*.jceks
+*.p12
+*.pfx
+
+# Environment variables & Firebase Service Account Private Keys
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+**/firebase-service-account.json
+firebase-service-account.json
+
+# Node.js backend (Backend/ and functions/)
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Flutter frontend specific ignores
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.pub-cache/
+frontend/.packages
+frontend/android/local.properties
+frontend/android/app/key.properties
+# Recommended: Firebase Client Configurations (Excluding these is highly recommended for public repos)
+google-services.json
+GoogleService-Info.plist
+frontend/android/app/google-services.json
+frontend/ios/Runner/GoogleService-Info.plist
+frontend/ios/Runner/GoogleService-Info-*.plist

@@ -1,0 +1,136 @@
+FinLoop Privacy Policy
+
+Effective Date: May 26, 2026
+
+Your privacy is important to us. This Privacy Policy explains how FinLoop collects, uses, stores, and protects your information when you use the application.
+
+1. Information We Collect
+Personal Financial Information
+
+FinLoop may store:
+
+Transactions
+Categories
+Account names
+Balances
+Notes
+Budget records
+
+This information is stored solely for app functionality.
+
+Device Information
+
+We may collect:
+
+Device type
+Operating system version
+App version
+Crash logs
+
+for improving app stability and performance.
+
+Authentication Information
+
+If enabled by the user:
+
+Biometric authentication
+Passcode settings
+
+are securely handled using device-level security systems.
+
+FinLoop does NOT store raw fingerprint or Face ID data.
+
+2. How We Use Your Information
+
+We use your data to:
+
+Provide finance tracking features
+Generate analytics
+Sync notes and records
+Improve app performance
+Secure user accounts
+Enable export/import functionality
+3. Data Storage
+Local Storage
+
+Most financial information is stored locally on the user's device.
+
+Cloud Synchronization
+
+Certain features such as:
+
+Scratchpad notes
+Optional backups
+Sync services
+
+may use secure cloud infrastructure such as Firebase Firestore.
+
+4. Data Sharing
+
+FinLoop does NOT sell user data.
+
+We do NOT share personal financial information with third parties except:
+
+When required by law
+When necessary for app functionality
+With secure infrastructure providers
+5. Data Security
+
+We implement:
+
+Secure local storage
+Encrypted authentication methods
+Device-level biometric protection
+Secure Firebase communication
+
+However, no system can guarantee absolute security.
+
+6. Excel Import & Export
+
+Users can:
+
+Export financial data to Excel files
+Share exported files externally
+
+Users are responsible for protecting exported files shared outside the app.
+
+7. Notifications
+
+FinLoop may send:
+
+Financial reminders
+App-related alerts
+Local notifications
+
+Users can disable notifications anytime through settings.
+
+8. Biometric Authentication
+
+Biometric authentication is optional.
+
+Fingerprint and Face ID data are processed only through the device operating system and are never directly accessed or stored by FinLoop.
+
+9. Children's Privacy
+
+FinLoop is not intended for children under 13 years of age.
+
+We do not knowingly collect information from children.
+
+10. User Rights
+
+Users may:
+
+Delete app data
+Disable cloud synchronization
+Remove passcodes
+Export their data
+Uninstall the application anytime
+11. Changes to This Privacy Policy
+
+We may update this Privacy Policy periodically. Users are encouraged to review this page regularly.
+
+12. Contact Information
+
+For questions regarding this Privacy Policy:
+
+Email: support.finloop@gmail.com

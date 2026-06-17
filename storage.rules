@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /feedback/{filename} {
+      // ✅ Security Rule:
+      // 1. Only authenticated users can write feedback screenshot attachments.
+      // 2. The filename must start with the uploading user's exact UID to prevent path guessing spoofing.
+      // 3. Request payload size must be strictly under 5MB to prevent quota exhaustion.
+      // 4. Request content type must be strictly verified as an image format.
+      // 5. Read access is completely denied to all clients (read: if false). Only accessible via Admin SDK or Console.
+      allow write: if request.auth != null
+                   && filename.matches(request.auth.uid + '_.*')
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow read: if false;
+    }
+  }
+}

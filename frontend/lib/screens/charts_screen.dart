@@ -1,0 +1,748 @@
+import 'dart:async';
+
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../domain/financial_analytics.dart';
+import '../providers/settings_provider.dart';
+import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
+
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
+abstract final class _K {
+  static const double cardRadius = 24;
+  static const double cardPadding = 24;
+  static const double sectionGap = 24;
+  static const double chartHeight = 200;
+  static const double pieCenter = 60;
+  static const double barWidth = 32;
+
+  static const List<Color> palette = [
+    Colors.green,
+    AppColors.primary,
+    Color(0xFFE57373),
+    Colors.purple,
+    Colors.amber,
+    Colors.teal,
+    Colors.pinkAccent,
+  ];
+}
+
+// ─────────────────────────────────────────────
+// Screen
+// ─────────────────────────────────────────────
+class ChartsScreen extends StatefulWidget {
+  const ChartsScreen({super.key});
+
+  @override
+  State<ChartsScreen> createState() => _ChartsScreenState();
+}
+
+class _ChartsScreenState extends State<ChartsScreen> {
+  // Stream subscriptions kept for proper disposal
+  StreamSubscription<List<Map<String, dynamic>>>? _txSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _accSub;
+
+  int _touchedIndex = -1;
+  bool _isLoading = true;
+  bool _hasError = false;
+
+  List<Map<String, dynamic>> _allTransactions = [];
+  List<Map<String, dynamic>> _userAccounts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToData();
+  }
+
+  @override
+  void dispose() {
+    _txSub?.cancel();
+    _accSub?.cancel();
+    super.dispose();
+  }
+
+  // ── Data ──────────────────────────────────────
+  void _subscribeToData() {
+    final firestore = FirestoreService();
+
+    // Subscribe to both streams independently so neither leaks
+    _txSub = firestore.getTransactions().listen((txList) {
+      if (!mounted) return;
+      setState(() {
+        _allTransactions = txList;
+        _isLoading = false;
+      });
+    }, onError: (_) => _setError());
+
+    _accSub = firestore.getAccounts().listen((accList) {
+      if (!mounted) return;
+      setState(() => _userAccounts = accList);
+    }, onError: (_) => _setError());
+  }
+
+  void _setError() {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+      _hasError = true;
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────
+  String _formatY(double value) {
+    if (value >= 1_000_000) {
+      return '${(value / 1_000_000).toStringAsFixed(1).replaceAll('.0', '')}M';
+    }
+    if (value >= 1_000) {
+      return '${(value / 1_000).toStringAsFixed(1).replaceAll('.0', '')}k';
+    }
+    return value.toStringAsFixed(0);
+  }
+
+  // ── Build ─────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_hasError) {
+      return const Scaffold(
+        body: Center(child: Text('Failed to load data. Please try again.')),
+      );
+    }
+
+    final currency = context.watch<SettingsProvider>().currency;
+    final analytics = FinancialAnalytics(
+      allTransactions: _allTransactions,
+      userAccounts: _userAccounts,
+    );
+
+    return Scaffold(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _Header(month: DateTime.now()),
+            const SizedBox(height: _K.sectionGap),
+            _ExpenseDistributionCard(
+              pieData: analytics.pieData,
+              totalExpenses: analytics.totalCurrentMonthExpenses,
+              currency: currency,
+              touchedIndex: _touchedIndex,
+              onTouch: (i) => setState(() => _touchedIndex = i),
+            ),
+            const SizedBox(height: _K.sectionGap),
+            _MonthlyTrendsCard(
+              months: analytics.trendMonths,
+              expenses: analytics.monthlyExpenses,
+              maxY: analytics.maxY,
+              currency: currency,
+              formatY: _formatY,
+            ),
+            const SizedBox(height: _K.sectionGap),
+            _SmartInsightCard(text: analytics.insightText),
+            const SizedBox(height: _K.sectionGap),
+            _AvailableBudgetCard(
+              balance: analytics.totalBalance,
+              currency: currency,
+            ),
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Sub-widgets (private, stateless where possible)
+// ─────────────────────────────────────────────
+
+class _Header extends StatelessWidget {
+  const _Header({required this.month});
+  final DateTime month;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurface;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Charts & Analytics',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Your spending intelligence for ${DateFormat('MMMM').format(month)}',
+          style: TextStyle(fontSize: 14, color: color.withValues(alpha: 0.6)),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Expense Distribution ──────────────────────
+class _ExpenseDistributionCard extends StatelessWidget {
+  const _ExpenseDistributionCard({
+    required this.pieData,
+    required this.totalExpenses,
+    required this.currency,
+    required this.touchedIndex,
+    required this.onTouch,
+  });
+
+  final List<MapEntry<String, double>> pieData;
+  final double totalExpenses;
+  final String currency;
+  final int touchedIndex;
+  final ValueChanged<int> onTouch;
+
+  @override
+  Widget build(BuildContext context) {
+    if (totalExpenses <= 0) return const _EmptyDistributionCard();
+
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final topCategory = pieData.first.key;
+    final topPct = (pieData.first.value / totalExpenses * 100).toStringAsFixed(
+      0,
+    );
+
+    return _SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CardHeader(
+            title: 'Expense Distribution',
+            subtitle: 'Top category: $topCategory ($topPct%)',
+            icon: Icons.pie_chart_outline,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: _K.chartHeight,
+            child: Stack(
+              children: [
+                PieChart(
+                  PieChartData(
+                    pieTouchData: PieTouchData(
+                      touchCallback: (event, response) {
+                        final idx =
+                            (!event.isInterestedForInteractions ||
+                                response?.touchedSection == null)
+                            ? -1
+                            : response!.touchedSection!.touchedSectionIndex;
+                        onTouch(idx);
+                      },
+                    ),
+                    borderData: FlBorderData(show: false),
+                    sectionsSpace: 0,
+                    centerSpaceRadius: _K.pieCenter,
+                    sections: List.generate(pieData.length, (i) {
+                      final isTouched = i == touchedIndex;
+                      return PieChartSectionData(
+                        color: _K.palette[i % _K.palette.length],
+                        value: pieData[i].value,
+                        title:
+                            '${(pieData[i].value / totalExpenses * 100).toStringAsFixed(0)}%',
+                        radius: isTouched ? 58 : 48,
+                        titleStyle: TextStyle(
+                          fontSize: isTouched ? 22 : 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Total Spent',
+                        style: TextStyle(
+                          color: onSurface.withValues(alpha: 0.5),
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '$currency${totalExpenses.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          ...List.generate(pieData.length, (i) {
+            final entry = pieData[i];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _LegendItem(
+                label: entry.key,
+                amount: '$currency${NumberFormat('#,##0.00').format(entry.value)}',
+                color: _K.palette[i % _K.palette.length],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyDistributionCard extends StatelessWidget {
+  const _EmptyDistributionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return _SurfaceCard(
+      child: Column(
+        children: [
+          const _CardHeader(
+            title: 'Expense Distribution',
+            icon: Icons.pie_chart_outline,
+          ),
+          const SizedBox(height: 40),
+          Icon(
+            Icons.donut_large_rounded,
+            size: 48,
+            color: onSurface.withValues(alpha: 0.2),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Expense Records this Month',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({
+    required this.label,
+    required this.amount,
+    required this.color,
+  });
+
+  final String label;
+  final String amount;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
+        ),
+        Text(
+          amount,
+          style: TextStyle(fontWeight: FontWeight.bold, color: onSurface),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Monthly Trends ────────────────────────────
+class _MonthlyTrendsCard extends StatelessWidget {
+  const _MonthlyTrendsCard({
+    required this.months,
+    required this.expenses,
+    required this.maxY,
+    required this.currency,
+    required this.formatY,
+  });
+
+  final List<DateTime> months;
+  final List<double> expenses;
+  final double maxY;
+  final String currency;
+  final String Function(double) formatY;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final surface = Theme.of(context).colorScheme.surface;
+
+    return _SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Monthly Spending Trends',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: onSurface,
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: _K.chartHeight,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: maxY,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) => surface,
+                    tooltipBorder: BorderSide(
+                      color: onSurface.withValues(alpha: 0.08),
+                    ),
+                    tooltipPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    tooltipMargin: 8,
+                    getTooltipItem: (group, groupIndex, rod, _) {
+                      final label = DateFormat(
+                        'MMMM yyyy',
+                      ).format(months[groupIndex]);
+                      return BarTooltipItem(
+                        '$label\n',
+                        TextStyle(
+                          color: onSurface.withValues(alpha: 0.6),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        children: [
+                          TextSpan(
+                            text:
+                                '$currency${NumberFormat('#,##0.00').format(rod.toY)}',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i < 0 || i >= months.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final isCurrentMonth = i == months.length - 1;
+                        return SideTitleWidget(
+                          meta: meta,
+                          space: 8,
+                          child: Text(
+                            DateFormat('MMM').format(months[i]),
+                            style: TextStyle(
+                              color: isCurrentMonth
+                                  ? AppColors.primary
+                                  : onSurface.withValues(alpha: 0.5),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        if (value == meta.max) return const SizedBox.shrink();
+                        return SideTitleWidget(
+                          meta: meta,
+                          space: 8,
+                          child: Text(
+                            formatY(value),
+                            style: TextStyle(
+                              color: onSurface.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 9,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                gridData: FlGridData(
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: onSurface.withValues(alpha: 0.06),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(
+                  months.length,
+                  (i) => _buildBar(
+                    i,
+                    expenses[i],
+                    isHighlight: i == months.length - 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Center(
+            child: Text(
+              'Last 6 Months',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BarChartGroupData _buildBar(int x, double y, {required bool isHighlight}) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          color: isHighlight
+              ? AppColors.primary
+              : AppColors.primary.withValues(alpha: 0.15),
+          width: _K.barWidth,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(8),
+            bottom: Radius.circular(8),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Smart Insight ─────────────────────────────
+class _SmartInsightCard extends StatelessWidget {
+  const _SmartInsightCard({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(_K.cardPadding),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_K.cardRadius),
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Smart Insight',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Available Balance ─────────────────────────
+class _AvailableBudgetCard extends StatelessWidget {
+  const _AvailableBudgetCard({required this.balance, required this.currency});
+  final double balance;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(_K.cardRadius),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Available Balance',
+                style: TextStyle(
+                  color: onSurface.withValues(alpha: 0.6),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$currency${balance.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: onSurface,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Shared layout primitives
+// ─────────────────────────────────────────────
+
+/// White/surface rounded card with consistent shadow.
+class _SurfaceCard extends StatelessWidget {
+  const _SurfaceCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(_K.cardPadding),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(_K.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Consistent card header row with title, optional subtitle, and icon.
+class _CardHeader extends StatelessWidget {
+  const _CardHeader({required this.title, this.subtitle, required this.icon});
+
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: onSurface,
+              ),
+            ),
+            if (subtitle != null)
+              Text(
+                subtitle!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+          ],
+        ),
+        Icon(icon, color: AppColors.primary),
+      ],
+    );
+  }
+}
