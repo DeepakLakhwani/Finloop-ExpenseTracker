@@ -6,7 +6,7 @@ class AdService {
   // ==========================================
   // Global Ad Settings
   // ==========================================
-  
+
   // Set this to 'false' if you want to turn off ALL ads globally (e.g., for premium users)
   static bool adsEnabled = true;
 
@@ -21,24 +21,35 @@ class AdService {
   // ==========================================
   // Centralized Ad Unit IDs Configuration
   // ==========================================
-  
-  // Official Test Ad Unit IDs provided by Google AdMob
-  static const String _testAndroidBannerId = 'ca-app-pub-3940256099942544/6300978111';
-  static const String _testAndroidInterstitialId = 'ca-app-pub-3940256099942544/1033173712';
-  static const String _testAndroidRewardedId = 'ca-app-pub-3940256099942544/5224354917';
 
-  static const String _testIosBannerId = 'ca-app-pub-3940256099942544/2934735716';
-  static const String _testIosInterstitialId = 'ca-app-pub-3940256099942544/4411468910';
-  static const String _testIosRewardedId = 'ca-app-pub-3940256099942544/1712485313';
+  // Official Test Ad Unit IDs provided by Google AdMob
+  static const String _testAndroidBannerId =
+      'ca-app-pub-3940256099942544/6300978111';
+  static const String _testAndroidInterstitialId =
+      'ca-app-pub-3940256099942544/1033173712';
+  static const String _testAndroidRewardedId =
+      'ca-app-pub-3940256099942544/5224354917';
+
+  static const String _testIosBannerId =
+      'ca-app-pub-3940256099942544/2934735716';
+  static const String _testIosInterstitialId =
+      'ca-app-pub-3940256099942544/4411468910';
+  static const String _testIosRewardedId =
+      'ca-app-pub-3940256099942544/1712485313';
 
   // REPLACE THESE STRING CONSTANTS WITH YOUR REAL PRODUCTION AD UNIT IDS LATER
-  static const String _prodAndroidBannerId = 'ca-app-pub-9816661566128786/1079689083';
-  static const String _prodAndroidInterstitialId = 'ca-app-pub-9816661566128786/3753953881';
-  static const String _prodAndroidRewardedId = 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY';
-
-  static const String _prodIosBannerId = 'ca-app-pub-9816661566128786/1079689083';
-  static const String _prodIosInterstitialId = 'ca-app-pub-9816661566128786/3753953881';
-  static const String _prodIosRewardedId = 'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY';
+  static const String _prodAndroidBannerId =
+      'ca-app-pub-9816661566128786/1079689083';
+  static const String _prodAndroidInterstitialId =
+      'ca-app-pub-9816661566128786/3753953881';
+  static const String _prodAndroidRewardedId =
+      'ca-app-pub-9816661566128786/3791128275';
+  static const String _prodIosBannerId =
+      'ca-app-pub-9816661566128786/1079689083';
+  static const String _prodIosInterstitialId =
+      'ca-app-pub-9816661566128786/3753953881';
+  static const String _prodIosRewardedId =
+      'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY';
 
   // Getter to automatically resolve target banner ID based on Platform & Mode
   static String get bannerAdUnitId {
@@ -53,9 +64,13 @@ class AdService {
   static String get interstitialAdUnitId {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return '';
     if (kReleaseMode) {
-      return Platform.isAndroid ? _prodAndroidInterstitialId : _prodIosInterstitialId;
+      return Platform.isAndroid
+          ? _prodAndroidInterstitialId
+          : _prodIosInterstitialId;
     }
-    return Platform.isAndroid ? _testAndroidInterstitialId : _testIosInterstitialId;
+    return Platform.isAndroid
+        ? _testAndroidInterstitialId
+        : _testIosInterstitialId;
   }
 
   // Getter to automatically resolve target rewarded ID based on Platform & Mode
@@ -79,7 +94,7 @@ class AdService {
   // ==========================================
   // Lifecycle Initialization
   // ==========================================
-  
+
   /// Initializes the Google Mobile Ads SDK safely in the background
   static Future<void> initialize() async {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
@@ -95,7 +110,7 @@ class AdService {
     try {
       _log("Initializing AdMob SDK...");
       await MobileAds.instance.initialize();
-      
+
       // Register developer test device IDs so Google AdMob serves test ads to physical devices
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(
@@ -104,9 +119,9 @@ class AdService {
           ],
         ),
       );
-      
+
       _log("AdMob SDK Initialized Successfully!");
-      
+
       // Warm up / Pre-cache Interstitial and Rewarded ads so they are ready instantly
       preloadInterstitial();
       preloadRewarded();
@@ -121,7 +136,10 @@ class AdService {
 
   /// Preloads an Interstitial Ad and stores it in cache
   static void preloadInterstitial() {
-    if (!adsEnabled || _preloadedInterstitialAd != null || _isPreloadingInterstitial) return;
+    if (!adsEnabled ||
+        _preloadedInterstitialAd != null ||
+        _isPreloadingInterstitial)
+      return;
 
     _isPreloadingInterstitial = true;
     _log("Preloading Interstitial Ad in background...");
@@ -172,7 +190,9 @@ class AdService {
     final now = DateTime.now();
     if (_lastInterstitialShowTime != null &&
         now.difference(_lastInterstitialShowTime!) < interstitialCooldown) {
-      _log("Cooldown active. Skipping Interstitial to protect user experience.");
+      _log(
+        "Cooldown active. Skipping Interstitial to protect user experience.",
+      );
       onAdClosed();
       return;
     }
@@ -189,7 +209,7 @@ class AdService {
     // Update timestamps and show
     _lastInterstitialShowTime = now;
     _log("Showing Interstitial Ad...");
-    
+
     // Intercept callback to trigger onAdClosed
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
@@ -217,7 +237,8 @@ class AdService {
 
   /// Preloads a Rewarded Ad and stores it in cache
   static void preloadRewarded() {
-    if (!adsEnabled || _preloadedRewardedAd != null || _isPreloadingRewarded) return;
+    if (!adsEnabled || _preloadedRewardedAd != null || _isPreloadingRewarded)
+      return;
 
     _isPreloadingRewarded = true;
     _log("Preloading Rewarded Ad in background...");
@@ -283,7 +304,7 @@ class AdService {
         ad.dispose();
         _preloadedRewardedAd = null;
         preloadRewarded(); // Auto preload next
-        
+
         if (earnedReward) {
           onRewardEarned();
         } else {
@@ -301,7 +322,9 @@ class AdService {
 
     ad.show(
       onUserEarnedReward: (adWithoutReward, reward) {
-        _log("User successfully earned reward: ${reward.amount} ${reward.type}");
+        _log(
+          "User successfully earned reward: ${reward.amount} ${reward.type}",
+        );
         earnedReward = true;
       },
     );

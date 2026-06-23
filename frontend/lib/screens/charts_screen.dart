@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../domain/financial_analytics.dart';
 import '../providers/settings_provider.dart';
@@ -46,6 +47,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   // Stream subscriptions kept for proper disposal
   StreamSubscription<List<Map<String, dynamic>>>? _txSub;
   StreamSubscription<List<Map<String, dynamic>>>? _accSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _budgetSub;
 
   int _touchedIndex = -1;
   bool _isLoading = true;
@@ -53,6 +55,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
   List<Map<String, dynamic>> _allTransactions = [];
   List<Map<String, dynamic>> _userAccounts = [];
+  List<Map<String, dynamic>> _allBudgets = [];
 
   @override
   void initState() {
@@ -64,6 +67,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   void dispose() {
     _txSub?.cancel();
     _accSub?.cancel();
+    _budgetSub?.cancel();
     super.dispose();
   }
 
@@ -83,6 +87,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
     _accSub = firestore.getAccounts().listen((accList) {
       if (!mounted) return;
       setState(() => _userAccounts = accList);
+    }, onError: (_) => _setError());
+
+    _budgetSub = firestore.getBudgets().listen((budgetList) {
+      if (!mounted) return;
+      setState(() => _allBudgets = budgetList);
     }, onError: (_) => _setError());
   }
 
@@ -139,6 +148,14 @@ class _ChartsScreenState extends State<ChartsScreen> {
               touchedIndex: _touchedIndex,
               onTouch: (i) => setState(() => _touchedIndex = i),
             ),
+            if (_allBudgets.isNotEmpty) ...[
+              const SizedBox(height: _K.sectionGap),
+              _BudgetsCard(
+                budgets: _allBudgets,
+                transactions: _allTransactions,
+                currency: currency,
+              ),
+            ],
             const SizedBox(height: _K.sectionGap),
             _MonthlyTrendsCard(
               months: analytics.trendMonths,
@@ -743,6 +760,140 @@ class _CardHeader extends StatelessWidget {
         ),
         Icon(icon, color: AppColors.primary),
       ],
+    );
+  }
+}
+
+// ── Budgets Card ──────────────────────────────
+class _BudgetsCard extends StatelessWidget {
+  const _BudgetsCard({
+    required this.budgets,
+    required this.transactions,
+    required this.currency,
+  });
+
+  final List<Map<String, dynamic>> budgets;
+  final List<Map<String, dynamic>> transactions;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    if (budgets.isEmpty) return const SizedBox.shrink();
+
+    final now = DateTime.now();
+    final currentMonthExpenses = transactions.where((tx) {
+      if (tx['type'] != 'Expense') return false;
+      final dateRaw = tx['date'];
+      if (dateRaw == null) return false;
+      
+      final DateTime date;
+      if (dateRaw is DateTime) {
+        date = dateRaw;
+      } else if (dateRaw is Timestamp) {
+        date = dateRaw.toDate();
+      } else {
+        date = DateTime.tryParse(dateRaw.toString()) ?? DateTime.now();
+      }
+      
+      return date.year == now.year && date.month == now.month;
+    }).toList();
+
+    return _SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _CardHeader(
+            title: 'Active Budgets',
+            subtitle: 'Monthly limit progress',
+            icon: Icons.track_changes_outlined,
+          ),
+          const SizedBox(height: 24),
+          ...budgets.map((budget) {
+            final isGlobal = budget['categoryId'] == null;
+            final categoryId = budget['categoryId'];
+            final limitAmount = (budget['limitAmount'] as num?)?.toDouble() ?? 0.0;
+            final displayTitle = budget['categoryName'] ?? (isGlobal ? 'All Expenses' : 'Budget');
+
+            // Sum current month transactions matching category
+            double spent = 0.0;
+            for (var tx in currentMonthExpenses) {
+              if (isGlobal || tx['category_id'] == categoryId) {
+                spent += (tx['amount'] as num?)?.toDouble() ?? 0.0;
+              }
+            }
+
+            final percent = limitAmount > 0 ? (spent / limitAmount).clamp(0.0, 1.0) : 0.0;
+            final isExceeded = spent > limitAmount;
+
+            // Determine status color
+            Color progressColor = Colors.green;
+            if (spent >= limitAmount) {
+              progressColor = Colors.redAccent;
+            } else if (spent >= limitAmount * 0.75) {
+              progressColor = Colors.amber;
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        displayTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '$currency${spent.toStringAsFixed(0)} / $currency${limitAmount.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: isExceeded ? Colors.redAccent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: percent,
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.05),
+                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                      minHeight: 8,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (isExceeded)
+                    Text(
+                      'Exceeded by $currency${(spent - limitAmount).toStringAsFixed(0)}!',
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    )
+                  else
+                    Text(
+                      '$currency${(limitAmount - spent).toStringAsFixed(0)} remaining',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }

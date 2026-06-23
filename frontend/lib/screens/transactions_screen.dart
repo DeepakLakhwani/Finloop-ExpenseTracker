@@ -53,10 +53,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   String? _filterAccountId;
   List<Map<String, dynamic>> _userAccounts = [];
   bool _showOnlyStarred = false;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _tabs.indexOf(_selectedTab));
+    _pageController.addListener(_onPageScroll);
     TransactionsScreen._onBottomBarTappedCallbacks.add(_handleBottomBarTap);
     _selectedCalendarDay = DateTime(
       _focusedDate.year,
@@ -74,9 +77,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   void dispose() {
+    _pageController.removeListener(_onPageScroll);
+    _pageController.dispose();
     TransactionsScreen._onBottomBarTappedCallbacks.remove(_handleBottomBarTap);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onPageScroll() {
+    if (FocusManager.instance.primaryFocus?.hasFocus ?? false) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
   }
 
   void _handleBottomBarTap() {
@@ -96,6 +107,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _filterAccountId = null;
         _showOnlyStarred = false;
       });
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(_tabs.indexOf('Daily'));
+      }
     }
   }
 
@@ -123,14 +137,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _selectedCalendarDay = DateTime(now.year, now.month, now.day);
       }
     });
-  }
-
-  void _navigateTab(int offset) {
-    final currentIndex = _tabs.indexOf(_selectedTab);
-    if (currentIndex == -1) return;
-    final newIndex = currentIndex + offset;
-    if (newIndex >= 0 && newIndex < _tabs.length) {
-      _selectTab(_tabs[newIndex]);
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        _tabs.indexOf(tab),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -215,46 +227,64 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Period Selector Banner
-            if (_selectedTab != 'Notes') _buildPeriodSelector(),
+            Column(
+              children: [
+                // Period Selector Banner
+                if (_selectedTab != 'Notes') _buildPeriodSelector(),
 
-            // Top Custom Tab Bar
-            _buildCustomTabBar(),
+                // Top Custom Tab Bar
+                _buildCustomTabBar(),
 
-            // Transactions Stream & Dynamic Layout Views
-            Expanded(
-              child: GestureDetector(
-                onHorizontalDragEnd: (details) {
-                  if (details.primaryVelocity == null) return;
-                  if (details.primaryVelocity! < -300) {
-                    _navigateTab(1); // Swipe left -> Next tab
-                  } else if (details.primaryVelocity! > 300) {
-                    _navigateTab(-1); // Swipe right -> Previous tab
-                  }
-                },
-                behavior: HitTestBehavior.translucent,
-                child: _selectedTab == 'Notes'
-                    ? ScratchpadCard(userId: userId, scratchpadStream: _scratchpadStream)
-                    : StreamBuilder<List<Map<String, dynamic>>>(
-                        stream: _transactionsStream ?? FirestoreService().getTransactions(),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            debugPrint("StreamBuilder error: ${snapshot.error}");
+                // Transactions Stream & Dynamic Layout Views
+                Expanded(
+                  child: StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: _transactionsStream ?? FirestoreService().getTransactions(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        debugPrint("StreamBuilder error: ${snapshot.error}");
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final allTransactions = snapshot.data ?? [];
+
+                      return PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          final tab = _tabs[index];
+                          if (_selectedTab != tab) {
+                            setState(() {
+                              _selectedTab = tab;
+                              if (tab == 'Calendar') {
+                                final now = DateTime.now();
+                                _focusedDate = DateTime(now.year, now.month, 1);
+                                _selectedCalendarDay = DateTime(now.year, now.month, now.day);
+                              }
+                            });
                           }
-                          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                            return const SizedBox.shrink();
+                        },
+                        itemCount: _tabs.length,
+                        itemBuilder: (context, index) {
+                          final tab = _tabs[index];
+                          if (tab == 'Notes') {
+                            return ScratchpadCard(
+                              userId: userId,
+                              scratchpadStream: _scratchpadStream,
+                            );
                           }
 
-                          final allTransactions = snapshot.data ?? [];
-
-                          // Calculate Top Banner Summary based on filter
                           final filteredTransactions = _filterTransactions(
                             allTransactions,
+                            tab,
                           );
-                          debugPrint("Transactions debugging: user=$userId, total=${allTransactions.length}, filtered=${filteredTransactions.length}, tab=$_selectedTab, date=$_focusedDate");
-                          final summary = _calculateSummary(filteredTransactions, allTransactions);
+                          final summary = _calculateSummary(
+                            filteredTransactions,
+                            allTransactions,
+                            tab,
+                          );
 
                           return Column(
                             children: [
@@ -263,58 +293,66 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
                               // Dynamic View Container
                               Expanded(
-                                child: filteredTransactions.isEmpty && _selectedTab != 'Calendar'
+                                child: filteredTransactions.isEmpty && tab != 'Calendar'
                                     ? _buildEmptyPlaceholder()
-                                    : _buildDynamicView(filteredTransactions, currency),
+                                    : _buildDynamicView(tab, filteredTransactions, currency),
                               ),
                             ],
                           );
                         },
-                      ),
-              ),
+                      );
+                    },
+                  ),
+                ),
+                
+                // Reusable policy-safe Adaptive Banner Ad
+                const BannerAdWidget(key: ValueKey('transactions_banner_ad')),
+              ],
             ),
-            
-            // Reusable policy-safe Adaptive Banner Ad
-            const BannerAdWidget(key: ValueKey('transactions_banner_ad')),
+
+            // Fixed Positioned Plus Button (stays stationary above the ad banner)
+            if (_selectedTab != 'Notes')
+              Positioned(
+                right: 16,
+                bottom: AdService.adsEnabled ? 80 : 16,
+                child: FloatingActionButton(
+                  heroTag: 'transactionsListFab',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddTransactionScreen(),
+                      ),
+                    ).then((saved) {
+                      if (saved == true) {
+                        AdService.showInterstitial(() {});
+                      }
+                    });
+                  },
+                  backgroundColor: AppColors.primary,
+                  child: const Icon(Icons.add, color: Colors.white),
+                ),
+              ),
           ],
         ),
       ),
-      floatingActionButtonLocation: _AboveAdFabLocation(hasAd: AdService.adsEnabled),
-      floatingActionButton: _selectedTab == 'Notes'
-          ? null
-          : FloatingActionButton(
-              heroTag: 'transactionsListFab',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddTransactionScreen(),
-                  ),
-                ).then((saved) {
-                  if (saved == true) {
-                    AdService.showInterstitial(() {});
-                  }
-                });
-              },
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
     );
   }
 
   // --- Dynamic Layout Views ---
 
   Widget _buildDynamicView(
+    String tab,
     List<Map<String, dynamic>> transactions,
     String currency,
   ) {
-    if (_selectedTab == 'Daily') {
+    if (tab == 'Daily') {
       return _buildDailyView(transactions, currency);
-    } else if (_selectedTab == 'Calendar') {
+    } else if (tab == 'Calendar') {
       return _buildCalendarView(transactions, currency);
-    } else if (_selectedTab == 'Weekly') {
+    } else if (tab == 'Weekly') {
       return _buildWeeklyView(transactions, currency);
-    } else if (_selectedTab == 'Monthly') {
+    } else if (tab == 'Monthly') {
       return _buildMonthlyView(transactions, currency);
     } else {
       return _buildSummaryView(transactions, currency);
@@ -363,9 +401,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               child: Row(
                 children: [
-                  // Column 1: Date Info (Left)
+                  // Column 1: Date Info (under top Income column)
                   Expanded(
-                    flex: 3,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -406,46 +443,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       ],
                     ),
                   ),
-
-                  // Column 2: Income and Expense Summary (Vertically aligned)
+                  const SizedBox(width: 1),
+                  // Column 2: Income total (under top Expense column)
                   Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: dayIncome > 0
-                                  ? Text(
-                                      '$currency${NumberFormat('#,##0.00').format(dayIncome)}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: (dayExpense > 0 || (dayIncome == 0 && dayExpense == 0))
-                                  ? Text(
-                                      '$currency${NumberFormat('#,##0.00').format(dayExpense)}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ),
-                        ],
+                    child: Center(
+                      child: Text(
+                        '$currency${NumberFormat('#,##0.00').format(dayIncome)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 1),
+                  // Column 3: Expense total (under top Balance column)
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        '$currency${NumberFormat('#,##0.00').format(dayExpense)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -466,7 +488,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   TransactionTile(
                     transaction: tx,
                     currency: currency,
-                    amountFontSize: 12.0,
                   ),
                 ],
               );
@@ -797,8 +818,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     behavior: HitTestBehavior.opaque,
                     child: Row(
                       children: [
+                        // Column 1: Week Info (under top Income column)
                         Expanded(
-                          flex: 3,
                           child: Text(
                             'Week $week',
                             style: TextStyle(
@@ -808,45 +829,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             ),
                           ),
                         ),
-                        // Column 2: Income and Expense Summary (Vertically aligned)
+                        const SizedBox(width: 1),
+                        // Column 2: Income total (under top Expense column)
                         Expanded(
-                          flex: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: weekIncome > 0
-                                        ? Text(
-                                            '$currency${NumberFormat('#,##0.00').format(weekIncome)}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: (weekExpense > 0 || (weekIncome == 0 && weekExpense == 0))
-                                        ? Text(
-                                            '$currency${NumberFormat('#,##0.00').format(weekExpense)}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ),
-                              ],
+                          child: Center(
+                            child: Text(
+                              '$currency${NumberFormat('#,##0.00').format(weekIncome)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 1),
+                        // Column 3: Expense total (under top Balance column)
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              '$currency${NumberFormat('#,##0.00').format(weekExpense)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -871,7 +878,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             currency: currency,
                             showDate: true,
                             isNested: true,
-                            amountFontSize: 12.0,
                           ),
                         ],
                       );
@@ -947,8 +953,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     behavior: HitTestBehavior.opaque,
                     child: Row(
                       children: [
+                        // Column 1: Month Info (under top Income column)
                         Expanded(
-                          flex: 3,
                           child: Text(
                             DateFormat('MMMM').format(dummyDate),
                             style: TextStyle(
@@ -958,45 +964,31 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             ),
                           ),
                         ),
-                        // Column 2: Income and Expense Summary (Vertically aligned)
+                        const SizedBox(width: 1),
+                        // Column 2: Income total (under top Expense column)
                         Expanded(
-                          flex: 4,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: monthIncome > 0
-                                        ? Text(
-                                            '$currency${NumberFormat('#,##0.00').format(monthIncome)}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: (monthExpense > 0 || (monthIncome == 0 && monthExpense == 0))
-                                        ? Text(
-                                            '$currency${NumberFormat('#,##0.00').format(monthExpense)}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ),
-                              ],
+                          child: Center(
+                            child: Text(
+                              '$currency${NumberFormat('#,##0.00').format(monthIncome)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 1),
+                        // Column 3: Expense total (under top Balance column)
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              '$currency${NumberFormat('#,##0.00').format(monthExpense)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -1021,7 +1013,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             currency: currency,
                             showDate: true,
                             isNested: true,
-                            amountFontSize: 12.0,
                           ),
                         ],
                       );
@@ -1704,7 +1695,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         Text(
           '$currency${NumberFormat('#,##0.00').format(val)}',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
             color: valColor,
           ),
@@ -1753,15 +1744,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   List<Map<String, dynamic>> _filterTransactions(
     List<Map<String, dynamic>> all,
+    String tab,
   ) {
     var list = all.where((tx) {
       final date = _parseDate(tx['date']);
-      if (_selectedTab == 'Daily' ||
-          _selectedTab == 'Calendar' ||
-          _selectedTab == 'Summary') {
+      if (tab == 'Daily' ||
+          tab == 'Calendar' ||
+          tab == 'Summary') {
         return date.year == _focusedDate.year &&
             date.month == _focusedDate.month;
-      } else if (_selectedTab == 'Weekly') {
+      } else if (tab == 'Weekly') {
         final startOfWeek = _focusedDate.subtract(
           Duration(days: _focusedDate.weekday - 1),
         );
@@ -1814,6 +1806,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Map<String, double> _calculateSummary(
     List<Map<String, dynamic>> filtered,
     List<Map<String, dynamic>> all,
+    String tab,
   ) {
     // 1. Calculate periodic income and expense from filtered list
     double income = 0;
@@ -1829,11 +1822,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     // 2. Calculate cumulative balance up to the end of the current period (excluding credit cards)
     DateTime endOfPeriod;
-    if (_selectedTab == 'Daily' ||
-        _selectedTab == 'Calendar' ||
-        _selectedTab == 'Summary') {
+    if (tab == 'Daily' ||
+        tab == 'Calendar' ||
+        tab == 'Summary') {
       endOfPeriod = DateTime(_focusedDate.year, _focusedDate.month + 1, 1);
-    } else if (_selectedTab == 'Weekly') {
+    } else if (tab == 'Weekly') {
       final startOfWeek = _focusedDate.subtract(
         Duration(days: _focusedDate.weekday - 1),
       );
@@ -1903,27 +1896,4 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return DateTime.now();
     }
   }
-}
-
-class _AboveAdFabLocation extends FloatingActionButtonLocation {
-  final bool hasAd;
-
-  const _AboveAdFabLocation({required this.hasAd});
-
-  @override
-  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
-    final Offset standardOffset = FloatingActionButtonLocation.endFloat.getOffset(scaffoldGeometry);
-    if (!hasAd) return standardOffset;
-    return Offset(standardOffset.dx, standardOffset.dy - 68);
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _AboveAdFabLocation &&
-          runtimeType == other.runtimeType &&
-          hasAd == other.hasAd;
-
-  @override
-  int get hashCode => hasAd.hashCode;
 }

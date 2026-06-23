@@ -450,6 +450,38 @@ class FirestoreService {
     return _db.collection('users').doc(uid).collection('notes').doc('scratchpad').snapshots();
   }
 
+  Stream<List<Map<String, dynamic>>> getBudgets() {
+    final uid = _uid;
+    if (uid == null) return Stream.value([]);
+    return _db.collection('users').doc(uid).collection('budgets')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
+  }
+
+  Future<void> createBudget(Map<String, dynamic> budgetData) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).collection('budgets').add({
+      ...budgetData,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateBudget(String id, Map<String, dynamic> budgetData) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).collection('budgets').doc(id).update({
+      ...budgetData,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteBudget(String id) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).collection('budgets').doc(id).delete();
+  }
+
   Future<void> submitFeedback(Map<String, dynamic> feedbackData) async {
     await _db.collection('feedback').add(feedbackData);
   }

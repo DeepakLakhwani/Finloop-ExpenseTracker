@@ -20,11 +20,8 @@ class SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(
@@ -33,11 +30,12 @@ class SettingsTile extends StatelessWidget {
           hoverColor: Colors.transparent,
         ),
         child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
           onTap: onTap,
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.primary, size: 20),
@@ -58,7 +56,7 @@ class SettingsTile extends StatelessWidget {
                     Text(
                       status!,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),

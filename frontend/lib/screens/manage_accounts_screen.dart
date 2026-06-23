@@ -331,7 +331,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
         : MediaQuery.of(context).padding.bottom + 16;
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(20, 10, 20, bottomPad),
+      padding: EdgeInsets.fromLTRB(0, 10, 0, bottomPad),
       children: [
         _DuesBanner(accounts: _accounts, currency: currency),
         for (final cat in _kCategories)
@@ -421,7 +421,7 @@ class _DuesBanner extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
           child: Text(
             'Upcoming Card Dues',
             style: TextStyle(
@@ -454,11 +454,9 @@ class _DueCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.orangeAccent.withAlpha(20),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.orangeAccent.withAlpha(60)),
       ),
       child: Row(
         children: [
@@ -583,14 +581,6 @@ class _AccountCategorySection extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,7 +623,7 @@ class _AccountCategorySection extends StatelessWidget {
                     currency: currency,
                   ),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: _isCreditCard && total > 0.01
                         ? const Color(0xFFE74C3C)

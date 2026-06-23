@@ -12,6 +12,7 @@ import 'settings/widgets/settings_tile.dart';
 import 'settings/widgets/appearance_card.dart';
 import 'settings/currency_settings_screen.dart';
 import 'settings/privacy_policy_screen.dart';
+import 'settings/budgets_management_screen.dart';
 
 // Main settings hub (previously ProfileScreen in profile_screen.dart)
 class SettingsScreen extends StatefulWidget {
@@ -62,117 +63,160 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Passcode Status
     final passcodeStatus = _isPasscodeOn ? 'On' : 'Off';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
 
               // Account Settings Section
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'SETTINGS',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: 1,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'SETTINGS',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              SettingsTile(
-                title: 'Appearance',
-                icon: Icons.palette_outlined,
-                onTap: () => setState(
-                  () => _showAppearanceOptions = !_showAppearanceOptions,
-                ),
-                status: appearanceStatus,
-              ),
-              if (_showAppearanceOptions) ...[
-                const AppearanceCard(),
-                const SizedBox(height: 12),
-              ],
-              SettingsTile(
-                title: 'Currency',
-                icon: Icons.payments_outlined,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CurrencySettingsScreen(),
-                  ),
-                ),
-                status: currencyStatus,
-              ),
-              SettingsTile(
-                title: 'Passcode',
-                icon: Icons.lock_outline,
-                onTap: () => _navigateToPasscode(context),
-                status: passcodeStatus,
-              ),
-              SettingsTile(
-                title: 'Backup',
-                icon: Icons.cloud_upload_outlined,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const ImportExportScreen(isBackupMode: true),
-                    ),
-                  );
-                },
-                status: 'Excel',
-              ),
-              SettingsTile(
-                title: 'Feedback',
-                icon: Icons.feedback_outlined,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FeedbackScreen(),
-                    ),
-                  );
-                },
-              ),
-              SettingsTile(
-                title: 'Privacy Policy',
-                icon: Icons.privacy_tip_outlined,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PrivacyPolicyScreen(),
-                    ),
-                  );
-                },
-              ),
 
-              SettingsTile(
-                title: 'Notifications',
-                icon: Icons.notifications_none,
-                onTap: () {},
-                trailing: Transform.scale(
-                  scale: 0.8,
-                  child: Switch(
-                    value: _notificationsEnabled,
-                    onChanged: (val) =>
-                        setState(() => _notificationsEnabled = val),
-                    activeThumbColor: AppColors.primary,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Column(
+                      children: [
+                        SettingsTile(
+                          title: 'Appearance',
+                          icon: Icons.palette_outlined,
+                          onTap: () => setState(
+                            () => _showAppearanceOptions = !_showAppearanceOptions,
+                          ),
+                          status: appearanceStatus,
+                        ),
+                        if (_showAppearanceOptions) ...[
+                          const AppearanceCard(),
+                        ],
+                        SettingsTile(
+                          title: 'Currency',
+                          icon: Icons.payments_outlined,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CurrencySettingsScreen(),
+                            ),
+                          ),
+                          status: currencyStatus,
+                        ),
+                        SettingsTile(
+                          title: 'Budgets',
+                          icon: Icons.track_changes_outlined,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BudgetsManagementScreen(),
+                            ),
+                          ),
+                        ),
+                        SettingsTile(
+                          title: 'Passcode',
+                          icon: Icons.lock_outline,
+                          onTap: () => _navigateToPasscode(context),
+                          status: passcodeStatus,
+                        ),
+                        SettingsTile(
+                          title: 'Backup',
+                          icon: Icons.cloud_upload_outlined,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ImportExportScreen(isBackupMode: true),
+                              ),
+                            );
+                          },
+                          status: 'Excel',
+                        ),
+                        SettingsTile(
+                          title: 'Feedback',
+                          icon: Icons.feedback_outlined,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const FeedbackScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        SettingsTile(
+                          title: 'Privacy Policy',
+                          icon: Icons.privacy_tip_outlined,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PrivacyPolicyScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        SettingsTile(
+                          title: 'Notifications',
+                          icon: Icons.notifications_none,
+                          onTap: () {},
+                          trailing: Transform.scale(
+                            scale: 0.8,
+                            child: Switch(
+                              value: _notificationsEnabled,
+                              onChanged: (val) =>
+                                  setState(() => _notificationsEnabled = val),
+                              activeThumbColor: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 32),
 
               // Version Info
-              const Text(
-                'FinLoop Version 1.0.0 (1)',
-                style: TextStyle(color: AppColors.neutralLight, fontSize: 11),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'FinLoop Version 1.0.0 (1)',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                    fontSize: 11,
+                  ),
+                ),
               ),
               const SizedBox(height: 100),
             ],

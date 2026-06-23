@@ -9,18 +9,12 @@ class AppearanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.05),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,7 +24,7 @@ class AppearanceCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
               letterSpacing: 0.8,
             ),
           ),
@@ -89,17 +83,17 @@ class AppearanceCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
+              ? AppColors.primary.withValues(alpha: 0.1)
               : (isDark
-                  ? Colors.white.withOpacity(0.03)
-                  : AppColors.neutralLight.withOpacity(0.3)),
+                  ? Colors.white.withValues(alpha: 0.03)
+                  : AppColors.neutralLight.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
                 : (isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : Colors.black.withOpacity(0.05)),
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05)),
             width: isSelected ? 1.8 : 1,
           ),
         ),

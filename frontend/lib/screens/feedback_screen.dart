@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_colors.dart';
@@ -35,12 +34,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   PlatformFile? _selectedFile;
   bool _isSubmitting = false;
-  String _submissionStatus = '';
-
-  // FIX #1: Track upload task and stream subscription so they can be
-  // cancelled on dispose or mid-flight widget removal.
-  UploadTask? _activeUploadTask;
-  StreamSubscription<TaskSnapshot>? _uploadProgressSubscription;
 
   @override
   void initState() {
@@ -55,10 +48,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   void dispose() {
     _messageController.dispose();
     _emailController.dispose();
-    // FIX #1 continued: Cancel any in-flight upload to avoid setState
-    // calls on a dead widget and to free resources.
-    _uploadProgressSubscription?.cancel();
-    _activeUploadTask?.cancel();
     super.dispose();
   }
 
@@ -94,50 +83,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   void _removeImage() => setState(() => _selectedFile = null);
 
-  Future<String?> _uploadImage(PlatformFile file, String userId) async {
-    try {
-      final ref = FirebaseStorage.instance.ref(
-        'feedback/${userId}_${DateTime.now().millisecondsSinceEpoch}',
-      );
 
-      if (kIsWeb) {
-        if (file.bytes == null) return null;
-        _activeUploadTask = ref.putData(file.bytes!);
-      } else {
-        if (file.path == null) return null;
-        _activeUploadTask = ref.putFile(File(file.path!));
-      }
-
-      // FIX #1 continued: Store the subscription so it can be cancelled in
-      // dispose() if the user leaves the screen during upload.
-      _uploadProgressSubscription = _activeUploadTask!.snapshotEvents.listen((
-        snapshot,
-      ) {
-        if (snapshot.totalBytes > 0 && mounted) {
-          final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-          setState(() {
-            _submissionStatus =
-                'Uploading screenshot... ${(progress * 100).toStringAsFixed(0)}%';
-          });
-        }
-      });
-
-      final snapshot = await _activeUploadTask!;
-
-      // Clean up references now that the upload is complete.
-      await _uploadProgressSubscription?.cancel();
-      _uploadProgressSubscription = null;
-      _activeUploadTask = null;
-
-      return await snapshot.ref.getDownloadURL();
-    } catch (e) {
-      if (kDebugMode) debugPrint('Error uploading image: $e');
-      await _uploadProgressSubscription?.cancel();
-      _uploadProgressSubscription = null;
-      _activeUploadTask = null;
-      return null;
-    }
-  }
 
   // FIX #3: Safely unwrap result.data — it may be null or not a Map if the
   // Cloud Function throws or returns an unexpected shape.

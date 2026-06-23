@@ -77,19 +77,22 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Currency Settings Section
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'Active: $_selectedCurrency',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  'Active: $_selectedCurrency',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ),
@@ -108,56 +111,43 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
                 prefixIcon: const Icon(
                   Icons.search,
                   color: Colors.grey,
-                  size: 20,
+                  size: 18,
                 ),
                 filled: true,
                 fillColor: Theme.of(context).brightness == Brightness.dark
                     ? Colors.white.withOpacity(0.05)
                     : Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Currency List Card
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(
-                      Theme.of(context).brightness == Brightness.dark
-                          ? 0.15
-                          : 0.02,
-                    ),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: Column(
-                children: _currencies
-                    .where(
-                      (c) =>
-                          c['name']!.toLowerCase().contains(
-                            _searchQuery.toLowerCase(),
-                          ) ||
-                          c['code']!.toLowerCase().contains(
-                            _searchQuery.toLowerCase(),
-                          ),
-                    )
-                    .map((c) => _buildCurrencyItem(c))
-                    .toList(),
-              ),
+            // Currency List
+            Column(
+              children: _currencies
+                  .where(
+                    (c) =>
+                        c['name']!.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ) ||
+                        c['code']!.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ),
+                  )
+                  .map((c) => _buildCurrencyItem(c))
+                  .toList(),
             ),
             const SizedBox(height: 32),
 
             // Save Button
-            CustomButton(text: 'Save Changes', onPressed: _saveChanges),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: CustomButton(text: 'Save Changes', onPressed: _saveChanges),
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -170,63 +160,69 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
     return GestureDetector(
       onTap: () => setState(() => _selectedCurrency = currency['code']!),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: isSelected ? BorderRadius.circular(16) : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.2)
-                    : (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withOpacity(0.08)
-                        : const Color(0xFFEBF2FF)),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  currency['symbol']!,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.primary,
-                    fontWeight: FontWeight.bold,
+        color: Colors.transparent, // Ensures the entire row is tap-targetable
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withOpacity(0.2)
+                      : (Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withOpacity(0.08)
+                          : const Color(0xFFEBF2FF)),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    currency['symbol']!,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    currency['code']!,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? Colors.white
-                          : Theme.of(context).colorScheme.onSurface,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      currency['code']!,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  Text(
-                    currency['name']!,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isSelected
-                          ? Colors.white.withOpacity(0.7)
-                          : AppColors.neutral,
+                    Text(
+                      currency['name']!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isSelected
+                            ? Colors.white.withOpacity(0.7)
+                            : AppColors.neutral,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: Colors.white, size: 24),
-          ],
+              if (isSelected)
+                const Icon(Icons.check_circle, color: Colors.white, size: 24),
+            ],
+          ),
         ),
       ),
     );
