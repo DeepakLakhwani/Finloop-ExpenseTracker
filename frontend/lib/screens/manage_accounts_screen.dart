@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
+import '../providers/language_provider.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
 import 'account_entries_screen.dart';
@@ -40,7 +41,7 @@ DateTime _toDateTime(dynamic value) {
 /// Returns a human-readable countdown to the credit-card due day.
 ///
 /// Uses proper [DateTime] arithmetic so December → January wrap-around is safe.
-String _dueCountdownText(int dueDay) {
+String _dueCountdownText(BuildContext context, int dueDay) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
 
@@ -62,8 +63,8 @@ String _dueCountdownText(int dueDay) {
   }
 
   final diff = dueDate.difference(today).inDays;
-  if (diff == 0) return 'due today!';
-  return 'due in $diff day${diff == 1 ? '' : 's'}';
+  if (diff == 0) return context.translate('due_today');
+  return context.translate('due_in_days').replaceAll('{days}', diff.toString());
 }
 
 /// Formats a balance for display.
@@ -250,8 +251,8 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
         // Dismiss loader only if it is still on the stack.
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not load account details. Please try again.'),
+          SnackBar(
+            content: Text(context.translate('err_load_account_details')),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -285,7 +286,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                 tooltip: 'Back',
               ),
               title: Text(
-                'Manage Accounts',
+                context.translate('manage_accounts'),
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -320,7 +321,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 
     if (_error != null) {
       return _ErrorView(
-        message: 'Failed to load accounts.\nPlease try again.',
+        message: context.translate('err_load_accounts_retry'),
         onRetry: _retryLoad,
       );
     }
@@ -423,7 +424,7 @@ class _DuesBanner extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
           child: Text(
-            'Upcoming Card Dues',
+            context.translate('header_card_dues'),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -450,88 +451,94 @@ class _DueCard extends StatelessWidget {
     final available = _parseDouble(acc['balance']);
     final outstanding = limit - available;
     final dueDay = (acc['dueDate'] as int?) ?? 30;
-    final countdownText = _dueCountdownText(dueDay);
+    final countdownText = _dueCountdownText(context, dueDay);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.orangeAccent.withAlpha(20),
-      ),
-      child: Row(
-        children: [
-          // Icon badge
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.orangeAccent.withAlpha(30),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.orangeAccent,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // Card info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${acc['cardIssuer'] ?? 'Credit Card'} (${acc['name'] ?? ''})',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$currency${_fmt.format(outstanding)} outstanding • $countdownText',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withAlpha(150),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Pay bill button
-          ElevatedButton(
-            onPressed: () => Navigator.push<void>(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => AddTransactionScreen(
-                  initialType: 'Transfer',
-                  prefilledToAccountId: acc['id']?.toString() ?? '',
-                ),
+    return Card(
+      margin: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.orangeAccent.withAlpha(20),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            // Icon badge
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orangeAccent.withAlpha(30),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orangeAccent,
+                size: 20,
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orangeAccent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              minimumSize: Size.zero,
-              elevation: 0,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+            const SizedBox(width: 14),
+
+            // Card info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${acc['cardIssuer'] ?? 'Credit Card'} (${acc['name'] ?? ''})',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$currency${_fmt.format(outstanding)} ${context.translate('label_outstanding')} • $countdownText',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withAlpha(150),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: const Text(
-              'Pay Bill',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            const SizedBox(width: 12),
+
+            // Pay bill button
+            ElevatedButton(
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => AddTransactionScreen(
+                    initialType: 'Transfer',
+                    prefilledToAccountId: acc['id']?.toString() ?? '',
+                  ),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                minimumSize: Size.zero,
+                elevation: 0,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                context.translate('btn_pay_bill'),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -577,11 +584,12 @@ class _AccountCategorySection extends StatelessWidget {
     final total = _sectionTotal;
     final dividerColor = Theme.of(context).dividerColor.withOpacity(0.2);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-      ),
+    return Card(
+      margin: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Theme.of(context).colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -607,7 +615,7 @@ class _AccountCategorySection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    category.name,
+                    context.translate('type_${category.name.toLowerCase()}'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -639,7 +647,7 @@ class _AccountCategorySection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Text(
-                'No ${category.name.toLowerCase()} accounts yet.',
+                context.translate('msg_no_accounts_in_category'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
@@ -740,7 +748,7 @@ class _SubAccountTile extends StatelessWidget {
                   if (isCreditCard) ...[
                     const SizedBox(height: 3),
                     Text(
-                      'Limit: $currency${_fmt.format(limit)}  |  Avail: $currency${_fmt.format(available)}',
+                      '${context.translate('label_limit')}: $currency${_fmt.format(limit)}  |  ${context.translate('label_available')}: $currency${_fmt.format(available)}',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,

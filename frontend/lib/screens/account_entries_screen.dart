@@ -6,6 +6,7 @@ import 'package:characters/characters.dart';
 import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
 import '../providers/settings_provider.dart';
+import '../providers/language_provider.dart';
 import '../theme/app_colors.dart';
 import 'add_account_screen.dart';
 import 'add_transaction_screen.dart';
@@ -101,22 +102,18 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'Are you sure you want to delete this account? '
-          'All associated transaction histories will be preserved, '
-          'but this source will be removed.',
-        ),
+        title: Text(context.translate('title_delete_account')),
+        content: Text(context.translate('delete_account_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(context.translate('cancel'), style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(
+            child: Text(
+              context.translate('delete'),
+              style: const TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,
               ),

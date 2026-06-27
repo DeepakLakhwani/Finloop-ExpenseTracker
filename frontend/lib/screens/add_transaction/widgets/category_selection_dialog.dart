@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../services/firestore_service.dart';
+import '../../../providers/language_provider.dart';
 import '../../manage_categories_screen.dart';
 
 class CategorySelectionDialog extends StatelessWidget {
@@ -147,10 +148,13 @@ class CategorySelectionDialog extends StatelessWidget {
                                       ],
                                     ),
                                     child: Text(
-                                      (cat['name'] == '👪 Family & Personal' ||
-                                              cat['name'] == '👪 Family')
-                                          ? '👪 Family'
-                                          : cat['name'] ?? '',
+                                      context.getLocalizedCategory(
+                                        cat['key']?.toString(),
+                                        (cat['name'] == '👪 Family & Personal' ||
+                                                cat['name'] == '👪 Family')
+                                            ? '👪 Family'
+                                            : cat['name'] ?? '',
+                                      ),
                                       style: TextStyle(
                                         fontWeight: isSelected
                                             ? FontWeight.bold

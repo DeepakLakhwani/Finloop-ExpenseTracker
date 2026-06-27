@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_colors.dart';
+import '../providers/language_provider.dart';
 
 // Fix #1: Centralize magic string into a constant
 const String _kNeverBackedUp = 'Never';
@@ -52,7 +53,7 @@ class _BackupScreenState extends State<BackupScreen> {
       debugPrint('Error loading backup settings: $e');
       // Fix #4: Show error to user, not just console
       if (!mounted) return;
-      _showErrorSnackBar('Failed to load backup settings.');
+      _showErrorSnackBar(context.translate('err_load_backup_settings'));
     }
   }
 
@@ -70,7 +71,7 @@ class _BackupScreenState extends State<BackupScreen> {
       setState(() {
         _autoBackupEnabled = !value;
       });
-      _showErrorSnackBar('Failed to save auto backup setting.');
+      _showErrorSnackBar(context.translate('err_save_auto_backup'));
     }
   }
 
@@ -117,7 +118,7 @@ class _BackupScreenState extends State<BackupScreen> {
       });
       _showSuccessSnackBar(
         icon: Icons.check_circle_outline,
-        message: 'Backup completed successfully!',
+        message: context.translate('msg_backup_success'),
       );
     } catch (e) {
       debugPrint('Error saving last backup time: $e');
@@ -127,7 +128,7 @@ class _BackupScreenState extends State<BackupScreen> {
         _isBackingUp = false;
         _backupProgress = 0.0;
       });
-      _showErrorSnackBar('Backup failed. Please try again.');
+      _showErrorSnackBar(context.translate('err_backup_failed'));
     }
   }
 
@@ -135,28 +136,27 @@ class _BackupScreenState extends State<BackupScreen> {
     if (_isBackingUp || _isRestoring) return;
 
     if (_lastBackupTime == _kNeverBackedUp) {
-      _showWarningSnackBar('No backup found to restore.');
+      _showWarningSnackBar(context.translate('err_no_backup_found'));
       return;
     }
 
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Restore Data'),
-        content: const Text(
-          'Are you sure you want to restore data from the last backup? '
-          'This will overwrite your current local records.',
+        title: Text(context.translate('title_restore_data')),
+        content: Text(
+          context.translate('restore_data_confirm'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(context.translate('cancel'), style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Restore',
-              style: TextStyle(
+            child: Text(
+              context.translate('restore'),
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
@@ -187,7 +187,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
       _showSuccessSnackBar(
         icon: Icons.cloud_done_outlined,
-        message: 'Data restored successfully!',
+        message: context.translate('msg_restore_success'),
       );
     } catch (e) {
       debugPrint('Error during restore: $e');
@@ -195,7 +195,7 @@ class _BackupScreenState extends State<BackupScreen> {
       setState(() {
         _isRestoring = false;
       });
-      _showErrorSnackBar('Restore failed. Please try again.');
+      _showErrorSnackBar(context.translate('err_restore_failed'));
     }
   }
 
@@ -251,7 +251,7 @@ class _BackupScreenState extends State<BackupScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Backup & Restore',
+          context.translate('backup_restore_title'),
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -264,7 +264,7 @@ class _BackupScreenState extends State<BackupScreen> {
             child: Row(
               children: [
                 Text(
-                  'Auto Backup',
+                  context.translate('label_auto_backup'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -299,7 +299,7 @@ class _BackupScreenState extends State<BackupScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Last Backup Status',
+                  context.translate('label_last_backup_status'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -307,7 +307,7 @@ class _BackupScreenState extends State<BackupScreen> {
                   ),
                 ),
                 Text(
-                  _lastBackupTime,
+                  _lastBackupTime == _kNeverBackedUp ? context.translate('never') : _lastBackupTime,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -321,7 +321,7 @@ class _BackupScreenState extends State<BackupScreen> {
             const SizedBox(height: 20),
 
             Text(
-              'ACTIONS',
+              context.translate('header_actions'),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -335,9 +335,8 @@ class _BackupScreenState extends State<BackupScreen> {
 
             // Back Up Now card
             CardActionItem(
-              title: 'Back Up Now',
-              subtitle:
-                  'Manually push your local changes to secure cloud servers',
+              title: context.translate('btn_backup_now'),
+              subtitle: context.translate('desc_backup_now'),
               icon: Icons.backup_outlined,
               isLoading: _isBackingUp,
               progress: _backupProgress,
@@ -347,9 +346,8 @@ class _BackupScreenState extends State<BackupScreen> {
 
             // Restore card
             CardActionItem(
-              title: 'Restore Data',
-              subtitle:
-                  'Retrieve your saved logs and overwrite current workspace data',
+              title: context.translate('title_restore_data'),
+              subtitle: context.translate('desc_restore_data'),
               icon: Icons.settings_backup_restore_outlined,
               isLoading: _isRestoring,
               // Fix #14: Pass progress: null explicitly for restore (indeterminate spinner)

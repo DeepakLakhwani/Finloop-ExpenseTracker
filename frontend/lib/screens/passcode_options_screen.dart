@@ -4,6 +4,7 @@ import '../services/biometric_service.dart';
 import '../theme/app_colors.dart';
 import 'passcode_lock_screen.dart';
 import 'passcode_setup_screen.dart';
+import '../providers/language_provider.dart';
 
 class PasscodeOptionsScreen extends StatefulWidget {
   const PasscodeOptionsScreen({super.key});
@@ -55,12 +56,12 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
-            children: const [
-              Icon(Icons.check_circle_outline, color: Colors.white),
-              SizedBox(width: 12),
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 12),
               Text(
-                'Passcode successfully disabled.',
-                style: TextStyle(fontWeight: FontWeight.w500),
+                context.translate('msg_passcode_disabled'),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -133,7 +134,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Passcode Settings',
+          context.translate('passcode_settings'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -163,21 +164,21 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.lock_open_outlined,
                       color: Colors.grey,
                       size: 20,
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Text(
-                      'Turn Off Passcode',
+                      context.translate('btn_turn_off_passcode'),
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    Spacer(),
-                    Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
+                    const Spacer(),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
                   ],
                 ),
               ),
@@ -202,21 +203,21 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.lock_reset_outlined,
                       color: Colors.grey,
                       size: 20,
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Text(
-                      'Change Passcode',
+                      context.translate('btn_change_passcode'),
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    Spacer(),
-                    Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
+                    const Spacer(),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
                   ],
                 ),
               ),
@@ -247,7 +248,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Biometric Login',
+                      context.translate('btn_biometric_login'),
                       style: TextStyle(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurface,

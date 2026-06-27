@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../providers/settings_provider.dart';
+import '../providers/language_provider.dart';
 import '../theme/app_colors.dart';
 import 'add_account/widgets/card_preview.dart';
 import 'add_account/widgets/color_selector.dart';
@@ -183,7 +184,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error saving account: $e')));
+        ).showSnackBar(SnackBar(content: Text('${context.translate('err_save_account')}$e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -194,21 +195,18 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'Are you sure you want to delete this account? All associated '
-          'transaction histories will be preserved, but this source will be removed.',
-        ),
+        title: Text(context.translate('title_delete_account')),
+        content: Text(context.translate('delete_account_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(context.translate('cancel'), style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(
+            child: Text(
+              context.translate('delete'),
+              style: const TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,
               ),
@@ -232,7 +230,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error deleting account: $e')));
+        ).showSnackBar(SnackBar(content: Text('${context.translate('err_delete_account')}$e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -256,7 +254,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isEditing ? 'Edit Account' : 'New Account',
+          isEditing ? context.translate('title_edit_account') : context.translate('title_new_account'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -305,11 +303,11 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         initialValue: _name,
                         style: _fieldTextStyle(context),
                         decoration: _underlineDecoration(
-                          label: 'Account Name',
-                          hint: 'e.g. My Savings, Daily Cash',
+                          label: context.translate('label_account_name'),
+                          hint: context.translate('hint_account_name'),
                         ),
                         validator: (val) => val == null || val.trim().isEmpty
-                            ? 'Please enter a valid name'
+                            ? context.translate('err_invalid_name')
                             : null,
                         // FIX #4: onChanged keeps _name live for CardPreview
                         onChanged: (val) => setState(() => _name = val.trim()),
@@ -326,20 +324,20 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         value: _type,
                         style: _fieldTextStyle(context),
                         dropdownColor: _dropdownColor(context),
-                        decoration: _underlineDecoration(label: 'Account Type'),
-                        items: const [
-                          DropdownMenuItem(value: 'Cash', child: Text('Cash')),
+                        decoration: _underlineDecoration(label: context.translate('label_account_type')),
+                        items: [
+                          DropdownMenuItem(value: 'Cash', child: Text(context.translate('type_cash'))),
                           DropdownMenuItem(
                             value: 'Bank Account',
-                            child: Text('Bank'),
+                            child: Text(context.translate('type_bank')),
                           ),
                           DropdownMenuItem(
                             value: 'Credit Card',
-                            child: Text('Credit Card'),
+                            child: Text(context.translate('type_cards')),
                           ),
                           DropdownMenuItem(
                             value: 'Wallet',
-                            child: Text('Wallet'),
+                            child: Text(context.translate('type_wallet')),
                           ),
                         ],
                         onChanged: (val) {
@@ -358,7 +356,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           controller: _balanceController,
                           style: _fieldTextStyle(context),
                           decoration: _underlineDecoration(
-                            label: 'Balance',
+                            label: context.translate('label_balance'),
                             prefix: Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: Text(
@@ -375,7 +373,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           ),
                           validator: (val) =>
                               val == null || double.tryParse(val) == null
-                              ? 'Invalid amount'
+                              ? context.translate('err_invalid_amount')
                               : null,
                           // FIX #1: no onSaved needed — controller always has current value
                         ),
@@ -391,8 +389,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           controller: _issuerController,
                           style: _fieldTextStyle(context),
                           decoration: _underlineDecoration(
-                            label: 'Card Issuer / Bank',
-                            hint: 'e.g. HDFC Bank, Chase',
+                            label: context.translate('label_card_issuer'),
+                            hint: context.translate('hint_card_issuer'),
                           ),
                           onChanged: (_) => setState(() {}),
                         ),
@@ -409,13 +407,13 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           ),
                           style: _fieldTextStyle(context),
                           decoration: _underlineDecoration(
-                            label: 'Total Credit Limit',
+                            label: context.translate('label_credit_limit'),
                             prefixText: '$currency ',
                           ),
                           validator: (val) {
                             final parsed = double.tryParse(val ?? '');
                             if (parsed == null || parsed <= 0) {
-                              return 'Please enter a valid credit limit';
+                              return context.translate('err_invalid_limit');
                             }
                             return null;
                           },
@@ -434,7 +432,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           ),
                           style: _fieldTextStyle(context),
                           decoration: _underlineDecoration(
-                            label: 'Already Used Amount (Optional)',
+                            label: context.translate('label_used_amount'),
                             prefixText: '$currency ',
                           ),
                           // FIX #5: Validate that usedAmount is numeric when provided
@@ -443,12 +441,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                             if (val == null || val.trim().isEmpty) return null;
                             final used = double.tryParse(val);
                             if (used == null || used < 0) {
-                              return 'Enter a valid amount';
+                              return context.translate('err_invalid_amount');
                             }
                             final limit =
                                 double.tryParse(_limitController.text) ?? 0;
                             if (used > limit) {
-                              return 'Used amount cannot exceed the limit';
+                              return context.translate('err_used_exceeds_limit');
                             }
                             return null;
                           },
@@ -458,9 +456,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
                       // Billing Cycle
                       const SizedBox(height: 24),
-                      const Text(
-                        'Billing Cycle Preferences',
-                        style: TextStyle(
+                      Text(
+                        context.translate('header_billing_cycle'),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppColors.neutral,
@@ -476,14 +474,17 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                               dropdownColor: _dropdownColor(context),
                               style: _fieldTextStyle(context),
                               decoration: _underlineDecoration(
-                                label: 'Statement Date',
+                                label: context.translate('label_statement_date'),
                                 labelSize: 12,
                               ),
                               items: List.generate(
                                 31,
                                 (i) => DropdownMenuItem<int>(
                                   value: i + 1,
-                                  child: Text('Day ${i + 1}'),
+                                  child: Text(
+                                    context.translate('label_day_count')
+                                        .replaceAll('{day}', '${i + 1}'),
+                                  ),
                                 ),
                               ),
                               onChanged: (val) {
@@ -501,14 +502,17 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                               dropdownColor: _dropdownColor(context),
                               style: _fieldTextStyle(context),
                               decoration: _underlineDecoration(
-                                label: 'Payment Due Date',
+                                label: context.translate('label_due_date'),
                                 labelSize: 12,
                               ),
                               items: List.generate(
                                 31,
                                 (i) => DropdownMenuItem<int>(
                                   value: i + 1,
-                                  child: Text('Day ${i + 1}'),
+                                  child: Text(
+                                    context.translate('label_day_count')
+                                        .replaceAll('{day}', '${i + 1}'),
+                                  ),
                                 ),
                               ),
                               onChanged: (val) {
@@ -523,9 +527,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
                       // Card Theme
                       const SizedBox(height: 28),
-                      const Text(
-                        'Select Card Theme',
-                        style: TextStyle(
+                      Text(
+                        context.translate('header_card_theme'),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppColors.neutral,
@@ -557,7 +561,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           ),
                         ),
                         child: Text(
-                          isEditing ? 'Save Changes' : 'Create Account',
+                          isEditing
+                              ? context.translate('btn_save_changes')
+                              : context.translate('btn_create_account'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

@@ -6,11 +6,12 @@ import 'screens/splash_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
-import 'providers/group_provider.dart';
+import 'providers/language_provider.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
 import 'services/ad_service.dart';
 import 'theme/app_theme.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 final GlobalKey<ScaffoldMessengerState> snackbarKey =
     GlobalKey<ScaffoldMessengerState>();
@@ -18,6 +19,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
   try {
     await Firebase.initializeApp();
   } catch (e) {
@@ -32,7 +34,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => GroupProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
         Provider(create: (_) => FirestoreService()),
       ],
       child: const FinloopApp(),
@@ -77,6 +79,12 @@ class _FinloopAppState extends State<FinloopApp> {
           context.read<SettingsProvider>().loadSettings(
             data['defaultCurrency'],
           );
+          context.read<LanguageProvider>().loadSettings(data['language']);
+        }
+      } else {
+        // Even if user is not logged in, load language from SharedPreferences
+        if (mounted) {
+          context.read<LanguageProvider>().loadSettings(null);
         }
       }
     } catch (e) {
@@ -87,6 +95,8 @@ class _FinloopAppState extends State<FinloopApp> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    // Watch LanguageProvider so the app rebuilds and switches languages dynamically
+    context.watch<LanguageProvider>();
 
     return MaterialApp(
       title: 'Finloop',

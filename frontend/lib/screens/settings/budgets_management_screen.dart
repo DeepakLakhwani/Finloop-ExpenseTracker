@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/firestore_service.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../theme/app_colors.dart';
 
 class BudgetsManagementScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Manage Budgets',
+          context.translate('title_manage_budgets'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -79,7 +80,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading budgets.'));
+                  return Center(child: Text(context.translate('err_load_budgets')));
                 }
                 final budgets = snapshot.data ?? [];
                 if (budgets.isEmpty) {
@@ -94,7 +95,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No Budgets Set',
+                          context.translate('msg_no_budgets'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -103,7 +104,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Create budgets to manage your spending categories',
+                          context.translate('msg_create_budgets_hint'),
                           style: TextStyle(
                             fontSize: 13,
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
@@ -135,11 +136,14 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                           child: const Icon(Icons.track_changes, color: AppColors.primary),
                         ),
                         title: Text(
-                          budget['categoryName'] ?? 'Category',
+                          context.getLocalizedCategory(
+                            budget['categoryKey']?.toString(),
+                            budget['categoryName'] ?? context.translate('label_category'),
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          'Limit: $currency ${budget['limitAmount']}',
+                          '${context.translate('label_limit')}: $currency ${budget['limitAmount']}',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
@@ -170,18 +174,18 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Budget'),
-        content: const Text('Are you sure you want to delete this budget?'),
+        title: Text(context.translate('title_delete_budget')),
+        content: Text(context.translate('delete_budget_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(context.translate('cancel'), style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+            child: Text(
+              context.translate('delete'),
+              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -212,7 +216,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
           builder: (context, setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 20,
                 left: 20,
                 right: 20,
                 top: 20,
@@ -222,7 +226,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isEditing ? 'Edit Budget' : 'Add Budget',
+                    isEditing ? context.translate('title_edit_budget') : context.translate('title_add_budget'),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -239,19 +243,19 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                      border: UnderlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.translate('label_category'),
+                      border: const UnderlineInputBorder(),
                     ),
                     items: [
-                      const DropdownMenuItem<String?>(
+                      DropdownMenuItem<String?>(
                         value: null,
-                        child: Text('All Expenses (Global)'),
+                        child: Text(context.translate('all_expenses')),
                       ),
                       ..._categories.where((c) => c['type'] == 'Expense').map((c) {
                         return DropdownMenuItem<String?>(
                           value: c['id'],
-                          child: Text(c['name'] ?? ''),
+                          child: Text(context.getLocalizedCategory(c['key']?.toString(), c['name'] ?? '')),
                         );
                       }),
                     ],
@@ -270,7 +274,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Monthly Limit Amount',
+                      labelText: context.translate('label_monthly_limit'),
                       prefixText: '${context.read<SettingsProvider>().currency} ',
                       border: const UnderlineInputBorder(),
                     ),
@@ -283,21 +287,26 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         final amount = double.tryParse(amountController.text);
                         if (amount == null || amount <= 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter a valid amount')),
+                            SnackBar(content: Text(context.translate('err_invalid_amount'))),
                           );
                           return;
                         }
 
                         final firestore = context.read<FirestoreService>();
                         String categoryName = 'All Expenses';
+                        String? categoryKey;
                         if (selectedCategoryId != null) {
                           final cat = _categories.firstWhere((c) => c['id'] == selectedCategoryId);
                           categoryName = cat['name'] ?? 'Category';
+                          categoryKey = cat['key']?.toString();
+                        } else {
+                          categoryKey = 'all_expenses';
                         }
 
                         final budgetData = {
                           'categoryId': selectedCategoryId,
                           'categoryName': categoryName,
+                          'categoryKey': categoryKey,
                           'limitAmount': amount,
                         };
 
@@ -319,7 +328,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(isEditing ? 'Save Changes' : 'Create Budget'),
+                      child: Text(isEditing ? context.translate('save_changes') : context.translate('btn_create_budget')),
                     ),
                   ),
                 ],

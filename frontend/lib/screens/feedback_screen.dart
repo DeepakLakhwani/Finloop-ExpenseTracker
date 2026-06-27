@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_colors.dart';
+import '../providers/language_provider.dart';
 import '../main.dart';
 import '../services/firestore_service.dart';
 
@@ -65,19 +66,19 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         // Check if we have valid image data (bytes on web, path on mobile)
         final hasData = kIsWeb ? pickedFile.bytes != null : pickedFile.path != null;
         if (!hasData) {
-          showTopNotification('Could not read image data', isError: true);
+          showTopNotification(context.translate('err_read_image'), isError: true);
           return;
         }
 
         if (pickedFile.size > 5 * 1024 * 1024) {
-          showTopNotification('Image must be smaller than 5MB', isError: true);
+          showTopNotification(context.translate('err_image_too_large'), isError: true);
           return;
         }
         setState(() => _selectedFile = pickedFile);
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Error picking image: $e');
-      showTopNotification('Failed to access gallery: $e', isError: true);
+      showTopNotification('${context.translate('err_gallery_access')}: $e', isError: true);
     }
   }
 
@@ -173,7 +174,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
       // Show immediate success feedback and pop the screen
       showTopNotification(
-        'Feedback received! Thank you for helping us improve.',
+        context.translate('msg_feedback_success'),
         isError: false,
       );
 
@@ -207,7 +208,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         setState(() {
           _isSubmitting = false;
         });
-        showTopNotification('Submission error: $e', isError: true);
+        showTopNotification('${context.translate('err_submission_failed')}: $e', isError: true);
       }
     }
   }
@@ -223,7 +224,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _isSubmitting) {
           showTopNotification(
-            'Please wait while your feedback is being submitted.',
+            context.translate('msg_feedback_submitting'),
             isError: false,
           );
         }
@@ -241,7 +242,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             onPressed: _isSubmitting ? null : () => Navigator.pop(context),
           ),
           title: Text(
-            'Feedback',
+            context.translate('feedback_title'),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -300,7 +301,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                'How can we help you?',
+                                context.translate('header_feedback_intro'),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -313,7 +314,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Have a bug to report or an idea for a feature? Fill out the form below. Your message along with device diagnostics will be sent directly to our support team.',
+                            context.translate('desc_feedback_intro'),
                             style: TextStyle(
                               fontSize: 12.5,
                               height: 1.5,
@@ -339,7 +340,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'If you do not receive a confirmation or reply within 48 hours, please feel free to reach out directly at support.finloop@gmail.com.',
+                                  context.translate('desc_feedback_support_email'),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     height: 1.4,
@@ -360,7 +361,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                     // ── Topic Selector ──────────────────────────────────────
                     Text(
-                      'SELECT TOPIC',
+                      context.translate('header_select_topic'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -376,11 +377,25 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       runSpacing: 8,
                       children: _feedbackTypes.map((type) {
                         final isSelected = _feedbackType == type;
+                        String getLocalizedType(String t) {
+                          switch (t) {
+                            case 'Bug Report':
+                              return context.translate('type_bug');
+                            case 'Feature Request':
+                              return context.translate('type_feature');
+                            case 'General Feedback':
+                              return context.translate('type_feedback');
+                            case 'Support Inquiry':
+                              return context.translate('type_support');
+                            default:
+                              return t;
+                          }
+                        }
                         // FIX #6: Replace deprecated selectedColor with the
                         // color resolver API to avoid lint warnings in newer
                         // Flutter versions (3.19+).
                         return ChoiceChip(
-                          label: Text(type),
+                          label: Text(getLocalizedType(type)),
                           selected: isSelected,
                           color: WidgetStateProperty.resolveWith((states) {
                             if (states.contains(WidgetState.selected)) {
@@ -413,7 +428,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                     // ── Email Field ─────────────────────────────────────────
                     Text(
-                      'YOUR EMAIL',
+                      context.translate('header_your_email'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -433,7 +448,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Enter your email address...',
+                        hintText: context.translate('hint_email_input'),
                         hintStyle: const TextStyle(
                           color: Colors.grey,
                           fontSize: 14,
@@ -472,12 +487,12 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
+                          return context.translate('err_email_empty');
                         }
                         final emailRegExp = RegExp(
                             r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
                         if (!emailRegExp.hasMatch(value.trim())) {
-                          return 'Please enter a valid email address';
+                          return context.translate('err_email_invalid');
                         }
                         return null;
                       },
@@ -486,7 +501,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                     // ── Message Field ───────────────────────────────────────
                     Text(
-                      'YOUR MESSAGE',
+                      context.translate('header_your_message'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -507,7 +522,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       ),
                       decoration: InputDecoration(
                         hintText:
-                            'Please describe the issue or share your ideas here...',
+                            context.translate('hint_message_input'),
                         hintStyle: const TextStyle(
                           color: Colors.grey,
                           fontSize: 14,
@@ -541,10 +556,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter a message';
+                          return context.translate('err_message_empty');
                         }
                         if (value.trim().length < 10) {
-                          return 'Message should be at least 10 characters';
+                          return context.translate('err_message_too_short');
                         }
                         return null;
                       },
@@ -553,7 +568,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
                     // ── Attachment ──────────────────────────────────────────
                     Text(
-                      'ATTACHMENT (OPTIONAL)',
+                      context.translate('header_attachment'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -636,7 +651,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                 color: AppColors.error,
                               ),
                               onPressed: _removeImage,
-                              tooltip: 'Remove Attachment',
+                              tooltip: context.translate('tooltip_remove_attachment'),
                             ),
                           ],
                         ),
@@ -670,7 +685,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Add Screenshot or Image',
+                                context.translate('btn_add_screenshot'),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -680,7 +695,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'PNG, JPG up to 5MB',
+                                context.translate('desc_attachment_limits'),
                                 style: TextStyle(
                                   fontSize: 10.5,
                                   color: Theme.of(context).colorScheme.onSurface
@@ -702,9 +717,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         color: Colors.white,
                         size: 18,
                       ),
-                      label: const Text(
-                        'Submit Feedback',
-                        style: TextStyle(
+                      label: Text(
+                        context.translate('feedback'),
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),

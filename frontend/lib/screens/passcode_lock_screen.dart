@@ -3,6 +3,7 @@ import '../services/security_service.dart';
 import '../services/biometric_service.dart';
 import '../theme/app_colors.dart';
 import 'dashboard_screen.dart';
+import '../providers/language_provider.dart';
 
 class PasscodeLockScreen extends StatefulWidget {
   final bool verificationOnly;
@@ -74,7 +75,7 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
           if (mounted) {
             setState(() {
               _enteredCode = '';
-              _errorMessage = 'Incorrect passcode';
+              _errorMessage = context.translate('err_incorrect_passcode');
             });
           }
         });
@@ -107,7 +108,7 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
               )
             : null,
         title: Text(
-          widget.verificationOnly ? 'Verify Identity' : 'Enter Passcode',
+          widget.verificationOnly ? context.translate('title_verify_identity') : context.translate('title_enter_passcode'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -125,8 +126,8 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
             const SizedBox(height: 16),
             Text(
               widget.verificationOnly
-                  ? 'Enter your current passcode to proceed'
-                  : 'Enter your 4-digit passcode to access Finloop',
+                  ? context.translate('msg_verify_identity_instruction')
+                  : context.translate('msg_enter_passcode_instruction'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

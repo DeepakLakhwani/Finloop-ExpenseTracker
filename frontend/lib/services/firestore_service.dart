@@ -116,26 +116,26 @@ class FirestoreService {
     if (uid == null) return;
     final categories = [
       // Income Categories
-      {'name': '💼 Salary & Work', 'type': 'Income', 'icon': 'work', 'color': '#4CAF50'},
-      {'name': '💵 Petty cash', 'type': 'Income', 'icon': 'payments', 'color': '#81C784'},
-      {'name': '🎁 Bonus', 'type': 'Income', 'icon': 'card_giftcard', 'color': '#FFD54F'},
-      {'name': '🏆 Rewards', 'type': 'Income', 'icon': 'stars', 'color': '#FFB300'},
-      {'name': 'Opening Balance', 'type': 'Income', 'icon': 'account_balance_wallet', 'color': '#9E9E9E'},
+      {'name': '💼 Salary & Work', 'type': 'Income', 'icon': 'work', 'color': '#4CAF50', 'key': 'cat_salary'},
+      {'name': '💵 Petty cash', 'type': 'Income', 'icon': 'payments', 'color': '#81C784', 'key': 'cat_petty_cash'},
+      {'name': '🎁 Bonus', 'type': 'Income', 'icon': 'card_giftcard', 'color': '#FFD54F', 'key': 'cat_bonus'},
+      {'name': '🏆 Rewards', 'type': 'Income', 'icon': 'stars', 'color': '#FFB300', 'key': 'cat_rewards'},
+      {'name': 'Opening Balance', 'type': 'Income', 'icon': 'account_balance_wallet', 'color': '#9E9E9E', 'key': 'cat_opening_balance'},
 
       // Expense Categories
-      {'name': '🏠Home & Living', 'type': 'Expense', 'icon': 'home', 'color': '#FF5722'},
-      {'name': '🍔Food & Dining', 'type': 'Expense', 'icon': 'restaurant', 'color': '#FF9800'},
-      {'name': '🚗 Transportation', 'type': 'Expense', 'icon': 'directions_car', 'color': '#2196F3'},
-      {'name': '🛍 Shopping', 'type': 'Expense', 'icon': 'shopping_bag', 'color': '#E91E63'},
-      {'name': '🎬 Entertainment', 'type': 'Expense', 'icon': 'movie', 'color': '#9C27B0'},
-      {'name': '🏥Health & Fitness', 'type': 'Expense', 'icon': 'medical_services', 'color': '#F44336'},
-      {'name': '📚 Education', 'type': 'Expense', 'icon': 'school', 'color': '#03A9F4'},
-      {'name': '💳 Finance', 'type': 'Expense', 'icon': 'credit_card', 'color': '#607D8B'},
-      {'name': '\u{1F46A} Family', 'type': 'Expense', 'icon': 'people', 'color': '#8D6E63'},
-      {'name': '✈ Travel', 'type': 'Expense', 'icon': 'flight', 'color': '#00BCD4'},
+      {'name': '🏠Home & Living', 'type': 'Expense', 'icon': 'home', 'color': '#FF5722', 'key': 'cat_home_living'},
+      {'name': '🍔Food & Dining', 'type': 'Expense', 'icon': 'restaurant', 'color': '#FF9800', 'key': 'cat_food_dining'},
+      {'name': '🚗 Transportation', 'type': 'Expense', 'icon': 'directions_car', 'color': '#2196F3', 'key': 'cat_transportation'},
+      {'name': '🛍 Shopping', 'type': 'Expense', 'icon': 'shopping_bag', 'color': '#E91E63', 'key': 'cat_shopping'},
+      {'name': '🎬 Entertainment', 'type': 'Expense', 'icon': 'movie', 'color': '#9C27B0', 'key': 'cat_entertainment'},
+      {'name': '🏥Health & Fitness', 'type': 'Expense', 'icon': 'medical_services', 'color': '#F44336', 'key': 'cat_health_fitness'},
+      {'name': '📚 Education', 'type': 'Expense', 'icon': 'school', 'color': '#03A9F4', 'key': 'cat_education'},
+      {'name': '💳 Finance', 'type': 'Expense', 'icon': 'credit_card', 'color': '#607D8B', 'key': 'cat_finance'},
+      {'name': '\u{1F46A} Family', 'type': 'Expense', 'icon': 'people', 'color': '#8D6E63', 'key': 'cat_family'},
+      {'name': '✈ Travel', 'type': 'Expense', 'icon': 'flight', 'color': '#00BCD4', 'key': 'cat_travel'},
 
       // Transfer Category
-      {'name': 'Transfer', 'type': 'Transfer', 'icon': 'swap_horiz', 'color': '#757575'},
+      {'name': 'Transfer', 'type': 'Transfer', 'icon': 'swap_horiz', 'color': '#757575', 'key': 'cat_transfer'},
     ];
 
     try {
@@ -234,20 +234,52 @@ class FirestoreService {
             final newSnap = await _db.collection('users').doc(uid).collection('categories').get();
             return newSnap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
           }
-          return snapshot.docs.map((doc) {
+          final List<Map<String, dynamic>> results = [];
+          for (var doc in snapshot.docs) {
             final data = doc.data();
             final String nameStr = data['name']?.toString() ?? '';
+            
+            // Legacy family corrections
             if (nameStr == '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family & Personal' ||
                 nameStr == '\u{1F468}\u{1F469}\u{1F467} Family & Personal' ||
                 nameStr == '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family' ||
                 nameStr == '\u{1F468}\u{1F469}\u{1F467} Family' ||
                 nameStr.contains('Family & Personal')) {
               data['name'] = '\u{1F46A} Family';
-              // Silently correct the database name in the background
               _db.collection('users').doc(uid).collection('categories').doc(doc.id).update({'name': '\u{1F46A} Family'});
             }
-            return {'id': doc.id, ...data};
-          }).toList();
+            
+            // Assign keys to existing/legacy default categories on-the-fly if missing
+            if (data['key'] == null) {
+              final cleanName = nameStr.replaceAll(RegExp(r'[^\s\w\&]'), '').replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+              final Map<String, String> nameToKeyMap = {
+                'salary & work': 'cat_salary',
+                'petty cash': 'cat_petty_cash',
+                'bonus': 'cat_bonus',
+                'rewards': 'cat_rewards',
+                'opening balance': 'cat_opening_balance',
+                'home & living': 'cat_home_living',
+                'food & dining': 'cat_food_dining',
+                'transportation': 'cat_transportation',
+                'shopping': 'cat_shopping',
+                'entertainment': 'cat_entertainment',
+                'health & fitness': 'cat_health_fitness',
+                'education': 'cat_education',
+                'finance': 'cat_finance',
+                'family': 'cat_family',
+                'travel': 'cat_travel',
+                'transfer': 'cat_transfer',
+              };
+              
+              final matchedKey = nameToKeyMap[cleanName];
+              if (matchedKey != null) {
+                data['key'] = matchedKey;
+                _db.collection('users').doc(uid).collection('categories').doc(doc.id).update({'key': matchedKey});
+              }
+            }
+            results.add({'id': doc.id, ...data});
+          }
+          return results;
         });
   }
 
@@ -434,7 +466,43 @@ class FirestoreService {
     final uid = _uid;
     if (uid == null) return [];
     final snap = await _db.collection('users').doc(uid).collection('categories').get();
-    return snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+    
+    final List<Map<String, dynamic>> results = [];
+    for (var doc in snap.docs) {
+      final data = doc.data();
+      final String nameStr = data['name']?.toString() ?? '';
+      
+      // Assign keys to existing/legacy default categories on-the-fly if missing
+      if (data['key'] == null) {
+        final cleanName = nameStr.replaceAll(RegExp(r'[^\s\w\&]'), '').replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+        final Map<String, String> nameToKeyMap = {
+          'salary & work': 'cat_salary',
+          'petty cash': 'cat_petty_cash',
+          'bonus': 'cat_bonus',
+          'rewards': 'cat_rewards',
+          'opening balance': 'cat_opening_balance',
+          'home & living': 'cat_home_living',
+          'food & dining': 'cat_food_dining',
+          'transportation': 'cat_transportation',
+          'shopping': 'cat_shopping',
+          'entertainment': 'cat_entertainment',
+          'health & fitness': 'cat_health_fitness',
+          'education': 'cat_education',
+          'finance': 'cat_finance',
+          'family': 'cat_family',
+          'travel': 'cat_travel',
+          'transfer': 'cat_transfer',
+        };
+        
+        final matchedKey = nameToKeyMap[cleanName];
+        if (matchedKey != null) {
+          data['key'] = matchedKey;
+          await _db.collection('users').doc(uid).collection('categories').doc(doc.id).update({'key': matchedKey});
+        }
+      }
+      results.add({'id': doc.id, ...data});
+    }
+    return results;
   }
 
   Future<List<Map<String, dynamic>>> getTransactionsList() async {

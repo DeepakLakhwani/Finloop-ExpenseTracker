@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../providers/language_provider.dart';
 
 class AppearanceCard extends StatelessWidget {
   const AppearanceCard({super.key});
@@ -20,7 +21,7 @@ class AppearanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'CHOOSE THEME',
+            context.translate('header_choose_theme').toUpperCase(),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -34,7 +35,7 @@ class AppearanceCard extends StatelessWidget {
               Expanded(
                 child: _buildThemeOptionCard(
                   context,
-                  'System',
+                  context.translate('appearance_system'),
                   Icons.brightness_auto_outlined,
                   ThemeMode.system,
                   themeProvider.themeMode == ThemeMode.system,
@@ -44,7 +45,7 @@ class AppearanceCard extends StatelessWidget {
               Expanded(
                 child: _buildThemeOptionCard(
                   context,
-                  'Light',
+                  context.translate('appearance_light'),
                   Icons.light_mode_outlined,
                   ThemeMode.light,
                   themeProvider.themeMode == ThemeMode.light,
@@ -54,7 +55,7 @@ class AppearanceCard extends StatelessWidget {
               Expanded(
                 child: _buildThemeOptionCard(
                   context,
-                  'Dark',
+                  context.translate('appearance_dark'),
                   Icons.dark_mode_outlined,
                   ThemeMode.dark,
                   themeProvider.themeMode == ThemeMode.dark,

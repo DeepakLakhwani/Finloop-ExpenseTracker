@@ -37,7 +37,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     'Calendar',
     'Notes',
   ];
-  String _selectedTab = 'Daily'; // Daily, Calendar, Weekly, Monthly, Summary, Notes
+  String _selectedTab =
+      'Daily'; // Daily, Calendar, Weekly, Monthly, Summary, Notes
   DateTime _focusedDate = DateTime.now();
   DateTime _selectedCalendarDay = DateTime.now();
   final Set<int> _expandedWeeks = {};
@@ -150,7 +151,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     setState(() {
       if (_selectedTab == 'Daily' ||
           _selectedTab == 'Calendar' ||
-          _selectedTab == 'Summary') {
+          _selectedTab == 'Summary' ||
+          _selectedTab == 'Weekly') {
         _focusedDate = DateTime(
           _focusedDate.year,
           _focusedDate.month + offset,
@@ -161,8 +163,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           _focusedDate.month,
           1,
         );
-      } else if (_selectedTab == 'Weekly') {
-        _focusedDate = _focusedDate.add(Duration(days: 7 * offset));
       } else if (_selectedTab == 'Monthly') {
         _focusedDate = DateTime(
           _focusedDate.year + offset,
@@ -176,14 +176,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   String _getPeriodLabel() {
     if (_selectedTab == 'Daily' ||
         _selectedTab == 'Calendar' ||
-        _selectedTab == 'Summary') {
+        _selectedTab == 'Summary' ||
+        _selectedTab == 'Weekly') {
       return DateFormat('MMM yyyy').format(_focusedDate);
-    } else if (_selectedTab == 'Weekly') {
-      final startOfWeek = _focusedDate.subtract(
-        Duration(days: _focusedDate.weekday - 1),
-      );
-      final endOfWeek = startOfWeek.add(const Duration(days: 6));
-      return '${DateFormat('d MMM').format(startOfWeek)} - ${DateFormat('d MMM, yyyy').format(endOfWeek)}';
     } else {
       return DateFormat('yyyy').format(_focusedDate);
     }
@@ -207,7 +202,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'Initializing secure session...',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -240,12 +237,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 // Transactions Stream & Dynamic Layout Views
                 Expanded(
                   child: StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: _transactionsStream ?? FirestoreService().getTransactions(),
+                    stream:
+                        _transactionsStream ??
+                        FirestoreService().getTransactions(),
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
                         debugPrint("StreamBuilder error: ${snapshot.error}");
                       }
-                      if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                      if (snapshot.connectionState == ConnectionState.waiting &&
+                          !snapshot.hasData) {
                         return const SizedBox.shrink();
                       }
 
@@ -261,7 +261,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               if (tab == 'Calendar') {
                                 final now = DateTime.now();
                                 _focusedDate = DateTime(now.year, now.month, 1);
-                                _selectedCalendarDay = DateTime(now.year, now.month, now.day);
+                                _selectedCalendarDay = DateTime(
+                                  now.year,
+                                  now.month,
+                                  now.day,
+                                );
                               }
                             });
                           }
@@ -293,9 +297,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
                               // Dynamic View Container
                               Expanded(
-                                child: filteredTransactions.isEmpty && tab != 'Calendar'
+                                child:
+                                    filteredTransactions.isEmpty &&
+                                        tab != 'Calendar'
                                     ? _buildEmptyPlaceholder()
-                                    : _buildDynamicView(tab, filteredTransactions, currency),
+                                    : _buildDynamicView(
+                                        tab,
+                                        filteredTransactions,
+                                        currency,
+                                      ),
                               ),
                             ],
                           );
@@ -304,7 +314,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     },
                   ),
                 ),
-                
+
                 // Reusable policy-safe Adaptive Banner Ad
                 const BannerAdWidget(key: ValueKey('transactions_banner_ad')),
               ],
@@ -397,83 +407,102 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Daily Section Header
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              child: Row(
-                children: [
-                  // Column 1: Date Info (under top Income column)
-                  Expanded(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          DateFormat('dd').format(date),
-                          style: TextStyle(
-                            fontSize: 18,
+            Container(
+              height: 52,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.08),
+                    width: 0.5,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                ),
+                child: Row(
+                  children: [
+                    // Column 1: Date Info (under top Income column)
+                    Expanded(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            DateFormat('dd').format(date),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                DateFormat('EEEE').format(date),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                ),
+                              ),
+                              Text(
+                                DateFormat('MMMM yyyy').format(date),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.4),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 1),
+                    // Column 2: Income total (under top Expense column)
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '$currency${NumberFormat('#,##0.00').format(dayIncome)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.green,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              DateFormat('EEEE').format(date),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.5),
-                              ),
-                            ),
-                            Text(
-                              DateFormat('MMMM yyyy').format(date),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.4),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 1),
-                  // Column 2: Income total (under top Expense column)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        '$currency${NumberFormat('#,##0.00').format(dayIncome)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
+                    const SizedBox(width: 1),
+                    // Column 3: Expense total (under top Balance column)
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '$currency${NumberFormat('#,##0.00').format(dayExpense)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 1),
-                  // Column 3: Expense total (under top Balance column)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        '$currency${NumberFormat('#,##0.00').format(dayExpense)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+            const SizedBox(height: 8),
             ...dayTxs.asMap().entries.map((entry) {
               final idx = entry.key;
               final tx = entry.value;
@@ -483,12 +512,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     Divider(
                       height: 1,
                       thickness: 0.5,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.08),
                     ),
-                  TransactionTile(
-                    transaction: tx,
-                    currency: currency,
-                  ),
+                  TransactionTile(transaction: tx, currency: currency),
                 ],
               );
             }),
@@ -557,7 +585,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'M',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -565,7 +595,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'T',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -573,7 +605,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'W',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -581,7 +615,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'T',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -589,7 +625,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'F',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -597,7 +635,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'S',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -605,7 +645,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Text(
                 'S',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -642,7 +684,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               final hasExpense = indicators.contains('Expense');
 
               final now = DateTime.now();
-              final isToday = now.year == date.year &&
+              final isToday =
+                  now.year == date.year &&
                   now.month == date.month &&
                   now.day == date.day;
 
@@ -654,17 +697,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     color: isSelected
                         ? AppColors.primary
                         : (isToday
-                            ? AppColors.primary.withOpacity(0.12)
-                            : Theme.of(context).colorScheme.surface),
+                              ? AppColors.primary.withOpacity(0.12)
+                              : Theme.of(context).colorScheme.surface),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isSelected
                           ? (isToday ? Colors.white : Colors.white30)
                           : (isToday
-                              ? AppColors.primary
-                              : Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(0.08)),
+                                ? AppColors.primary
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.08)),
                       width: isToday || isSelected ? 1.5 : 1,
                     ),
                   ),
@@ -679,8 +722,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           color: isSelected
                               ? Colors.white
                               : (isToday
-                                  ? AppColors.primary
-                                  : Theme.of(context).colorScheme.onSurface),
+                                    ? AppColors.primary
+                                    : Theme.of(context).colorScheme.onSurface),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -743,12 +786,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           Divider(
                             height: 1,
                             thickness: 0.5,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.08),
                           ),
-                        TransactionTile(
-                          transaction: tx,
-                          currency: currency,
-                        ),
+                        TransactionTile(transaction: tx, currency: currency),
                       ],
                     );
                   },
@@ -773,7 +815,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final sortedWeeks = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 12, bottom: 16),
+      padding: const EdgeInsets.only(bottom: 16),
       itemCount: sortedWeeks.length,
       itemBuilder: (context, index) {
         final week = sortedWeeks[index];
@@ -794,74 +836,109 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Divider(
                 height: 1,
                 thickness: 0.5,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.08),
               ),
+            // Weekly Section Header
             Container(
-              margin: EdgeInsets.zero,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              height: 52,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (isExpanded) {
-                          _expandedWeeks.remove(week);
-                        } else {
-                          _expandedWeeks.add(week);
-                        }
-                      });
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      children: [
-                        // Column 1: Week Info (under top Income column)
-                        Expanded(
-                          child: Text(
-                            'Week $week',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 1),
-                        // Column 2: Income total (under top Expense column)
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '$currency${NumberFormat('#,##0.00').format(weekIncome)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 1),
-                        // Column 3: Expense total (under top Balance column)
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '$currency${NumberFormat('#,##0.00').format(weekExpense)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.08),
+                    width: 0.5,
                   ),
-                  if (isExpanded) ...[
-                    const SizedBox(height: 12),
+                ),
+              ),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedWeeks.remove(week);
+                    } else {
+                      _expandedWeeks.add(week);
+                    }
+                  });
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      // Column 1: Week Info (under top Income column)
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isExpanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.55),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Week $week',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 1),
+                      // Column 2: Income total (under top Expense column)
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$currency${NumberFormat('#,##0.00').format(weekIncome)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 1),
+                      // Column 3: Expense total (under top Balance column)
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$currency${NumberFormat('#,##0.00').format(weekExpense)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (isExpanded) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
                     ...weekTxs.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final tx = entry.value;
@@ -871,7 +948,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             Divider(
                               height: 1,
                               thickness: 0.5,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.08),
                             ),
                           TransactionTile(
                             transaction: tx,
@@ -883,9 +962,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       );
                     }),
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
           ],
         );
       },
@@ -906,7 +985,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     final sortedMonths = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 12, bottom: 16),
+      padding: const EdgeInsets.only(bottom: 16),
       itemCount: sortedMonths.length,
       itemBuilder: (context, index) {
         final month = sortedMonths[index];
@@ -929,74 +1008,109 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               Divider(
                 height: 1,
                 thickness: 0.5,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.08),
               ),
+            // Monthly Section Header
             Container(
-              margin: EdgeInsets.zero,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              height: 52,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (isExpanded) {
-                          _expandedMonths.remove(month);
-                        } else {
-                          _expandedMonths.add(month);
-                        }
-                      });
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      children: [
-                        // Column 1: Month Info (under top Income column)
-                        Expanded(
-                          child: Text(
-                            DateFormat('MMMM').format(dummyDate),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 1),
-                        // Column 2: Income total (under top Expense column)
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '$currency${NumberFormat('#,##0.00').format(monthIncome)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 1),
-                        // Column 3: Expense total (under top Balance column)
-                        Expanded(
-                          child: Center(
-                            child: Text(
-                              '$currency${NumberFormat('#,##0.00').format(monthExpense)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.08),
+                    width: 0.5,
                   ),
-                  if (isExpanded) ...[
-                    const SizedBox(height: 12),
+                ),
+              ),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedMonths.remove(month);
+                    } else {
+                      _expandedMonths.add(month);
+                    }
+                  });
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      // Column 1: Month Info (under top Income column)
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isExpanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.55),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              DateFormat('MMMM').format(dummyDate),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 1),
+                      // Column 2: Income total (under top Expense column)
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$currency${NumberFormat('#,##0.00').format(monthIncome)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 1),
+                      // Column 3: Expense total (under top Balance column)
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$currency${NumberFormat('#,##0.00').format(monthExpense)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (isExpanded) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
                     ...monthTxs.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final tx = entry.value;
@@ -1006,7 +1120,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             Divider(
                               height: 1,
                               thickness: 0.5,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.08),
                             ),
                           TransactionTile(
                             transaction: tx,
@@ -1018,9 +1134,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       );
                     }),
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
           ],
         );
       },
@@ -1367,7 +1483,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   Icons.filter_list_rounded,
                   color: hasActiveFilters
                       ? AppColors.primary
-                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
                 ),
                 onPressed: _showFilterBottomSheet,
               ),
@@ -1402,7 +1520,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             return Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
@@ -1414,13 +1534,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1450,14 +1572,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.55),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: ['All', 'Income', 'Expense', 'Transfer'].map((type) {
+                    children: ['All', 'Income', 'Expense', 'Transfer'].map((
+                      type,
+                    ) {
                       final isSelected = _filterType == type;
                       return ChoiceChip(
                         label: Text(type),
@@ -1467,13 +1593,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         labelStyle: TextStyle(
                           color: isSelected
                               ? AppColors.primary
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                         side: BorderSide(
                           color: isSelected
                               ? AppColors.primary
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.12),
                         ),
                         onSelected: (selected) {
                           if (selected) {
@@ -1492,7 +1624,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.55),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1503,7 +1637,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             'No accounts added yet',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.4),
                             ),
                           ),
                         )
@@ -1519,13 +1655,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               labelStyle: TextStyle(
                                 color: _filterAccountId == null
                                     ? AppColors.primary
-                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: _filterAccountId == null ? FontWeight.bold : FontWeight.normal,
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: _filterAccountId == null
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                               side: BorderSide(
                                 color: _filterAccountId == null
                                     ? AppColors.primary
-                                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.12),
                               ),
                               onSelected: (selected) {
                                 if (selected) {
@@ -1541,19 +1683,25 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               return ChoiceChip(
                                 label: Text(acc['name'] ?? ''),
                                 selected: isSelected,
-                                selectedColor: AppColors.primary.withOpacity(0.2),
+                                selectedColor: AppColors.primary.withOpacity(
+                                  0.2,
+                                ),
                                 backgroundColor: Colors.transparent,
                                 labelStyle: TextStyle(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withOpacity(0.7),
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                                 side: BorderSide(
                                   color: isSelected
                                       ? AppColors.primary
-                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
-                                  ),
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withOpacity(0.12),
+                                ),
                                 onSelected: (selected) {
                                   if (selected) {
                                     setBottomSheetState(() {
@@ -1584,7 +1732,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             side: BorderSide(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.2),
                             ),
                           ),
                           child: Text(
@@ -1641,12 +1791,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: const Border(bottom: BorderSide(color: Colors.white24, width: 1)),
+        border: const Border(
+          bottom: BorderSide(color: Colors.white24, width: 1),
+        ),
       ),
       child: Row(
         children: [
           Expanded(
-            child: _buildSummaryColumn('Income', income, Colors.green, currency),
+            child: _buildSummaryColumn(
+              'Income',
+              income,
+              Colors.green,
+              currency,
+            ),
           ),
           Container(
             width: 1,
@@ -1654,7 +1811,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
           ),
           Expanded(
-            child: _buildSummaryColumn('Expense', expense, Colors.red, currency),
+            child: _buildSummaryColumn(
+              'Expense',
+              expense,
+              Colors.red,
+              currency,
+            ),
           ),
           Container(
             width: 1,
@@ -1695,7 +1857,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         Text(
           '$currency${NumberFormat('#,##0.00').format(val)}',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: valColor,
           ),
@@ -1750,21 +1912,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       final date = _parseDate(tx['date']);
       if (tab == 'Daily' ||
           tab == 'Calendar' ||
-          tab == 'Summary') {
+          tab == 'Summary' ||
+          tab == 'Weekly') {
         return date.year == _focusedDate.year &&
             date.month == _focusedDate.month;
-      } else if (tab == 'Weekly') {
-        final startOfWeek = _focusedDate.subtract(
-          Duration(days: _focusedDate.weekday - 1),
-        );
-        final start = DateTime(
-          startOfWeek.year,
-          startOfWeek.month,
-          startOfWeek.day,
-        );
-        final end = start.add(const Duration(days: 7));
-        return date.isAfter(start.subtract(const Duration(seconds: 1))) &&
-            date.isBefore(end);
       } else {
         return date.year == _focusedDate.year;
       }
@@ -1772,7 +1923,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     // Starred filter
     if (_showOnlyStarred) {
-      list = list.where((tx) => tx['is_starred'] == true || tx['isStarred'] == true).toList();
+      list = list
+          .where((tx) => tx['is_starred'] == true || tx['isStarred'] == true)
+          .toList();
     }
 
     // 2. Search filter
@@ -1782,7 +1935,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         final cat = (tx['category_name'] ?? '').toString().toLowerCase();
         final note = (tx['notes'] ?? '').toString().toLowerCase();
         final amt = (tx['amount'] ?? '').toString().toLowerCase();
-        return cat.contains(query) || note.contains(query) || amt.contains(query);
+        return cat.contains(query) ||
+            note.contains(query) ||
+            amt.contains(query);
       }).toList();
     }
 
@@ -1794,8 +1949,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     // 4. Filter by account
     if (_filterAccountId != null) {
       list = list.where((tx) {
-        final fromAccId = tx['account_id']?.toString() ?? tx['accountId']?.toString();
-        final toAccId = tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
+        final fromAccId =
+            tx['account_id']?.toString() ?? tx['accountId']?.toString();
+        final toAccId =
+            tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
         return fromAccId == _filterAccountId || toAccId == _filterAccountId;
       }).toList();
     }
@@ -1824,18 +1981,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     DateTime endOfPeriod;
     if (tab == 'Daily' ||
         tab == 'Calendar' ||
-        tab == 'Summary') {
+        tab == 'Summary' ||
+        tab == 'Weekly') {
       endOfPeriod = DateTime(_focusedDate.year, _focusedDate.month + 1, 1);
-    } else if (tab == 'Weekly') {
-      final startOfWeek = _focusedDate.subtract(
-        Duration(days: _focusedDate.weekday - 1),
-      );
-      final start = DateTime(
-        startOfWeek.year,
-        startOfWeek.month,
-        startOfWeek.day,
-      );
-      endOfPeriod = start.add(const Duration(days: 7));
     } else {
       // Monthly tab (shows year)
       endOfPeriod = DateTime(_focusedDate.year + 1, 1, 1);
@@ -1853,9 +2001,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       if (date.isBefore(endOfPeriod)) {
         final amt = double.tryParse(tx['amount'].toString()) ?? 0.0;
         final txType = tx['type']?.toString();
-        final fromAccId = tx['account_id']?.toString() ?? tx['accountId']?.toString();
-        final toAccId = tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
-        
+        final fromAccId =
+            tx['account_id']?.toString() ?? tx['accountId']?.toString();
+        final toAccId =
+            tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
+
         final isFromCreditCard = creditCardIds.contains(fromAccId);
         final isToCreditCard = creditCardIds.contains(toAccId);
 
@@ -1880,11 +2030,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       }
     }
 
-    return {
-      'Income': income,
-      'Expense': expense,
-      'Balance': cumulativeBalance,
-    };
+    return {'Income': income, 'Expense': expense, 'Balance': cumulativeBalance};
   }
 
   DateTime _parseDate(dynamic dateVal) {

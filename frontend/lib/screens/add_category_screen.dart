@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
+import '../providers/language_provider.dart';
 
 class AddCategoryScreen extends StatefulWidget {
   final String type; // 'Income' or 'Expense'
@@ -45,7 +46,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error saving category: $e')));
+        ).showSnackBar(SnackBar(content: Text('${context.translate('err_save_category')}$e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -61,9 +62,9 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Add Category',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.translate('title_add_category'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Padding(
@@ -82,12 +83,12 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                 onFieldSubmitted: (_) => _saveCategory(),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Category name cannot be empty';
+                    return context.translate('err_category_name_empty');
                   }
                   return null;
                 },
                 decoration: InputDecoration(
-                  hintText: 'Enter category name',
+                  hintText: context.translate('hint_category_name'),
                   filled: false,
                   fillColor: Colors.transparent,
                   border: const UnderlineInputBorder(),
@@ -130,9 +131,9 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text(
-                        'Save',
-                        style: TextStyle(
+                    : Text(
+                        context.translate('btn_save'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

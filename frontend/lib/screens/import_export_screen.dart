@@ -12,6 +12,7 @@ import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_colors.dart';
+import '../providers/language_provider.dart';
 import '../main.dart';
 import 'import_export/services/excel_service.dart';
 import 'import_export/widgets/backup_guidance_card.dart';
@@ -69,7 +70,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
       if (!mounted) return;
       setState(() => _isLoadingAccounts = false);
       _showNotification(
-        'Could not load accounts. Please try again.',
+        context.translate('err_load_account_details'),
         isError: true,
       );
     }
@@ -150,7 +151,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
   void _promptExport() {
     if (_fromDate == null || _toDate == null) {
       _showNotification(
-        'Please select From and To dates first.',
+        context.translate('select_date_hint'),
         isError: true,
       );
       return;
@@ -159,10 +160,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Unlock Premium Export'),
-        content: const Text(
-          'Support FinLoop by watching a short sponsor video to export your '
-          'transactions to a fully customised Excel spreadsheet for free.',
+        title: Text(context.translate('title_unlock_premium_export')),
+        content: Text(
+          context.translate('desc_premium_export'),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -181,9 +181,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                     ),
                     minimumSize: const Size(0, 48),
                   ),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: Text(
+                    context.translate('cancel'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -202,9 +202,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                     ),
                     minimumSize: const Size(0, 48),
                   ),
-                  child: const Text(
-                    'Watch & Export',
-                    style: TextStyle(
+                  child: Text(
+                    context.translate('btn_watch_export'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -222,25 +222,25 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
   void _playRewardedAdThenExport() {
     _rewardGranted = false;
-    _showNotification('Preparing sponsor video…');
+    _showNotification(context.translate('msg_ad_preparing'));
 
     AdService.showRewarded(
       onRewardEarned: () {
         _rewardGranted = true;
-        _showNotification('Reward unlocked! Compiling Excel export…');
+        _showNotification(context.translate('msg_export_compiling'));
         _runExport();
       },
       onAdClosed: () {
         // Only show the "must watch" message when the reward was NOT earned.
         if (!_rewardGranted) {
           _showNotification(
-            'You must watch the full video to unlock Excel Export.',
+            context.translate('err_ad_unwatched'),
             isError: true,
           );
         }
       },
       onAdFailed: () {
-        _showNotification('Ad failed to load — granting free export.');
+        _showNotification(context.translate('msg_ad_failed_fallback'));
         _runExport();
       },
     );
@@ -251,7 +251,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      _showNotification('You must be signed in to export.', isError: true);
+      _showNotification(context.translate('err_sign_in_to_export'), isError: true);
       return;
     }
 
@@ -292,7 +292,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
       if (filtered.isEmpty) {
         _showNotification(
-          'No transactions found in this period.',
+          context.translate('err_no_tx_found'),
           isError: true,
         );
         return;
@@ -318,7 +318,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
       );
       if (bytes == null) {
         _showNotification(
-          'Export failed: could not generate file.',
+          context.translate('err_export_failed_gen'),
           isError: true,
         );
         return;
@@ -331,12 +331,12 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
       await File(filePath).writeAsBytes(bytes);
 
       if (!mounted) return;
-      _showNotification('Export compiled successfully!');
+      _showNotification(context.translate('msg_export_success'));
       await Share.shareXFiles([XFile(filePath)], text: 'Exported Transactions');
     } catch (e, stack) {
       debugPrint('Export error: $e\n$stack');
       if (!mounted) return;
-      _showNotification('Export failed. Please try again.', isError: true);
+      _showNotification(context.translate('err_export_failed'), isError: true);
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -347,7 +347,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
   Future<void> _importTransactions() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      _showNotification('You must be signed in to import.', isError: true);
+      _showNotification(context.translate('err_sign_in_to_import'), isError: true);
       return;
     }
 
@@ -372,7 +372,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
       if (parsedRows.isEmpty) {
         _showNotification(
-          'The file contains no importable rows.',
+          context.translate('err_empty_import_file'),
           isError: true,
         );
         setState(() => _isImporting = false);
@@ -444,15 +444,15 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
       if (!mounted) return;
 
       final msg = skipCount > 0
-          ? 'Imported $importCount transactions ($skipCount skipped).'
-          : 'Imported $importCount transactions successfully!';
+          ? '${context.translate('msg_import_success_partial')} ($importCount/$skipCount)'
+          : context.translate('msg_import_success_full');
       _showNotification(msg, isError: skipCount > 0 && importCount == 0);
 
       await _fetchMetadata();
     } catch (e, stack) {
       debugPrint('Import error: $e\n$stack');
       if (!mounted) return;
-      _showNotification('Import failed. Please try again.', isError: true);
+      _showNotification(context.translate('err_import_failed'), isError: true);
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
@@ -537,7 +537,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isBackupMode ? 'Backup & Restore' : 'Import & Export Data',
+          widget.isBackupMode ? context.translate('backup_restore_title') : '${context.translate('header_import_tx')} & ${context.translate('header_export_tx')}',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -558,8 +558,8 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                   ],
                   _SectionHeader(
                     title: widget.isBackupMode
-                        ? 'CREATE BACKUP FILE'
-                        : 'EXPORT TRANSACTIONS',
+                        ? context.translate('header_create_backup')
+                        : context.translate('header_export_tx'),
                   ),
                   const SizedBox(height: 12),
                   _ExportCard(
@@ -578,8 +578,8 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                   const SizedBox(height: 32),
                   _SectionHeader(
                     title: widget.isBackupMode
-                        ? 'RESTORE FROM BACKUP'
-                        : 'IMPORT TRANSACTIONS',
+                        ? context.translate('header_restore_backup')
+                        : context.translate('header_import_tx'),
                   ),
                   const SizedBox(height: 12),
                   _ImportCard(
@@ -660,7 +660,7 @@ class _ExportCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _DatePickerField(
-                  label: 'From Date',
+                  label: context.translate('label_from_date'),
                   date: fromDate,
                   isDark: isDark,
                   onTap: onPickFromDate,
@@ -669,7 +669,7 @@ class _ExportCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _DatePickerField(
-                  label: 'To Date',
+                  label: context.translate('label_to_date'),
                   date: toDate,
                   isDark: isDark,
                   onTap: onPickToDate,
@@ -681,7 +681,7 @@ class _ExportCard extends StatelessWidget {
 
           // Account filter
           Text(
-            'Select Account',
+            context.translate('select_account'),
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -694,7 +694,7 @@ class _ExportCard extends StatelessWidget {
             child: Row(
               children: [
                 _AccountChip(
-                  label: 'All Accounts',
+                  label: context.translate('filter_all_accounts'),
                   isSelected: selectedAccountId == null,
                   onSelected: () => onSelectAccount(null),
                 ),
@@ -730,8 +730,8 @@ class _ExportCard extends StatelessWidget {
                 : const Icon(Icons.download_rounded, color: Colors.white),
             label: Text(
               isExporting
-                  ? 'Exporting…'
-                  : (isBackupMode ? 'Export Data Backup' : 'Export to Excel'),
+                  ? context.translate('btn_exporting')
+                  : (isBackupMode ? context.translate('btn_export_backup') : context.translate('btn_export_excel')),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -802,7 +802,7 @@ class _DatePickerField extends StatelessWidget {
                 Expanded(
                   child: Text(
                     date == null
-                        ? 'Select date'
+                        ? context.translate('select_date_hint')
                         : DateFormat('dd MMM yyyy').format(date!),
                     style: TextStyle(fontSize: 13, color: cs.onSurface),
                   ),
@@ -891,7 +891,7 @@ class _ImportCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Import format instructions',
+                  context.translate('header_import_instructions'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -903,12 +903,7 @@ class _ImportCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Ensure your Excel spreadsheet has the following headers in order:\n'
-            'Date, Type, Category, Account, To Account, Amount, Notes, '
-            'Description, Fees.\n\n'
-            'Date format: YYYY-MM-DD HH:MM. Rows with missing or invalid '
-            'required fields will be skipped. Unknown accounts and categories '
-            'are created automatically.',
+            context.translate('desc_import_instructions'),
             style: TextStyle(
               fontSize: 12,
               height: 1.5,
@@ -930,8 +925,8 @@ class _ImportCard extends StatelessWidget {
                 : const Icon(Icons.upload_file_rounded, color: Colors.white),
             label: Text(
               isImporting
-                  ? 'Importing…'
-                  : (isBackupMode ? 'Upload Backup File' : 'Upload Excel File'),
+                  ? context.translate('btn_importing')
+                  : (isBackupMode ? context.translate('btn_upload_backup') : context.translate('btn_upload_excel')),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../domain/financial_analytics.dart';
 import '../providers/settings_provider.dart';
+import '../providers/language_provider.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
 
@@ -122,8 +123,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     }
 
     if (_hasError) {
-      return const Scaffold(
-        body: Center(child: Text('Failed to load data. Please try again.')),
+      return Scaffold(
+        body: Center(child: Text(context.translate('err_load_data_retry'))),
       );
     }
 
@@ -165,7 +166,16 @@ class _ChartsScreenState extends State<ChartsScreen> {
               formatY: _formatY,
             ),
             const SizedBox(height: _K.sectionGap),
-            _SmartInsightCard(text: analytics.insightText),
+            _SmartInsightCard(
+              text: () {
+                final info = analytics.insightInfo;
+                final localized = context.translate(info.key);
+                if (info.percent != null) {
+                  return localized.replaceAll('{percent}', info.percent!);
+                }
+                return localized;
+              }(),
+            ),
             const SizedBox(height: _K.sectionGap),
             _AvailableBudgetCard(
               balance: analytics.totalBalance,
@@ -190,11 +200,15 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.onSurface;
+    final langProvider = context.watch<LanguageProvider>();
+    final localizedMonth = DateFormat('MMMM', langProvider.languageCode).format(month);
+    final subtitle = context.translate('spending_intelligence').replaceAll('{month}', localizedMonth);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Charts & Analytics',
+          context.translate('charts_analytics'),
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -203,7 +217,7 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Your spending intelligence for ${DateFormat('MMMM').format(month)}',
+          subtitle,
           style: TextStyle(fontSize: 14, color: color.withValues(alpha: 0.6)),
         ),
       ],
@@ -232,7 +246,12 @@ class _ExpenseDistributionCard extends StatelessWidget {
     if (totalExpenses <= 0) return const _EmptyDistributionCard();
 
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final topCategory = pieData.first.key;
+    final parts = pieData.first.key.split('::');
+    final topKey = parts[0];
+    final topFallback = parts.length > 1 ? parts[1] : '';
+    final topCategory = pieData.first.key == 'Others'
+        ? context.translate('others')
+        : context.getLocalizedCategory(topKey, topFallback);
     final topPct = (pieData.first.value / totalExpenses * 100).toStringAsFixed(
       0,
     );
@@ -242,8 +261,10 @@ class _ExpenseDistributionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _CardHeader(
-            title: 'Expense Distribution',
-            subtitle: 'Top category: $topCategory ($topPct%)',
+            title: context.translate('expense_distribution'),
+            subtitle: context.translate('top_category_pct')
+                .replaceAll('{category}', topCategory)
+                .replaceAll('{pct}', topPct),
             icon: Icons.pie_chart_outline,
           ),
           const SizedBox(height: 32),
@@ -288,7 +309,7 @@ class _ExpenseDistributionCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Total Spent',
+                        context.translate('total_spent'),
                         style: TextStyle(
                           color: onSurface.withValues(alpha: 0.5),
                           fontSize: 12,
@@ -311,10 +332,16 @@ class _ExpenseDistributionCard extends StatelessWidget {
           const SizedBox(height: 32),
           ...List.generate(pieData.length, (i) {
             final entry = pieData[i];
+            final parts = entry.key.split('::');
+            final key = parts[0];
+            final fallback = parts.length > 1 ? parts[1] : '';
+            final label = entry.key == 'Others'
+                ? context.translate('others')
+                : context.getLocalizedCategory(key, fallback);
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _LegendItem(
-                label: entry.key,
+                label: label,
                 amount: '$currency${NumberFormat('#,##0.00').format(entry.value)}',
                 color: _K.palette[i % _K.palette.length],
               ),
@@ -335,8 +362,8 @@ class _EmptyDistributionCard extends StatelessWidget {
     return _SurfaceCard(
       child: Column(
         children: [
-          const _CardHeader(
-            title: 'Expense Distribution',
+          _CardHeader(
+            title: context.translate('expense_distribution'),
             icon: Icons.pie_chart_outline,
           ),
           const SizedBox(height: 40),
@@ -347,7 +374,7 @@ class _EmptyDistributionCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No Expense Records this Month',
+            context.translate('no_expense_this_month'),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -424,13 +451,14 @@ class _MonthlyTrendsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final surface = Theme.of(context).colorScheme.surface;
+    final langProvider = context.watch<LanguageProvider>();
 
     return _SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Monthly Spending Trends',
+            context.translate('monthly_spending_trends'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -459,6 +487,7 @@ class _MonthlyTrendsCard extends StatelessWidget {
                     getTooltipItem: (group, groupIndex, rod, _) {
                       final label = DateFormat(
                         'MMMM yyyy',
+                        langProvider.languageCode,
                       ).format(months[groupIndex]);
                       return BarTooltipItem(
                         '$label\n',
@@ -496,7 +525,7 @@ class _MonthlyTrendsCard extends StatelessWidget {
                           meta: meta,
                           space: 8,
                           child: Text(
-                            DateFormat('MMM').format(months[i]),
+                            DateFormat('MMM', langProvider.languageCode).format(months[i]),
                             style: TextStyle(
                               color: isCurrentMonth
                                   ? AppColors.primary
@@ -557,10 +586,10 @@ class _MonthlyTrendsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Center(
+          Center(
             child: Text(
-              'Last 6 Months',
-              style: TextStyle(
+              context.translate('last_6_months'),
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -613,9 +642,9 @@ class _SmartInsightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Smart Insight',
-            style: TextStyle(
+          Text(
+            context.translate('smart_insight'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -670,7 +699,7 @@ class _AvailableBudgetCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Available Balance',
+                context.translate('available_balance'),
                 style: TextStyle(
                   color: onSurface.withValues(alpha: 0.6),
                   fontSize: 12,
@@ -802,9 +831,9 @@ class _BudgetsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardHeader(
-            title: 'Active Budgets',
-            subtitle: 'Monthly limit progress',
+          _CardHeader(
+            title: context.translate('active_budgets'),
+            subtitle: context.translate('monthly_limit_progress'),
             icon: Icons.track_changes_outlined,
           ),
           const SizedBox(height: 24),
@@ -812,7 +841,12 @@ class _BudgetsCard extends StatelessWidget {
             final isGlobal = budget['categoryId'] == null;
             final categoryId = budget['categoryId'];
             final limitAmount = (budget['limitAmount'] as num?)?.toDouble() ?? 0.0;
-            final displayTitle = budget['categoryName'] ?? (isGlobal ? 'All Expenses' : 'Budget');
+            final displayTitle = isGlobal
+                ? context.translate('all_expenses')
+                : context.getLocalizedCategory(
+                    budget['categoryKey']?.toString(),
+                    budget['categoryName'] ?? 'Budget',
+                  );
 
             // Sum current month transactions matching category
             double spent = 0.0;
@@ -873,7 +907,7 @@ class _BudgetsCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   if (isExceeded)
                     Text(
-                      'Exceeded by $currency${(spent - limitAmount).toStringAsFixed(0)}!',
+                      context.translate('exceeded_by').replaceAll('{amount}', '$currency${(spent - limitAmount).toStringAsFixed(0)}'),
                       style: const TextStyle(
                         color: Colors.redAccent,
                         fontSize: 11,
@@ -882,7 +916,7 @@ class _BudgetsCard extends StatelessWidget {
                     )
                   else
                     Text(
-                      '$currency${(limitAmount - spent).toStringAsFixed(0)} remaining',
+                      context.translate('remaining_amount').replaceAll('{amount}', '$currency${(limitAmount - spent).toStringAsFixed(0)}'),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         fontSize: 11,

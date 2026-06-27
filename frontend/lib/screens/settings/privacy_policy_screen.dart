@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
+import '../../providers/language_provider.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -18,7 +19,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Privacy Policy',
+          context.translate('privacy_policy'),
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -48,28 +49,28 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'FinLoop Privacy Policy',
-                    style: TextStyle(
+                    context.translate('privacy_policy_header_title'),
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Effective Date: May 26, 2026',
-                    style: TextStyle(
+                    context.translate('privacy_policy_effective_date'),
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.white70,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
-                    'Your privacy is important to us. This Privacy Policy explains how FinLoop collects, uses, stores, and protects your information when you use the application.',
-                    style: TextStyle(
+                    context.translate('privacy_policy_welcome_desc'),
+                    style: const TextStyle(
                       fontSize: 13,
                       color: Colors.white,
                       height: 1.4,
@@ -84,74 +85,74 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               context,
               '1',
-              'Information We Collect',
-              'Personal Financial Information\nFinLoop may store:\n• Transactions\n• Categories\n• Account names\n• Balances\n• Notes\n• Budget records\n\nThis information is stored solely for app functionality.\n\nDevice Information\nWe may collect:\n• Device type\n• Operating system version\n• App version\n• Crash logs\n\nfor improving app stability and performance.\n\nAuthentication Information\nIf enabled by the user:\n• Biometric authentication\n• Passcode settings\n\nare securely handled using device-level security systems.\n\nFinLoop does NOT store raw fingerprint or Face ID data.',
+              context.translate('privacy_policy_sec_1_title'),
+              context.translate('privacy_policy_sec_1_content'),
             ),
             _buildSection(
               context,
               '2',
-              'How We Use Your Information',
-              'We use your data to:\n• Provide finance tracking features\n• Generate analytics\n• Sync notes and records\n• Improve app performance\n• Secure user accounts\n• Enable export/import functionality',
+              context.translate('privacy_policy_sec_2_title'),
+              context.translate('privacy_policy_sec_2_content'),
             ),
             _buildSection(
               context,
               '3',
-              'Data Storage',
-              'Local Storage\nMost financial information is stored locally on the user\'s device.\n\nCloud Synchronization\nCertain features such as:\n• Scratchpad notes\n• Optional backups\n• Sync services\n\nmay use secure cloud infrastructure such as Firebase Firestore.',
+              context.translate('privacy_policy_sec_3_title'),
+              context.translate('privacy_policy_sec_3_content'),
             ),
             _buildSection(
               context,
               '4',
-              'Data Sharing',
-              'FinLoop does NOT sell user data.\n\nWe do NOT share personal financial information with third parties except:\n• When required by law\n• When necessary for app functionality\n• With secure infrastructure providers',
+              context.translate('privacy_policy_sec_4_title'),
+              context.translate('privacy_policy_sec_4_content'),
             ),
             _buildSection(
               context,
               '5',
-              'Data Security',
-              'We implement:\n• Secure local storage\n• Encrypted authentication methods\n• Device-level biometric protection\n• Secure Firebase communication\n\nHowever, no system can guarantee absolute security.',
+              context.translate('privacy_policy_sec_5_title'),
+              context.translate('privacy_policy_sec_5_content'),
             ),
             _buildSection(
               context,
               '6',
-              'Excel Import & Export',
-              'Users can:\n• Export financial data to Excel files\n• Share exported files externally\n\nUsers are responsible for protecting exported files shared outside the app.',
+              context.translate('privacy_policy_sec_6_title'),
+              context.translate('privacy_policy_sec_6_content'),
             ),
             _buildSection(
               context,
               '7',
-              'Notifications',
-              'FinLoop may send:\n• Financial reminders\n• App-related alerts\n• Local notifications\n\nUsers can disable notifications anytime through settings.',
+              context.translate('privacy_policy_sec_7_title'),
+              context.translate('privacy_policy_sec_7_content'),
             ),
             _buildSection(
               context,
               '8',
-              'Biometric Authentication',
-              'Biometric authentication is optional.\n\nFingerprint and Face ID data are processed only through the device operating system and are never directly accessed or stored by FinLoop.',
+              context.translate('privacy_policy_sec_8_title'),
+              context.translate('privacy_policy_sec_8_content'),
             ),
             _buildSection(
               context,
               '9',
-              'Children\'s Privacy',
-              'FinLoop is not intended for children under 13 years of age.\n\nWe do not knowingly collect information from children.',
+              context.translate('privacy_policy_sec_9_title'),
+              context.translate('privacy_policy_sec_9_content'),
             ),
             _buildSection(
               context,
               '10',
-              'User Rights',
-              'Users may:\n• Delete app data\n• Disable cloud synchronization\n• Remove passcodes\n• Export their data\n• Uninstall the application anytime',
+              context.translate('privacy_policy_sec_10_title'),
+              context.translate('privacy_policy_sec_10_content'),
             ),
             _buildSection(
               context,
               '11',
-              'Changes to This Privacy Policy',
-              'We may update this Privacy Policy periodically. Users are encouraged to review this page regularly.',
+              context.translate('privacy_policy_sec_11_title'),
+              context.translate('privacy_policy_sec_11_content'),
             ),
             _buildSection(
               context,
               '12',
-              'Contact Information',
-              'For questions regarding this Privacy Policy:\n\nEmail: support.finloop@gmail.com',
+              context.translate('privacy_policy_sec_12_title'),
+              context.translate('privacy_policy_sec_12_content'),
             ),
             const SizedBox(height: 40),
           ],

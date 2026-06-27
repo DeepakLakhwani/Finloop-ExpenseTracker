@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/security_service.dart';
 import '../theme/app_colors.dart';
+import '../providers/language_provider.dart';
 
 class PasscodeSetupScreen extends StatefulWidget {
   const PasscodeSetupScreen({super.key});
@@ -54,12 +55,12 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
-              children: const [
-                Icon(Icons.check_circle_outline, color: Colors.white),
-                SizedBox(width: 12),
+              children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white),
+                const SizedBox(width: 12),
                 Text(
-                  'Passcode successfully set!',
-                  style: TextStyle(fontWeight: FontWeight.w500),
+                  context.translate('msg_passcode_set'),
+                  style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -77,7 +78,7 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
           _enteredCode = '';
           _firstCode = '';
           _isConfirming = false;
-          _errorMessage = 'Passcodes do not match. Let\'s try again.';
+          _errorMessage = context.translate('err_passcode_mismatch');
         });
       }
     }
@@ -98,7 +99,7 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          _isConfirming ? 'Confirm Passcode' : 'Create Passcode',
+          _isConfirming ? context.translate('title_confirm_passcode') : context.translate('title_create_passcode'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -114,8 +115,8 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
             // Instruction
             Text(
               _isConfirming
-                  ? 'Confirm your 4-digit passcode'
-                  : 'Enter a 4-digit passcode',
+                  ? context.translate('msg_confirm_passcode_digits')
+                  : context.translate('msg_create_passcode_digits'),
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,

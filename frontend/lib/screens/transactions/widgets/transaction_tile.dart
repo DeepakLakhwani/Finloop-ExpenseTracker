@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../add_transaction_screen.dart';
 import '../../../services/ad_service.dart';
+import '../../../providers/language_provider.dart';
 
 class TransactionTile extends StatelessWidget {
   final Map<String, dynamic> transaction;
@@ -30,180 +31,173 @@ class TransactionTile extends StatelessWidget {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final type = transaction['type'];
     final isIncome = type == 'Income';
     final isTransfer = type == 'Transfer';
-    final amount = (double.tryParse(transaction['amount'].toString()) ?? 0.0).abs();
+    final amount = (double.tryParse(transaction['amount'].toString()) ?? 0.0)
+        .abs();
     final catName = transaction['category_name']?.toString() ?? 'General';
-    final displayName = isTransfer ? 'Transfer' : catName;
+    final displayName = isTransfer
+        ? context.translate('cat_transfer')
+        : context.getLocalizedCategory(
+            transaction['category_key']?.toString(),
+            catName,
+          );
 
+    final amountColor = isIncome
+        ? Colors.green
+        : (isTransfer ? Colors.blue : Colors.red);
 
-
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddTransactionScreen(initialTransaction: transaction),
-        ),
-      ).then((saved) {
-        if (saved == true) {
-          AdService.showInterstitial(() {});
-        }
-      }),
-      child: Container(
-        margin: EdgeInsets.zero,
-        padding: isNested
-            ? const EdgeInsets.symmetric(vertical: 8, horizontal: 0)
-            : const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: isNested
-            ? null
-            : BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-              ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+    final tileContent = Padding(
+      padding: isNested
+          ? const EdgeInsets.symmetric(vertical: 8, horizontal: 0)
+          : const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left: Category Name, Optional Notes, and Optional Date
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Column 1: Details - aligned under Date column (1/3 of width)
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              displayName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (showDate) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                DateFormat('dd MMM yyyy').format(_parseDate(transaction['date'])),
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ],
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (transaction['notes'] != null &&
+                        transaction['notes'].toString().isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '• ${transaction['notes']}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.45),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 1),
-                // Column 2: Income Amount (centered, under daily Income column)
-                Expanded(
-                  child: isIncome
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$currency${NumberFormat('#,##0.00').format(amount)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: amountFontSize,
-                                color: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              transaction['account_name'] ?? 'No Account',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                const SizedBox(width: 1),
-                // Column 3: Expense/Transfer Amount (centered, under daily Expense column)
-                Expanded(
-                  child: !isIncome
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$currency${NumberFormat('#,##0.00').format(amount)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: amountFontSize,
-                                color: isTransfer ? Colors.blue : Colors.red,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              isTransfer
-                                  ? '${transaction['account_name'] ?? 'Account'} ➔ ${transaction['to_account_name'] ?? 'Account'}'
-                                  : (transaction['account_name'] ?? 'No Account'),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.455),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              maxLines: 1,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
-            if (transaction['notes'] != null && transaction['notes'].toString().isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.only(left: 0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.notes_outlined,
-                      size: 11,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        transaction['notes'],
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontStyle: FontStyle.italic,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45),
-                        ),
+                    if (transaction['attachment_url'] != null &&
+                        transaction['attachment_url'].toString().isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.attach_file,
+                        size: 13,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.45),
                       ),
-                    ),
+                    ],
                   ],
                 ),
+                if (showDate) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    DateFormat('dd MMM yyyy')
+                        .format(_parseDate(transaction['date'])),
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.4),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Right: Amount and Account Name
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$currency${NumberFormat('#,##0.00').format(amount)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: amountFontSize == 12.0 ? 14.0 : amountFontSize,
+                  color: amountColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isTransfer
+                    ? '${transaction['account_name'] ?? 'Account'} ➔ ${transaction['to_account_name'] ?? 'Account'}'
+                    : (transaction['account_name'] ?? 'No Account'),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.45),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+
+    if (isNested) {
+      return GestureDetector(
+        onTap: () =>
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    AddTransactionScreen(initialTransaction: transaction),
+              ),
+            ).then((saved) {
+              if (saved == true) {
+                AdService.showInterstitial(() {});
+              }
+            }),
+        child: tileContent,
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () =>
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    AddTransactionScreen(initialTransaction: transaction),
+              ),
+            ).then((saved) {
+              if (saved == true) {
+                AdService.showInterstitial(() {});
+              }
+            }),
+        child: tileContent,
       ),
     );
   }

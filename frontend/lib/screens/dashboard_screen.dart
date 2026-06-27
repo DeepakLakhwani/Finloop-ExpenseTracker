@@ -1,7 +1,8 @@
-import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
+import '../providers/language_provider.dart';
 import 'settings_screen.dart';
 import 'transactions_screen.dart';
 import 'charts_screen.dart';
@@ -31,7 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
     final firestore = context.read<FirestoreService>();
     await firestore.initializeUser();
-    
+
     // One-time cleanup of previously seeded dummy data
     try {
       final hasCleaned = await firestore.hasCleanedDummyData();
@@ -54,7 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'type': 'Cash',
             'balance': 50000.0,
           });
-          
+
           final categories = await firestore.getCategoriesList();
           final salaryCat = categories.firstWhere(
             (c) => c['name'].toString().contains('Salary'),
@@ -64,27 +65,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
             (c) => c['name'].toString().contains('Food'),
             orElse: () => categories.first,
           );
-          
+
           final now = DateTime.now();
-          
+
           // Income
           await firestore.createTransaction({
             'account_id': accId,
             'account_name': 'Cash',
             'category_id': salaryCat['id'],
             'category_name': salaryCat['name'],
+            'category_key': salaryCat['key'],
             'amount': 30000.0,
             'type': 'Income',
             'date': now,
             'note': 'Salary',
           });
-          
+
           // Expense
           await firestore.createTransaction({
             'account_id': accId,
             'account_name': 'Cash',
             'category_id': foodCat['id'],
             'category_name': foodCat['name'],
+            'category_key': foodCat['key'],
             'amount': 1500.0,
             'type': 'Expense',
             'date': now.subtract(const Duration(days: 1)),
@@ -103,11 +106,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch language changes to rebuild bottom navigation immediately
+    context.watch<LanguageProvider>();
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        exit(0);
+        SystemNavigator.pop();
       },
       child: Scaffold(
         appBar: _appBarForIndex(_selectedIndex),
@@ -120,10 +126,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   PreferredSizeWidget? _appBarForIndex(int index) {
     switch (index) {
       case 1:
-        return _styledAppBar(title: 'Analytics');
+        return _styledAppBar(title: context.translate('analytics'));
       case 2:
         return _styledAppBar(
-          title: 'Manage Accounts',
+          title: context.translate('manage_accounts'),
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -200,10 +206,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.list_alt_rounded, 'Transactions'),
-              _buildNavItem(1, Icons.bar_chart_rounded, 'Charts'),
-              _buildNavItem(2, Icons.account_balance_wallet_outlined, 'Accounts'),
-              _buildNavItem(3, Icons.settings_outlined, 'Settings'),
+              _buildNavItem(
+                0,
+                Icons.list_alt_rounded,
+                context.translate('transactions'),
+              ),
+              _buildNavItem(
+                1,
+                Icons.bar_chart_rounded,
+                context.translate('charts'),
+              ),
+              _buildNavItem(
+                2,
+                Icons.account_balance_wallet_outlined,
+                context.translate('accounts'),
+              ),
+              _buildNavItem(
+                3,
+                Icons.settings_outlined,
+                context.translate('settings'),
+              ),
             ],
           ),
         ),

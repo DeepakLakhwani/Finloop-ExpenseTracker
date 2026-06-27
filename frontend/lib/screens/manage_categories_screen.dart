@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
+import '../providers/language_provider.dart';
 import 'add_category_screen.dart';
 
 class ManageCategoriesScreen extends StatelessWidget {
@@ -19,12 +20,12 @@ class ManageCategoriesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Category', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(context.translate('title_edit_category'), style: const TextStyle(fontWeight: FontWeight.bold)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: 'Enter category name',
+            hintText: context.translate('hint_category_name'),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(vertical: 8),
             filled: false,
@@ -50,7 +51,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: Text(
-                    'Cancel',
+                    context.translate('cancel'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       fontWeight: FontWeight.bold,
@@ -75,9 +76,9 @@ class ManageCategoriesScreen extends StatelessWidget {
                     });
                     if (context.mounted) Navigator.pop(context);
                   },
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  child: Text(
+                    context.translate('btn_save'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),
@@ -93,13 +94,13 @@ class ManageCategoriesScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Category', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete "${cat['name']}"? This action cannot be undone.'),
+        title: Text(context.translate('title_delete_category'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(context.translate('delete_category_confirm').replaceAll('{category}', context.getLocalizedCategory(cat['key']?.toString(), cat['name'] ?? ''))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              context.translate('cancel'),
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontWeight: FontWeight.bold),
             ),
           ),
@@ -108,7 +109,7 @@ class ManageCategoriesScreen extends StatelessWidget {
               await context.read<FirestoreService>().deleteCategory(cat['id']);
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text(context.translate('delete'), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -121,7 +122,7 @@ class ManageCategoriesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Manage $type Categories', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('${context.translate('title_manage_categories')} (${context.translate(type.toLowerCase())})', style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add, size: 28),
@@ -152,7 +153,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                   Icon(Icons.category_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
                   const SizedBox(height: 16),
                   Text(
-                    'No categories found',
+                    context.translate('err_no_categories'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -161,7 +162,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tap the + icon at the top right to add one!',
+                    context.translate('hint_add_category'),
                     style: TextStyle(
                       fontSize: 14,
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
@@ -194,7 +195,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   title: Text(
-                    cat['name'],
+                    context.getLocalizedCategory(cat['key']?.toString(), cat['name'] ?? ''),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,

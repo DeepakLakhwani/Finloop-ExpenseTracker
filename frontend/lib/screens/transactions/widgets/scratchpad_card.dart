@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../theme/app_colors.dart';
 
+import '../../../providers/language_provider.dart';
+
 class ScratchpadCard extends StatefulWidget {
   final String userId;
   final Stream<DocumentSnapshot>? scratchpadStream;
@@ -107,7 +109,7 @@ class _ScratchpadCardState extends State<ScratchpadCard> {
               decoration: InputDecoration(
                 filled: false,
                 fillColor: Colors.transparent,
-                hintText: 'Type your notes here...',
+                hintText: context.translate('hint_scratchpad'),
                 hintStyle: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
                   fontSize: 15,

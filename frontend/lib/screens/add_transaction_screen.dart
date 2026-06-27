@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/settings_provider.dart';
+import '../providers/language_provider.dart';
 import 'package:intl/intl.dart';
 import 'add_transaction/widgets/category_selection_dialog.dart';
 import 'add_transaction/widgets/account_selection_dialog.dart';
 import 'add_transaction/widgets/fees_input_dialog.dart';
+import 'package:image_picker/image_picker.dart';
+import '../theme/app_colors.dart';
+import '../services/cloudinary_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final String initialType;
@@ -44,6 +49,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isLoadingData = true;
   bool _isSubmitting = false;
   bool _isStarred = false;
+  String? _attachmentUrl;
+  bool _isUploadingAttachment = false;
+  bool _isPickingImage = false;
 
   bool get isEditing => widget.initialTransaction != null;
 
@@ -65,6 +73,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _fees = double.tryParse(tx['fees']?.toString() ?? '0.0') ?? 0.0;
 
       _isStarred = tx['is_starred'] == true || tx['isStarred'] == true;
+      _attachmentUrl = tx['attachment_url']?.toString();
       final dynamic dateVal = tx['date'];
       if (dateVal is Timestamp) {
         _selectedDate = dateVal.toDate();
@@ -113,7 +122,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       if (mounted) {
         setState(() => _isLoadingData = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load data: $e')),
+          SnackBar(content: Text('${context.translate('error_load_data')}: $e')),
         );
       }
     }
@@ -143,23 +152,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
 
     if (_selectedAccountId == null) {
-      _showSnackBar('Please select an account');
+      _showSnackBar(context.translate('err_select_account'));
       return false;
     }
 
     if (_type != 'Transfer' && _selectedCategoryId == null) {
-      _showSnackBar('Please select a category');
+      _showSnackBar(context.translate('err_select_category'));
       return false;
     }
 
     // FIX: Validate transfer-specific fields
     if (_type == 'Transfer') {
       if (_toAccountId == null) {
-        _showSnackBar('Please select a destination account');
+        _showSnackBar(context.translate('err_select_dest_account'));
         return false;
       }
       if (_selectedAccountId == _toAccountId) {
-        _showSnackBar('From and To accounts must be different');
+        _showSnackBar(context.translate('err_accounts_same'));
         return false;
       }
     }
@@ -173,12 +182,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
       // FIX: Use safe lookup helpers instead of firstWhere without orElse
       String categoryName = 'Unknown';
+      String? categoryKey;
       if (_type == 'Transfer') {
-        categoryName = 'Transfer';
+        categoryName = context.translate('cat_transfer');
+        categoryKey = 'cat_transfer';
       } else {
         final catMatch = _findById(_categories, _selectedCategoryId);
         if (catMatch != null) {
           categoryName = catMatch['name']?.toString() ?? 'Unknown';
+          categoryKey = catMatch['key']?.toString();
         }
       }
 
@@ -201,6 +213,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         'to_account_id': _type == 'Transfer' ? _toAccountId : null,
         'category_id': _selectedCategoryId,
         'category_name': categoryName,
+        'category_key': categoryKey,
         'account_name': accountName,
         'to_account_name': toAccountName,
         'amount': amount,
@@ -210,6 +223,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         'description': _descriptionController.text.trim(),
         'fees': _type == 'Transfer' ? _fees : 0.0,
         'is_starred': _isStarred,
+        'attachment_url': _attachmentUrl,
       };
 
       if (isEditing) {
@@ -223,7 +237,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
       return true;
     } catch (e) {
-      if (mounted) _showSnackBar('Error saving transaction: $e');
+      if (mounted) _showSnackBar('${context.translate('error_save_tx')}: $e');
       return false;
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -319,9 +333,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete Transaction'),
-          content: const Text(
-            'Are you sure you want to delete this transaction?',
+          title: Text(context.translate('delete_tx_title')),
+          content: Text(
+            context.translate('delete_tx_confirm'),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -329,13 +343,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(context.translate('cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text(
-                'Delete',
-                style: TextStyle(color: Colors.redAccent),
+              child: Text(
+                context.translate('delete'),
+                style: const TextStyle(color: Colors.redAccent),
               ),
             ),
           ],
@@ -349,7 +363,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         final firestore = context.read<FirestoreService>();
         await firestore.deleteTransaction(widget.initialTransaction!);
         if (mounted) {
-          _showSnackBar('Transaction deleted successfully');
+          _showSnackBar(context.translate('settings_saved'));
           Navigator.pop(context, true);
         }
       } catch (e) {
@@ -358,6 +372,193 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         if (mounted) setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  Future<void> _pickAndUploadAttachment() async {
+    final picker = ImagePicker();
+    
+    // Show bottom sheet to choose source
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final double bottomPadding = MediaQuery.of(context).padding.bottom;
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
+          ),
+          padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                context.translate('header_attachment'),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildSourceOption(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Camera',
+                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                  ),
+                  _buildSourceOption(
+                    icon: Icons.photo_library_outlined,
+                    label: 'Gallery',
+                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (source == null) return;
+    if (_isPickingImage) return;
+
+    setState(() => _isPickingImage = true);
+
+    try {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      
+      setState(() => _isPickingImage = false);
+      if (image == null) return;
+
+      setState(() => _isUploadingAttachment = true);
+
+      final cloudinary = CloudinaryService();
+      final String? uploadedUrl = await cloudinary.uploadImage(image.path);
+
+      if (uploadedUrl != null) {
+        setState(() {
+          _attachmentUrl = uploadedUrl;
+          _isUploadingAttachment = false;
+        });
+        _showSnackBar('Attachment uploaded successfully!');
+      } else {
+        setState(() {
+          _isUploadingAttachment = false;
+        });
+      }
+    } on PlatformException catch (e) {
+      setState(() {
+        _isPickingImage = false;
+        _isUploadingAttachment = false;
+      });
+      debugPrint('PlatformException picking image: $e');
+      if (e.code == 'photo_access_denied' || e.code == 'camera_access_denied') {
+        _showSnackBar('Access denied. Please grant library/camera permissions in your device settings.');
+      } else if (e.code == 'already_active') {
+        _showSnackBar('Image picker is already active.');
+      } else {
+        _showSnackBar('Error: ${e.message} (${e.code})');
+      }
+    } catch (e) {
+      setState(() {
+        _isPickingImage = false;
+        _isUploadingAttachment = false;
+      });
+      _showSnackBar('Failed to upload attachment: $e');
+    }
+  }
+
+  Widget _buildSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.primary,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _viewFullscreenImage(String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              child: SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: SafeArea(
+                child: CircleAvatar(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -376,7 +577,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          _type,
+          context.translate(_type.toLowerCase()),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
@@ -418,7 +619,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     const SizedBox(height: 24),
 
                     _buildFormRow(
-                      label: 'Date',
+                      label: context.translate('label_date'),
                       child: Row(
                         children: [
                           GestureDetector(
@@ -450,7 +651,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
 
                     _buildFormRow(
-                      label: 'Amount',
+                      label: context.translate('label_amount'),
                       child: Row(
                         children: [
                           Text(
@@ -491,7 +692,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 final parsed =
                                     val == null ? null : double.tryParse(val);
                                 if (parsed == null || parsed <= 0) {
-                                  return 'Enter a valid amount';
+                                  return context.translate('err_invalid_amount');
                                 }
                                 return null;
                               },
@@ -521,8 +722,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                                 child: Text(
                                   _fees > 0
-                                      ? 'Fees: $currency${_fees.toStringAsFixed(0)}'
-                                      : 'Fees',
+                                      ? '${context.translate('label_fees')}: $currency${_fees.toStringAsFixed(0)}'
+                                      : context.translate('label_fees'),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -539,13 +740,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                     if (_type != 'Transfer') ...[
                       _buildFormRow(
-                        label: 'Category',
+                        label: context.translate('label_category'),
                         child: GestureDetector(
                           onTap: _showCategorySelectionDialog,
                           child: Text(
-                            _findById(_categories, _selectedCategoryId)?[
-                                    'name'] ??
-                                'Select Category',
+                            (() {
+                              final cat = _findById(_categories, _selectedCategoryId);
+                              if (cat == null) return context.translate('select_category_hint');
+                              return context.getLocalizedCategory(cat['key']?.toString(), cat['name']?.toString() ?? 'Unknown');
+                            })(),
                             style: TextStyle(
                               fontSize: 14,
                               color: _selectedCategoryId != null
@@ -559,14 +762,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ),
                       ),
                       _buildFormRow(
-                        label: 'Account',
+                        label: context.translate('label_account'),
                         child: GestureDetector(
                           onTap: () =>
                               _showAccountSelectionDialog(isToAccount: false),
                           child: Text(
                             _findById(_accounts, _selectedAccountId)?[
                                     'name'] ??
-                                'Select Account',
+                                context.translate('select_account_hint'),
                             style: TextStyle(
                               fontSize: 14,
                               color: _selectedAccountId != null
@@ -586,7 +789,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             child: Column(
                               children: [
                                 _buildFormRow(
-                                  label: 'From',
+                                  label: context.translate('label_from'),
                                   child: GestureDetector(
                                     onTap: () => _showAccountSelectionDialog(
                                       isToAccount: false,
@@ -594,7 +797,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     child: Text(
                                       _findById(_accounts,
                                               _selectedAccountId)?['name'] ??
-                                          'Select Account',
+                                          context.translate('select_account_hint'),
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _selectedAccountId != null
@@ -610,7 +813,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   ),
                                 ),
                                 _buildFormRow(
-                                  label: 'To',
+                                  label: context.translate('label_to'),
                                   child: GestureDetector(
                                     onTap: () => _showAccountSelectionDialog(
                                       isToAccount: true,
@@ -618,7 +821,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     child: Text(
                                       _findById(_accounts, _toAccountId)?[
                                               'name'] ??
-                                          'Select Account',
+                                          context.translate('select_account_hint'),
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _toAccountId != null
@@ -658,15 +861,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ],
 
                     _buildFormRow(
-                      label: 'Note',
+                      label: context.translate('label_note'),
                       child: TextFormField(
                         controller: _notesController,
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: const InputDecoration(
-                          hintText: 'Short note...',
+                        decoration: InputDecoration(
+                          hintText: context.translate('note_hint'),
                           filled: false,
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
@@ -702,8 +905,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 color:
                                     Theme.of(context).colorScheme.onSurface,
                               ),
-                              decoration: const InputDecoration(
-                                hintText: 'Description',
+                              decoration: InputDecoration(
+                                hintText: context.translate('label_description'),
                                 filled: false,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -712,26 +915,125 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 focusedErrorBorder: InputBorder.none,
                                 isDense: true,
                                 contentPadding:
-                                    EdgeInsets.symmetric(vertical: 10),
+                                    const EdgeInsets.symmetric(vertical: 10),
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           IconButton(
                             icon: Icon(
-                              Icons.camera_alt_outlined,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              _attachmentUrl != null
+                                  ? Icons.camera_alt
+                                  : Icons.camera_alt_outlined,
+                              color: _attachmentUrl != null
+                                  ? AppColors.primary
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.5),
                             ),
-                            onPressed: () {
-                              _showSnackBar('Receipt attachment coming soon!');
-                            },
+                            onPressed: _isUploadingAttachment
+                                ? null
+                                : _pickAndUploadAttachment,
                           ),
                         ],
                       ),
                     ),
+
+                    // Attachment Preview / Uploader UI
+                    if (_isUploadingAttachment) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        height: 100,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.08),
+                          ),
+                        ),
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Uploading attachment...',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else if (_attachmentUrl != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        height: 150,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.08),
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              GestureDetector(
+                                onTap: () => _viewFullscreenImage(_attachmentUrl!),
+                                child: Image.network(
+                                  _attachmentUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Icon(Icons.broken_image_outlined, size: 40),
+                                    );
+                                  },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    );
+                                  },
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.white, size: 20),
+                                    onPressed: () {
+                                      setState(() {
+                                        _attachmentUrl = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 40),
 
                     SizedBox(
@@ -756,7 +1058,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                               )
                             : Text(
-                                isEditing ? 'Update' : 'Save',
+                                isEditing ? context.translate('btn_update') : context.translate('btn_save'),
                                 style: TextStyle(
                                   color: _getButtonTextColor(),
                                   fontWeight: FontWeight.bold,
@@ -824,7 +1126,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
           child: Center(
             child: Text(
-              label,
+              context.translate(label.toLowerCase()),
               style: TextStyle(
                 color: isSelected
                     ? _getActiveColor()

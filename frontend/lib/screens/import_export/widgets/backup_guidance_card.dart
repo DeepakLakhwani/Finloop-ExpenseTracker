@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
+import '../../../providers/language_provider.dart';
 
 class BackupGuidanceCard extends StatelessWidget {
   const BackupGuidanceCard({super.key});
@@ -40,7 +41,7 @@ class BackupGuidanceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Offline Data Backup',
+                      context.translate('title_offline_backup'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -49,7 +50,7 @@ class BackupGuidanceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Protect and manage your own data',
+                      context.translate('subtitle_offline_backup'),
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
@@ -65,7 +66,7 @@ class BackupGuidanceCard extends StatelessWidget {
           const Divider(height: 1, thickness: 0.5, color: Colors.black12),
           const SizedBox(height: 16),
           Text(
-            'To securely back up your personal finance history, export your transactions as a secure Excel document. Store this file in a safe cloud drive or external storage. When you need to restore your records on this or a new device, simply upload your exported backup file to restore your entire ledger seamlessly.',
+            context.translate('desc_offline_backup'),
             style: TextStyle(
               fontSize: 13,
               height: 1.6,

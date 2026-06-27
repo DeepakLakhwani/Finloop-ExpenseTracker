@@ -39,7 +39,9 @@ class FinancialAnalytics {
       if (date.year == now.year && date.month == now.month && tx['type'] == 'Expense') {
         final amt = double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
         final catName = tx['category_name']?.toString() ?? 'Other';
-        categoryMap[catName] = (categoryMap[catName] ?? 0.0) + amt;
+        final catKey = tx['category_key']?.toString() ?? '';
+        final compoundKey = '$catKey::$catName';
+        categoryMap[compoundKey] = (categoryMap[compoundKey] ?? 0.0) + amt;
       }
     }
 
@@ -92,6 +94,20 @@ class FinancialAnalytics {
 
   /// Computes a smart analysis string comparing current month spending against the previous month.
   String get insightText {
+    final info = insightInfo;
+    if (info.key == 'insight_spent_less') {
+      return "You've spent ${info.percent}% less this month compared to last month. Great job!";
+    } else if (info.key == 'insight_spent_more') {
+      return "You've spent ${info.percent}% more this month compared to last month. Consider reviewing your budgets.";
+    } else if (info.key == 'insight_started_tracking') {
+      return "You've started tracking your expenses. Keep it up to see comparison next month!";
+    }
+    return 'Keep tracking your transactions to see smart insights here next month.';
+  }
+
+  /// Computes a smart analysis comparing current month spending against the previous month,
+  /// returning translation key and replacement parameters.
+  InsightInfo get insightInfo {
     final now = DateTime.now();
     final currentMonthExpenses = totalCurrentMonthExpenses;
 
@@ -109,14 +125,14 @@ class FinancialAnalytics {
       final diffPercent = ((prevMonthExpenses - currentMonthExpenses) / prevMonthExpenses * 100).abs();
       final formattedPercent = diffPercent.toStringAsFixed(0);
       if (currentMonthExpenses < prevMonthExpenses) {
-        return "You've spent $formattedPercent% less this month compared to last month. Great job!";
+        return InsightInfo(key: 'insight_spent_less', percent: formattedPercent);
       } else {
-        return "You've spent $formattedPercent% more this month compared to last month. Consider reviewing your budgets.";
+        return InsightInfo(key: 'insight_spent_more', percent: formattedPercent);
       }
     } else if (currentMonthExpenses > 0) {
-      return "You've started tracking your expenses. Keep it up to see comparison next month!";
+      return InsightInfo(key: 'insight_started_tracking');
     }
-    return 'Keep tracking your transactions to see smart insights here next month.';
+    return const InsightInfo(key: 'insight_no_data');
   }
 
   /// Calculates total net balance across all bank accounts and wallets (excluding credit cards).
@@ -129,4 +145,11 @@ class FinancialAnalytics {
     }
     return total;
   }
+}
+
+class InsightInfo {
+  final String key;
+  final String? percent;
+
+  const InsightInfo({required this.key, this.percent});
 }
