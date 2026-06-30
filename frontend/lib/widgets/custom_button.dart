@@ -33,7 +33,7 @@ class CustomButton extends StatelessWidget {
         foregroundColor = Colors.white;
         break;
       case CustomButtonType.secondary:
-        backgroundColor = isDark ? Colors.white.withOpacity(0.08) : AppColors.neutralLight;
+        backgroundColor = isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.neutralLight;
         foregroundColor = isDark ? Colors.white : AppColors.secondary;
         break;
       case CustomButtonType.inverted:
@@ -55,8 +55,8 @@ class CustomButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
-          disabledBackgroundColor: backgroundColor.withOpacity(0.7),
-          disabledForegroundColor: foregroundColor.withOpacity(0.7),
+          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.7),
+          disabledForegroundColor: foregroundColor.withValues(alpha: 0.7),
           side: borderSide,
           elevation: 0,
           shape: RoundedRectangleBorder(

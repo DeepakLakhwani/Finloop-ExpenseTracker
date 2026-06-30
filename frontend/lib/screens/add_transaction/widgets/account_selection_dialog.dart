@@ -46,9 +46,13 @@ class AccountSelectionDialog extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Text('No accounts found.'),
               )
-            : ListView.builder(
+            : ListView.separated(
                 shrinkWrap: true,
                 itemCount: accounts.length,
+                separatorBuilder: (context, index) => const Divider(
+                  height: 1,
+                  thickness: 0.5,
+                ),
                 itemBuilder: (context, index) {
                   final acc = accounts[index];
                   return ListTile(

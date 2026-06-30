@@ -53,7 +53,7 @@ class TransactionTile extends StatelessWidget {
     final tileContent = Padding(
       padding: isNested
           ? const EdgeInsets.symmetric(vertical: 8, horizontal: 0)
-          : const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          : const EdgeInsets.symmetric(vertical: 9, horizontal: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -84,12 +84,11 @@ class TransactionTile extends StatelessWidget {
                         child: Text(
                           '• ${transaction['notes']}',
                           style: TextStyle(
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.45),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.45),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -97,15 +96,16 @@ class TransactionTile extends StatelessWidget {
                       ),
                     ],
                     if (transaction['attachment_url'] != null &&
-                        transaction['attachment_url'].toString().isNotEmpty) ...[
+                        transaction['attachment_url']
+                            .toString()
+                            .isNotEmpty) ...[
                       const SizedBox(width: 6),
                       Icon(
                         Icons.attach_file,
                         size: 13,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.45),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.45),
                       ),
                     ],
                   ],
@@ -113,13 +113,13 @@ class TransactionTile extends StatelessWidget {
                 if (showDate) ...[
                   const SizedBox(height: 2),
                   Text(
-                    DateFormat('dd MMM yyyy')
-                        .format(_parseDate(transaction['date'])),
+                    DateFormat(
+                      'dd MMM yyyy',
+                    ).format(_parseDate(transaction['date'])),
                     style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.4),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),
@@ -150,10 +150,9 @@ class TransactionTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.45),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.45),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

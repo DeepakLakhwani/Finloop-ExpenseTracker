@@ -10,6 +10,7 @@ import 'providers/language_provider.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
 import 'services/ad_service.dart';
+import 'services/app_review_service.dart';
 import 'theme/app_theme.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -53,6 +54,7 @@ class _FinloopAppState extends State<FinloopApp> {
   @override
   void initState() {
     super.initState();
+    AppReviewService.logAppOpen();
     _loadInitialSettings();
     _initNotifications();
   }
@@ -149,7 +151,7 @@ void showTopNotification(String message, {bool isError = false}) {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),

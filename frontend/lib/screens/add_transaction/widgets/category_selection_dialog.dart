@@ -112,7 +112,7 @@ class CategorySelectionDialog extends StatelessWidget {
                                       color: isSelected
                                           ? (Theme.of(context).brightness ==
                                                     Brightness.dark
-                                                ? activeColor.withOpacity(0.2)
+                                                ? activeColor.withValues(alpha: 0.2)
                                                 : Colors.white)
                                           : (Theme.of(context).brightness ==
                                                     Brightness.dark
@@ -131,7 +131,7 @@ class CategorySelectionDialog extends StatelessWidget {
                                       boxShadow: [
                                         if (isSelected)
                                           BoxShadow(
-                                            color: activeColor.withOpacity(
+                                            color: activeColor.withValues(alpha: 
                                               0.25,
                                             ),
                                             blurRadius: 10,
@@ -139,7 +139,7 @@ class CategorySelectionDialog extends StatelessWidget {
                                           )
                                         else
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
+                                            color: Colors.black.withValues(alpha: 
                                               0.06,
                                             ),
                                             blurRadius: 6,
@@ -164,7 +164,7 @@ class CategorySelectionDialog extends StatelessWidget {
                                             : Theme.of(context)
                                                   .colorScheme
                                                   .onSurface
-                                                  .withOpacity(0.8),
+                                                  .withValues(alpha: 0.8),
                                         fontSize: 14,
                                       ),
                                       maxLines: 2,

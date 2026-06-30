@@ -5,17 +5,16 @@ import '../providers/theme_provider.dart';
 import '../providers/language_provider.dart';
 import '../theme/app_colors.dart';
 import '../services/security_service.dart';
+import '../services/notification_service.dart';
 import 'passcode_setup_screen.dart';
 import 'passcode_options_screen.dart';
 import 'passcode_lock_screen.dart';
 import 'import_export_screen.dart';
 import 'feedback_screen.dart';
 import 'settings/widgets/settings_tile.dart';
-import 'settings/widgets/appearance_card.dart';
-import 'settings/currency_settings_screen.dart';
 import 'settings/privacy_policy_screen.dart';
 import 'settings/budgets_management_screen.dart';
-import 'settings/language_settings_screen.dart';
+import '../services/app_review_service.dart';
 
 // Main settings hub (previously ProfileScreen in profile_screen.dart)
 class SettingsScreen extends StatefulWidget {
@@ -33,6 +32,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _checkPasscodeStatus();
+    _checkNotificationStatus();
+  }
+
+  Future<void> _checkNotificationStatus() async {
+    final enabled = await NotificationService().areNotificationsEnabled();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = enabled;
+      });
+    }
   }
 
   Future<void> _checkPasscodeStatus() async {
@@ -169,6 +178,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                     ),
                     SettingsTile(
+                      title: context.translate('rate_us'),
+                      icon: Icons.star_outline,
+                      onTap: () {
+                        AppReviewService.openStoreListing();
+                      },
+                    ),
+                    SettingsTile(
                       title: context.translate('privacy_policy'),
                       icon: Icons.privacy_tip_outlined,
                       onTap: () {
@@ -188,8 +204,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         scale: 0.8,
                         child: Switch(
                           value: _notificationsEnabled,
-                          onChanged: (val) =>
-                              setState(() => _notificationsEnabled = val),
+                          onChanged: (val) async {
+                            setState(() => _notificationsEnabled = val);
+                            await NotificationService().setNotificationsEnabled(
+                              val,
+                            );
+                          },
                           activeThumbColor: AppColors.primary,
                         ),
                       ),
@@ -255,7 +275,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
                   child: Text(
                     context.translate('appearance'),
                     style: const TextStyle(
@@ -278,7 +301,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.08),
                         child: Icon(
                           icon,
                           color: Theme.of(context).colorScheme.onSurface,
@@ -288,10 +313,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text(
                         label,
                         style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
-                      trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                      trailing: isSelected
+                          ? const Icon(Icons.check, color: AppColors.primary)
+                          : null,
                       onTap: () {
                         context.read<ThemeProvider>().setThemeMode(mode);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -353,7 +382,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
                   child: Text(
                     context.translate('select_currency'),
                     style: const TextStyle(
@@ -375,12 +407,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final symbol = item['symbol']!;
                       final isSelected = currentCurrency == code;
 
-                      final translatedName = context.translate('curr_${code.toLowerCase()}');
-                      final displayName = translatedName == 'curr_${code.toLowerCase()}' ? name : translatedName;
+                      final translatedName = context.translate(
+                        'curr_${code.toLowerCase()}',
+                      );
+                      final displayName =
+                          translatedName == 'curr_${code.toLowerCase()}'
+                          ? name
+                          : translatedName;
 
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.08),
                           child: Text(
                             symbol,
                             style: TextStyle(
@@ -392,15 +431,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: Text(
                           '$code - $displayName',
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
-                        trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: AppColors.primary)
+                            : null,
                         onTap: () {
                           context.read<SettingsProvider>().setCurrency(code);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(context.translate('settings_saved')),
+                              content: Text(
+                                context.translate('settings_saved'),
+                              ),
                               backgroundColor: AppColors.primary,
                             ),
                           );
@@ -437,7 +482,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
                   child: Text(
                     context.translate('select_language'),
                     style: const TextStyle(
@@ -460,7 +508,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.08),
                           child: Text(
                             code.toUpperCase(),
                             style: TextStyle(
@@ -473,16 +523,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: Text(
                           name,
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
-                        trailing: isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: AppColors.primary)
+                            : null,
                         onTap: () async {
-                          await context.read<LanguageProvider>().setLanguage(code);
+                          await context.read<LanguageProvider>().setLanguage(
+                            code,
+                          );
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(context.translate('settings_saved')),
+                                content: Text(
+                                  context.translate('settings_saved'),
+                                ),
                                 backgroundColor: AppColors.primary,
                               ),
                             );
@@ -509,14 +567,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final verified = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => const PasscodeLockScreen(verificationOnly: true),
+          builder: (context) =>
+              const PasscodeLockScreen(verificationOnly: true),
         ),
       );
 
       if (verified == true && context.mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const PasscodeOptionsScreen()),
+          MaterialPageRoute(
+            builder: (context) => const PasscodeOptionsScreen(),
+          ),
         ).then((_) {
           _checkPasscodeStatus();
         });

@@ -22,7 +22,9 @@ class FinancialAnalytics {
     double total = 0.0;
     for (var tx in allTransactions) {
       final date = _parseDate(tx['date']);
-      if (date.year == now.year && date.month == now.month && tx['type'] == 'Expense') {
+      if (date.year == now.year &&
+          date.month == now.month &&
+          tx['type'] == 'Expense') {
         total += double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
       }
     }
@@ -36,7 +38,9 @@ class FinancialAnalytics {
 
     for (var tx in allTransactions) {
       final date = _parseDate(tx['date']);
-      if (date.year == now.year && date.month == now.month && tx['type'] == 'Expense') {
+      if (date.year == now.year &&
+          date.month == now.month &&
+          tx['type'] == 'Expense') {
         final amt = double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
         final catName = tx['category_name']?.toString() ?? 'Other';
         final catKey = tx['category_key']?.toString() ?? '';
@@ -48,19 +52,7 @@ class FinancialAnalytics {
     final sortedCategories = categoryMap.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final result = <MapEntry<String, double>>[];
-    double othersSum = 0.0;
-    for (int i = 0; i < sortedCategories.length; i++) {
-      if (i < 3) {
-        result.add(sortedCategories[i]);
-      } else {
-        othersSum += sortedCategories[i].value;
-      }
-    }
-    if (othersSum > 0.0) {
-      result.add(MapEntry('Others', othersSum));
-    }
-    return result;
+    return sortedCategories;
   }
 
   /// Returns the past 6 calendar months as a chronological list of Dates.
@@ -77,10 +69,19 @@ class FinancialAnalytics {
   List<double> get monthlyExpenses {
     final result = <double>[];
     for (var m in trendMonths) {
-      final sum = allTransactions.where((tx) {
-        final date = _parseDate(tx['date']);
-        return date.year == m.year && date.month == m.month && tx['type'] == 'Expense';
-      }).fold<double>(0.0, (sum, tx) => sum + (double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0));
+      final sum = allTransactions
+          .where((tx) {
+            final date = _parseDate(tx['date']);
+            return date.year == m.year &&
+                date.month == m.month &&
+                tx['type'] == 'Expense';
+          })
+          .fold<double>(
+            0.0,
+            (sum, tx) =>
+                sum +
+                (double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0),
+          );
       result.add(sum);
     }
     return result;
@@ -88,7 +89,10 @@ class FinancialAnalytics {
 
   /// Computes the optimal Y-axis bounds for the spending trend bar charts.
   double get maxY {
-    double maxExpense = monthlyExpenses.fold(0.0, (max, val) => val > max ? val : max);
+    double maxExpense = monthlyExpenses.fold(
+      0.0,
+      (max, val) => val > max ? val : max,
+    );
     return maxExpense > 0 ? maxExpense * 1.15 : 100;
   }
 
@@ -114,20 +118,33 @@ class FinancialAnalytics {
     final prevMonthDate = DateTime(now.year, now.month - 1, 1);
     final prevMonthTxs = allTransactions.where((tx) {
       final date = _parseDate(tx['date']);
-      return date.year == prevMonthDate.year && date.month == prevMonthDate.month;
+      return date.year == prevMonthDate.year &&
+          date.month == prevMonthDate.month;
     }).toList();
-    
+
     final prevMonthExpenses = prevMonthTxs
         .where((tx) => tx['type'] == 'Expense')
-        .fold<double>(0.0, (sum, tx) => sum + (double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0));
+        .fold<double>(
+          0.0,
+          (sum, tx) =>
+              sum + (double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0),
+        );
 
     if (prevMonthExpenses > 0) {
-      final diffPercent = ((prevMonthExpenses - currentMonthExpenses) / prevMonthExpenses * 100).abs();
+      final diffPercent =
+          ((prevMonthExpenses - currentMonthExpenses) / prevMonthExpenses * 100)
+              .abs();
       final formattedPercent = diffPercent.toStringAsFixed(0);
       if (currentMonthExpenses < prevMonthExpenses) {
-        return InsightInfo(key: 'insight_spent_less', percent: formattedPercent);
+        return InsightInfo(
+          key: 'insight_spent_less',
+          percent: formattedPercent,
+        );
       } else {
-        return InsightInfo(key: 'insight_spent_more', percent: formattedPercent);
+        return InsightInfo(
+          key: 'insight_spent_more',
+          percent: formattedPercent,
+        );
       }
     } else if (currentMonthExpenses > 0) {
       return InsightInfo(key: 'insight_started_tracking');

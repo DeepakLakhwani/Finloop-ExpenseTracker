@@ -14,13 +14,13 @@ class BackupGuidanceCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark 
-              ? [AppColors.primary.withOpacity(0.15), AppColors.primary.withOpacity(0.05)]
+              ? [AppColors.primary.withValues(alpha: 0.15), AppColors.primary.withValues(alpha: 0.05)]
               : [const Color(0xFFE3F2FD), const Color(0xFFFBFBFB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withOpacity(isDark ? 0.3 : 0.15)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: isDark ? 0.3 : 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,7 +30,7 @@ class BackupGuidanceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.security_rounded, color: AppColors.primary, size: 24),
@@ -53,7 +53,7 @@ class BackupGuidanceCard extends StatelessWidget {
                       context.translate('subtitle_offline_backup'),
                       style: TextStyle(
                         fontSize: 11,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -70,7 +70,7 @@ class BackupGuidanceCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               height: 1.6,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],

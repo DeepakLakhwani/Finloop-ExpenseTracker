@@ -238,7 +238,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Text(
@@ -280,7 +280,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                           size: 10,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.3),
+                          ).colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -291,7 +291,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                               fontStyle: FontStyle.italic,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.4),
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -306,7 +306,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                     style: TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.4),
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),
@@ -461,14 +461,14 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [cardColor, cardColor.withOpacity(0.8)],
+                            colors: [cardColor, cardColor.withValues(alpha: 0.8)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: cardColor.withOpacity(0.24),
+                              color: cardColor.withValues(alpha: 0.24),
                               blurRadius: 15,
                               offset: const Offset(0, 8),
                             ),
@@ -483,7 +483,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                   : (_account['type'] ?? 'Account'),
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -502,7 +502,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                 'Available Credit',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.white.withOpacity(0.65),
+                                  color: Colors.white.withValues(alpha: 0.65),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -514,7 +514,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                     'Used: $currency${NumberFormat('#,##0.00').format(used)}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white.withOpacity(0.95),
+                                      color: Colors.white.withValues(alpha: 0.95),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -522,7 +522,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                     'Limit: $currency${NumberFormat('#,##0.00').format(limit)}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white.withOpacity(0.95),
+                                      color: Colors.white.withValues(alpha: 0.95),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -551,7 +551,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                   '${_entries.length} Transaction${_entries.length == 1 ? "" : "s"}',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -586,7 +586,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                   size: 48,
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.onSurface.withOpacity(0.2),
+                                  ).colorScheme.onSurface.withValues(alpha: 0.2),
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
@@ -594,7 +594,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                   style: TextStyle(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurface.withOpacity(0.4),
+                                    ).colorScheme.onSurface.withValues(alpha: 0.4),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -609,8 +609,8 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                             height: 1,
                             thickness: 1,
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withOpacity(0.08)
-                                : Colors.black.withOpacity(0.05),
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.black.withValues(alpha: 0.05),
                           ),
                           itemBuilder: (context, index) {
                             final tx = _entries[index];

@@ -34,14 +34,14 @@ class CardPreview extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cardColor, cardColor.withOpacity(0.82)],
+          colors: [cardColor, cardColor.withValues(alpha: 0.82)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: cardColor.withOpacity(0.24),
+            color: cardColor.withValues(alpha: 0.24),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),

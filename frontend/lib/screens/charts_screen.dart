@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,7 @@ abstract final class _K {
   static const double cardPadding = 24;
   static const double sectionGap = 24;
   static const double chartHeight = 200;
-  static const double pieCenter = 60;
+  static const double pieCenter = 50;
   static const double barWidth = 32;
 
   static const List<Color> palette = [
@@ -201,8 +202,13 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.onSurface;
     final langProvider = context.watch<LanguageProvider>();
-    final localizedMonth = DateFormat('MMMM', langProvider.languageCode).format(month);
-    final subtitle = context.translate('spending_intelligence').replaceAll('{month}', localizedMonth);
+    final localizedMonth = DateFormat(
+      'MMMM',
+      langProvider.languageCode,
+    ).format(month);
+    final subtitle = context
+        .translate('spending_intelligence')
+        .replaceAll('{month}', localizedMonth);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,14 +268,15 @@ class _ExpenseDistributionCard extends StatelessWidget {
         children: [
           _CardHeader(
             title: context.translate('expense_distribution'),
-            subtitle: context.translate('top_category_pct')
+            subtitle: context
+                .translate('top_category_pct')
                 .replaceAll('{category}', topCategory)
                 .replaceAll('{pct}', topPct),
             icon: Icons.pie_chart_outline,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           SizedBox(
-            height: _K.chartHeight,
+            height: 320,
             child: Stack(
               children: [
                 PieChart(
@@ -289,17 +296,44 @@ class _ExpenseDistributionCard extends StatelessWidget {
                     centerSpaceRadius: _K.pieCenter,
                     sections: List.generate(pieData.length, (i) {
                       final isTouched = i == touchedIndex;
+
+                      // Calculate mid angle in radians
+                      double sumBefore = 0.0;
+                      for (int j = 0; j < i; j++) {
+                        sumBefore += pieData[j].value;
+                      }
+                      final double currentValue = pieData[i].value;
+                      final double startAngle = totalExpenses > 0
+                          ? (sumBefore / totalExpenses) * 360
+                          : 0.0;
+                      final double sweepAngle = totalExpenses > 0
+                          ? (currentValue / totalExpenses) * 360
+                          : 0.0;
+                      final double midAngleRadians =
+                          (startAngle + (sweepAngle / 2)) * math.pi / 180;
+
+                      final parts = pieData[i].key.split('::');
+                      final key = parts[0];
+                      final fallback = parts.length > 1 ? parts[1] : '';
+                      final label = pieData[i].key == 'Others'
+                          ? context.translate('others')
+                          : context.getLocalizedCategory(key, fallback);
+
                       return PieChartSectionData(
                         color: _K.palette[i % _K.palette.length],
                         value: pieData[i].value,
-                        title:
-                            '${(pieData[i].value / totalExpenses * 100).toStringAsFixed(0)}%',
+                        showTitle: false,
                         radius: isTouched ? 58 : 48,
-                        titleStyle: TextStyle(
-                          fontSize: isTouched ? 22 : 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                        badgeWidget: _CalloutBadge(
+                          angle: midAngleRadians,
+                          label: label,
+                          amount:
+                              '$currency${NumberFormat('#,##0.00').format(pieData[i].value)}',
+                          color: _K.palette[i % _K.palette.length],
+                          textColor: onSurface,
+                          isTouched: isTouched,
                         ),
+                        badgePositionPercentageOffset: 2.0,
                       );
                     }),
                   ),
@@ -329,27 +363,141 @@ class _ExpenseDistributionCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 32),
-          ...List.generate(pieData.length, (i) {
-            final entry = pieData[i];
-            final parts = entry.key.split('::');
-            final key = parts[0];
-            final fallback = parts.length > 1 ? parts[1] : '';
-            final label = entry.key == 'Others'
-                ? context.translate('others')
-                : context.getLocalizedCategory(key, fallback);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _LegendItem(
-                label: label,
-                amount: '$currency${NumberFormat('#,##0.00').format(entry.value)}',
-                color: _K.palette[i % _K.palette.length],
-              ),
-            );
-          }),
         ],
       ),
     );
+  }
+}
+
+class _CalloutBadge extends StatelessWidget {
+  final double angle;
+  final String label;
+  final String amount;
+  final Color color;
+  final Color textColor;
+  final bool isTouched;
+
+  const _CalloutBadge({
+    required this.angle,
+    required this.label,
+    required this.amount,
+    required this.color,
+    required this.textColor,
+    required this.isTouched,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isLeft = math.cos(angle) < 0;
+
+    return CustomPaint(
+      painter: _CalloutLinePainter(
+        angle: angle,
+        color: color,
+        isLeft: isLeft,
+        isTouched: isTouched,
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: isLeft ? 0 : 12,
+          right: isLeft ? 12 : 0,
+          bottom: 2,
+        ),
+        child: SizedBox(
+          width: 75,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: isLeft
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: textColor.withValues(alpha: 0.8),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 1),
+              Text(
+                amount,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CalloutLinePainter extends CustomPainter {
+  final double angle;
+  final Color color;
+  final bool isLeft;
+  final bool isTouched;
+
+  const _CalloutLinePainter({
+    required this.angle,
+    required this.color,
+    required this.isLeft,
+    required this.isTouched,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const double pieRadius = 48.0;
+    final double sliceRadius = isTouched ? 58.0 : 48.0;
+    const double badgeOffsetRadius = 2.0 * pieRadius;
+
+    final double distanceToEdge = badgeOffsetRadius - sliceRadius;
+
+    final double cosVal = math.cos(angle);
+    final double sinVal = math.sin(angle);
+
+    final double centerX = size.width / 2;
+    final double centerY = size.height / 2;
+
+    final double dx = -distanceToEdge * cosVal + centerX;
+    final double dy = -distanceToEdge * sinVal + centerY;
+
+    final double elbowY = size.height;
+    final path = Path();
+
+    if (isLeft) {
+      path.moveTo(dx, dy);
+      path.lineTo(size.width, elbowY);
+      path.lineTo(0.0, elbowY);
+    } else {
+      path.moveTo(dx, dy);
+      path.lineTo(0.0, elbowY);
+      path.lineTo(size.width, elbowY);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CalloutLinePainter oldDelegate) {
+    return oldDelegate.angle != angle ||
+        oldDelegate.color != color ||
+        oldDelegate.isLeft != isLeft ||
+        oldDelegate.isTouched != isTouched;
   }
 }
 
@@ -384,49 +532,6 @@ class _EmptyDistributionCard extends StatelessWidget {
           const SizedBox(height: 20),
         ],
       ),
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  const _LegendItem({
-    required this.label,
-    required this.amount,
-    required this.color,
-  });
-
-  final String label;
-  final String amount;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-          ],
-        ),
-        Text(
-          amount,
-          style: TextStyle(fontWeight: FontWeight.bold, color: onSurface),
-        ),
-      ],
     );
   }
 }
@@ -525,7 +630,10 @@ class _MonthlyTrendsCard extends StatelessWidget {
                           meta: meta,
                           space: 8,
                           child: Text(
-                            DateFormat('MMM', langProvider.languageCode).format(months[i]),
+                            DateFormat(
+                              'MMM',
+                              langProvider.languageCode,
+                            ).format(months[i]),
                             style: TextStyle(
                               color: isCurrentMonth
                                   ? AppColors.primary
@@ -814,7 +922,7 @@ class _BudgetsCard extends StatelessWidget {
       if (tx['type'] != 'Expense') return false;
       final dateRaw = tx['date'];
       if (dateRaw == null) return false;
-      
+
       final DateTime date;
       if (dateRaw is DateTime) {
         date = dateRaw;
@@ -823,7 +931,7 @@ class _BudgetsCard extends StatelessWidget {
       } else {
         date = DateTime.tryParse(dateRaw.toString()) ?? DateTime.now();
       }
-      
+
       return date.year == now.year && date.month == now.month;
     }).toList();
 
@@ -840,7 +948,8 @@ class _BudgetsCard extends StatelessWidget {
           ...budgets.map((budget) {
             final isGlobal = budget['categoryId'] == null;
             final categoryId = budget['categoryId'];
-            final limitAmount = (budget['limitAmount'] as num?)?.toDouble() ?? 0.0;
+            final limitAmount =
+                (budget['limitAmount'] as num?)?.toDouble() ?? 0.0;
             final displayTitle = isGlobal
                 ? context.translate('all_expenses')
                 : context.getLocalizedCategory(
@@ -856,7 +965,9 @@ class _BudgetsCard extends StatelessWidget {
               }
             }
 
-            final percent = limitAmount > 0 ? (spent / limitAmount).clamp(0.0, 1.0) : 0.0;
+            final percent = limitAmount > 0
+                ? (spent / limitAmount).clamp(0.0, 1.0)
+                : 0.0;
             final isExceeded = spent > limitAmount;
 
             // Determine status color
@@ -887,7 +998,11 @@ class _BudgetsCard extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: isExceeded ? Colors.redAccent : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                          color: isExceeded
+                              ? Colors.redAccent
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -897,7 +1012,8 @@ class _BudgetsCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percent,
-                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.dark
                           ? Colors.white.withValues(alpha: 0.08)
                           : Colors.black.withValues(alpha: 0.05),
                       valueColor: AlwaysStoppedAnimation<Color>(progressColor),
@@ -907,7 +1023,12 @@ class _BudgetsCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   if (isExceeded)
                     Text(
-                      context.translate('exceeded_by').replaceAll('{amount}', '$currency${(spent - limitAmount).toStringAsFixed(0)}'),
+                      context
+                          .translate('exceeded_by')
+                          .replaceAll(
+                            '{amount}',
+                            '$currency${(spent - limitAmount).toStringAsFixed(0)}',
+                          ),
                       style: const TextStyle(
                         color: Colors.redAccent,
                         fontSize: 11,
@@ -916,9 +1037,16 @@ class _BudgetsCard extends StatelessWidget {
                     )
                   else
                     Text(
-                      context.translate('remaining_amount').replaceAll('{amount}', '$currency${(limitAmount - spent).toStringAsFixed(0)}'),
+                      context
+                          .translate('remaining_amount')
+                          .replaceAll(
+                            '{amount}',
+                            '$currency${(limitAmount - spent).toStringAsFixed(0)}',
+                          ),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
                         fontSize: 11,
                       ),
                     ),

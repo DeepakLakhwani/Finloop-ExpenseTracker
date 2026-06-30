@@ -582,7 +582,7 @@ class _AccountCategorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = _sectionTotal;
-    final dividerColor = Theme.of(context).dividerColor.withOpacity(0.2);
+    final dividerColor = Theme.of(context).dividerColor.withValues(alpha: 0.2);
 
     return Card(
       margin: const EdgeInsets.only(left: 8, right: 8, bottom: 16),

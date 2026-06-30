@@ -32,7 +32,7 @@ class ManageCategoriesScreen extends StatelessWidget {
             fillColor: Colors.transparent,
             border: const UnderlineInputBorder(),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
             ),
             focusedBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: _parseColor(cat['color']), width: 2),
@@ -53,7 +53,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                   child: Text(
                     context.translate('cancel'),
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -101,7 +101,7 @@ class ManageCategoriesScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: Text(
               context.translate('cancel'),
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontWeight: FontWeight.bold),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontWeight: FontWeight.bold),
             ),
           ),
           TextButton(
@@ -150,14 +150,14 @@ class ManageCategoriesScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.category_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                  Icon(Icons.category_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2)),
                   const SizedBox(height: 16),
                   Text(
                     context.translate('err_no_categories'),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -165,7 +165,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                     context.translate('hint_add_category'),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                     ),
                   ),
                 ],
@@ -183,10 +183,10 @@ class ManageCategoriesScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.04)),
+                  border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -206,7 +206,7 @@ class ManageCategoriesScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.edit_outlined, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                        icon: Icon(Icons.edit_outlined, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                         onPressed: () => _showSimpleEditCategoryDialog(context, cat),
                       ),
                       IconButton(

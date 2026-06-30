@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,13 +7,16 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/settings_provider.dart';
+import '../providers/language_provider.dart';
 import '../theme/app_colors.dart';
 import '../services/firestore_service.dart';
+import '../services/app_review_service.dart';
 import 'add_transaction_screen.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../services/ad_service.dart';
 import 'transactions/widgets/transaction_tile.dart';
 import 'transactions/widgets/scratchpad_card.dart';
+import '../main.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -29,7 +33,8 @@ class TransactionsScreen extends StatefulWidget {
   State<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> {
+class _TransactionsScreenState extends State<TransactionsScreen>
+    with SingleTickerProviderStateMixin {
   final List<String> _tabs = const [
     'Daily',
     'Weekly',
@@ -54,13 +59,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   String? _filterAccountId;
   List<Map<String, dynamic>> _userAccounts = [];
   bool _showOnlyStarred = false;
-  late PageController _pageController;
+  bool _isAdLoaded = false;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _tabs.indexOf(_selectedTab));
-    _pageController.addListener(_onPageScroll);
+    final initialIndex = _tabs.indexOf(_selectedTab);
+    _tabController = TabController(
+      length: _tabs.length,
+      vsync: this,
+      initialIndex: initialIndex >= 0 ? initialIndex : 0,
+    );
+    _tabController.addListener(_handleTabSelection);
     TransactionsScreen._onBottomBarTappedCallbacks.add(_handleBottomBarTap);
     _selectedCalendarDay = DateTime(
       _focusedDate.year,
@@ -78,16 +89,28 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   void dispose() {
-    _pageController.removeListener(_onPageScroll);
-    _pageController.dispose();
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
     TransactionsScreen._onBottomBarTappedCallbacks.remove(_handleBottomBarTap);
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onPageScroll() {
+  void _handleTabSelection() {
+    if (!mounted) return;
     if (FocusManager.instance.primaryFocus?.hasFocus ?? false) {
       FocusManager.instance.primaryFocus?.unfocus();
+    }
+    final newTab = _tabs[_tabController.index];
+    if (_selectedTab != newTab) {
+      setState(() {
+        _selectedTab = newTab;
+        if (newTab == 'Calendar') {
+          final now = DateTime.now();
+          _focusedDate = DateTime(now.year, now.month, 1);
+          _selectedCalendarDay = DateTime(now.year, now.month, now.day);
+        }
+      });
     }
   }
 
@@ -108,8 +131,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _filterAccountId = null;
         _showOnlyStarred = false;
       });
-      if (_pageController.hasClients) {
-        _pageController.jumpToPage(_tabs.indexOf('Daily'));
+      if (_tabController.index != 0) {
+        _tabController.animateTo(0);
       }
     }
   }
@@ -128,24 +151,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     });
   }
 
-  void _selectTab(String tab) {
-    if (_selectedTab == tab) return;
-    setState(() {
-      _selectedTab = tab;
-      if (tab == 'Calendar') {
-        final now = DateTime.now();
-        _focusedDate = DateTime(now.year, now.month, 1);
-        _selectedCalendarDay = DateTime(now.year, now.month, now.day);
-      }
-    });
-    if (_pageController.hasClients) {
-      _pageController.animateToPage(
-        _tabs.indexOf(tab),
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
+
 
   void _adjustPeriod(int offset) {
     setState(() {
@@ -204,7 +210,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -251,28 +257,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
                       final allTransactions = snapshot.data ?? [];
 
-                      return PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (index) {
-                          final tab = _tabs[index];
-                          if (_selectedTab != tab) {
-                            setState(() {
-                              _selectedTab = tab;
-                              if (tab == 'Calendar') {
-                                final now = DateTime.now();
-                                _focusedDate = DateTime(now.year, now.month, 1);
-                                _selectedCalendarDay = DateTime(
-                                  now.year,
-                                  now.month,
-                                  now.day,
-                                );
-                              }
-                            });
-                          }
-                        },
-                        itemCount: _tabs.length,
-                        itemBuilder: (context, index) {
-                          final tab = _tabs[index];
+                      return TabBarView(
+                        controller: _tabController,
+                        children: _tabs.map((tab) {
                           if (tab == 'Notes') {
                             return ScratchpadCard(
                               userId: userId,
@@ -309,24 +296,35 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               ),
                             ],
                           );
-                        },
+                        }).toList(),
                       );
                     },
                   ),
                 ),
 
-                // Reusable policy-safe Adaptive Banner Ad
-                const BannerAdWidget(key: ValueKey('transactions_banner_ad')),
+                BannerAdWidget(
+                  key: const ValueKey('transactions_banner_ad'),
+                  onAdLoaded: (loaded) {
+                    if (_isAdLoaded != loaded) {
+                      setState(() {
+                        _isAdLoaded = loaded;
+                      });
+                    }
+                  },
+                ),
               ],
             ),
 
             // Fixed Positioned Plus Button (stays stationary above the ad banner)
             if (_selectedTab != 'Notes')
-              Positioned(
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
                 right: 16,
-                bottom: AdService.adsEnabled ? 80 : 16,
+                bottom: _isAdLoaded ? 80 : 16,
                 child: FloatingActionButton(
                   heroTag: 'transactionsListFab',
+                  shape: const CircleBorder(),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -335,7 +333,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       ),
                     ).then((saved) {
                       if (saved == true) {
-                        AdService.showInterstitial(() {});
+                        AdService.showInterstitial(() {
+                          AppReviewService.requestInAppReview();
+                        });
                       }
                     });
                   },
@@ -408,22 +408,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           children: [
             // Daily Section Header
             Container(
-              height: 52,
+              height: 44,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 border: Border(
                   bottom: BorderSide(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.08),
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
                     width: 0.5,
                   ),
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
                     // Column 1: Date Info (under top Income column)
@@ -449,18 +447,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                               Text(
                                 DateFormat('MMMM yyyy').format(date),
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.4),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.4),
                                 ),
                               ),
                             ],
@@ -514,7 +510,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       thickness: 0.5,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.08),
+                      ).colorScheme.onSurface.withValues(alpha: 0.08),
                     ),
                   TransactionTile(transaction: tx, currency: currency),
                 ],
@@ -523,7 +519,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             Divider(
               height: 1,
               thickness: 0.5,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.08),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.08),
             ),
           ],
         );
@@ -587,7 +585,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -597,7 +595,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -607,7 +605,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -617,7 +615,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -627,7 +625,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -637,7 +635,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -647,7 +645,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 style: TextStyle(
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.38),
+                  ).colorScheme.onSurface.withValues(alpha: 0.38),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -697,7 +695,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     color: isSelected
                         ? AppColors.primary
                         : (isToday
-                              ? AppColors.primary.withOpacity(0.12)
+                              ? AppColors.primary.withValues(alpha: 0.12)
                               : Theme.of(context).colorScheme.surface),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -705,9 +703,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           ? (isToday ? Colors.white : Colors.white30)
                           : (isToday
                                 ? AppColors.primary
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withOpacity(0.08)),
+                                : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.08)),
                       width: isToday || isSelected ? 1.5 : 1,
                     ),
                   ),
@@ -771,7 +768,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: TextStyle(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.4),
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 )
@@ -788,7 +785,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             thickness: 0.5,
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.08),
+                            ).colorScheme.onSurface.withValues(alpha: 0.08),
                           ),
                         TransactionTile(transaction: tx, currency: currency),
                       ],
@@ -838,18 +835,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 thickness: 0.5,
                 color: Theme.of(
                   context,
-                ).colorScheme.onSurface.withOpacity(0.08),
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
               ),
             // Weekly Section Header
             Container(
-              height: 52,
+              height: 44,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 border: Border(
                   bottom: BorderSide(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.08),
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
                     width: 0.5,
                   ),
                 ),
@@ -866,9 +863,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 },
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       // Column 1: Week Info (under top Income column)
@@ -880,10 +875,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               isExpanded
                                   ? Icons.keyboard_arrow_down
                                   : Icons.keyboard_arrow_right,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.55),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.55),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -950,7 +944,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               thickness: 0.5,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.08),
+                              ).colorScheme.onSurface.withValues(alpha: 0.08),
                             ),
                           TransactionTile(
                             transaction: tx,
@@ -1010,18 +1004,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 thickness: 0.5,
                 color: Theme.of(
                   context,
-                ).colorScheme.onSurface.withOpacity(0.08),
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
               ),
             // Monthly Section Header
             Container(
-              height: 52,
+              height: 44,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 border: Border(
                   bottom: BorderSide(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.08),
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
                     width: 0.5,
                   ),
                 ),
@@ -1038,9 +1032,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 },
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       // Column 1: Month Info (under top Income column)
@@ -1052,10 +1044,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               isExpanded
                                   ? Icons.keyboard_arrow_down
                                   : Icons.keyboard_arrow_right,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.55),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.55),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -1122,7 +1113,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               thickness: 0.5,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.08),
+                              ).colorScheme.onSurface.withValues(alpha: 0.08),
                             ),
                           TransactionTile(
                             transaction: tx,
@@ -1232,7 +1223,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           style: TextStyle(
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.6),
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                             fontSize: 12,
                           ),
                         ),
@@ -1280,7 +1271,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Widget _buildCustomTabBar() {
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: const Border(
@@ -1290,40 +1280,30 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           ),
         ),
       ),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _tabs.length,
-        itemBuilder: (context, index) {
-          final tab = _tabs[index];
-          final isSelected = _selectedTab == tab;
-          return GestureDetector(
-            onTap: () => _selectTab(tab),
-            child: Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-              ),
-              child: Text(
-                tab,
-                style: TextStyle(
-                  color: isSelected
-                      ? AppColors.primary
-                      : Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          );
-        },
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: Theme.of(context)
+            .colorScheme
+            .onSurface
+            .withValues(alpha: 0.6),
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 14,
+        ),
+        indicatorColor: AppColors.primary,
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        indicatorWeight: 2,
+        padding: EdgeInsets.zero,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 20),
+        tabs: _tabs.map((tab) => Tab(text: tab)).toList(),
       ),
     );
   }
@@ -1433,7 +1413,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               padding: const EdgeInsets.all(4.0),
               child: Icon(
                 Icons.chevron_left,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
                 size: 24,
               ),
             ),
@@ -1446,7 +1428,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               padding: const EdgeInsets.all(4.0),
               child: Icon(
                 Icons.chevron_right,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
                 size: 24,
               ),
             ),
@@ -1457,7 +1441,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               _showOnlyStarred ? Icons.star : Icons.star_border_outlined,
               color: _showOnlyStarred
                   ? Colors.amber
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             onPressed: () {
               setState(() {
@@ -1468,7 +1454,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           IconButton(
             icon: Icon(
               Icons.search_rounded,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             onPressed: () {
               setState(() {
@@ -1485,7 +1473,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       ? AppColors.primary
                       : Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 onPressed: _showFilterBottomSheet,
               ),
@@ -1510,6 +1498,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _showFilterBottomSheet() {
+    String localType = _filterType;
+    String? localAccountId = _filterAccountId;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1536,7 +1527,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.12),
+                        ).colorScheme.onSurface.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1557,8 +1548,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       TextButton(
                         onPressed: () {
                           setBottomSheetState(() {
-                            _filterType = 'All';
-                            _filterAccountId = null;
+                            localType = 'All';
+                            localAccountId = null;
                           });
                         },
                         child: const Text('Reset All'),
@@ -1574,7 +1565,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       fontWeight: FontWeight.bold,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.55),
+                      ).colorScheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1584,18 +1575,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     children: ['All', 'Income', 'Expense', 'Transfer'].map((
                       type,
                     ) {
-                      final isSelected = _filterType == type;
+                      final isSelected = localType == type;
                       return ChoiceChip(
                         label: Text(type),
                         selected: isSelected,
-                        selectedColor: AppColors.primary.withOpacity(0.2),
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
                         backgroundColor: Colors.transparent,
                         labelStyle: TextStyle(
                           color: isSelected
                               ? AppColors.primary
                               : Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.7),
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                           fontWeight: isSelected
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -1605,12 +1596,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               ? AppColors.primary
                               : Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.12),
+                                ).colorScheme.onSurface.withValues(alpha: 0.12),
                         ),
                         onSelected: (selected) {
                           if (selected) {
                             setBottomSheetState(() {
-                              _filterType = type;
+                              localType = type;
                             });
                           }
                         },
@@ -1626,7 +1617,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       fontWeight: FontWeight.bold,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.55),
+                      ).colorScheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1639,7 +1630,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               fontSize: 12,
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.4),
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
                             ),
                           ),
                         )
@@ -1649,49 +1640,49 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           children: [
                             ChoiceChip(
                               label: const Text('All Accounts'),
-                              selected: _filterAccountId == null,
-                              selectedColor: AppColors.primary.withOpacity(0.2),
+                              selected: localAccountId == null,
+                              selectedColor: AppColors.primary.withValues(
+                                alpha: 0.2,
+                              ),
                               backgroundColor: Colors.transparent,
                               labelStyle: TextStyle(
-                                color: _filterAccountId == null
+                                color: localAccountId == null
                                     ? AppColors.primary
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
-                                fontWeight: _filterAccountId == null
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.7),
+                                fontWeight: localAccountId == null
                                     ? FontWeight.bold
                                     : FontWeight.normal,
                               ),
                               side: BorderSide(
-                                color: _filterAccountId == null
+                                color: localAccountId == null
                                     ? AppColors.primary
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.12),
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.12),
                               ),
                               onSelected: (selected) {
                                 if (selected) {
                                   setBottomSheetState(() {
-                                    _filterAccountId = null;
+                                    localAccountId = null;
                                   });
                                 }
                               },
                             ),
                             ..._userAccounts.map((acc) {
                               final accId = acc['id']?.toString();
-                              final isSelected = _filterAccountId == accId;
+                              final isSelected = localAccountId == accId;
                               return ChoiceChip(
                                 label: Text(acc['name'] ?? ''),
                                 selected: isSelected,
-                                selectedColor: AppColors.primary.withOpacity(
-                                  0.2,
+                                selectedColor: AppColors.primary.withValues(
+                                  alpha: 0.2,
                                 ),
                                 backgroundColor: Colors.transparent,
                                 labelStyle: TextStyle(
                                   color: isSelected
                                       ? AppColors.primary
                                       : Theme.of(context).colorScheme.onSurface
-                                            .withOpacity(0.7),
+                                            .withValues(alpha: 0.7),
                                   fontWeight: isSelected
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -1700,12 +1691,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                   color: isSelected
                                       ? AppColors.primary
                                       : Theme.of(context).colorScheme.onSurface
-                                            .withOpacity(0.12),
+                                            .withValues(alpha: 0.12),
                                 ),
                                 onSelected: (selected) {
                                   if (selected) {
                                     setBottomSheetState(() {
-                                      _filterAccountId = accId;
+                                      localAccountId = accId;
                                     });
                                   }
                                 },
@@ -1734,7 +1725,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             side: BorderSide(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.2),
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
                             ),
                           ),
                           child: Text(
@@ -1750,8 +1741,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            setState(() {}); // Apply state change to parent
-                            Navigator.pop(context);
+                            if (localType != 'All' || localAccountId != null) {
+                              _checkAndUnlockFilters(
+                                context,
+                                onUnlocked: () {
+                                  setState(() {
+                                    _filterType = localType;
+                                    _filterAccountId = localAccountId;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            } else {
+                              setState(() {
+                                _filterType = 'All';
+                                _filterAccountId = null;
+                              });
+                              Navigator.pop(context);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
@@ -1777,6 +1784,151 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             );
           },
         );
+      },
+    );
+  }
+
+  Future<void> _checkAndUnlockFilters(
+    BuildContext context, {
+    required VoidCallback onUnlocked,
+    VoidCallback? onCancelled,
+  }) async {
+    if (!AdService.adsEnabled) {
+      onUnlocked();
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final unlockUntil = prefs.getInt('filters_unlocked_until') ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    if (now < unlockUntil) {
+      onUnlocked();
+      return;
+    }
+
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Row(
+          children: [
+            const Icon(Icons.lock_outline, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(
+              context.translate('title_unlock_filters'),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          context.translate('desc_unlock_filters'),
+          style: TextStyle(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.8),
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    if (onCancelled != null) onCancelled();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey,
+                    side: const BorderSide(color: Colors.grey, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(0, 48),
+                  ),
+                  child: Text(
+                    context.translate('cancel'),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 3,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _playRewardedAdThenUnlock(
+                      context,
+                      onUnlocked: onUnlocked,
+                      onCancelled: onCancelled,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(0, 48),
+                  ),
+                  child: Text(
+                    context.translate('btn_watch_unlock'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _playRewardedAdThenUnlock(
+    BuildContext context, {
+    required VoidCallback onUnlocked,
+    VoidCallback? onCancelled,
+  }) {
+    showTopNotification(context.translate('msg_ad_preparing'));
+
+    AdService.showRewarded(
+      onRewardEarned: () async {
+        final prefs = await SharedPreferences.getInstance();
+        final newUnlockTime = DateTime.now()
+            .add(const Duration(hours: 24))
+            .millisecondsSinceEpoch;
+        await prefs.setInt('filters_unlocked_until', newUnlockTime);
+        showTopNotification(context.translate('msg_unlock_success'));
+        onUnlocked();
+      },
+      onAdClosed: () {
+        showTopNotification(
+          context.translate('err_ad_unwatched'),
+          isError: true,
+        );
+        if (onCancelled != null) onCancelled();
+      },
+      onAdFailed: () async {
+        // Fallback reward if ad failed to show
+        final prefs = await SharedPreferences.getInstance();
+        final newUnlockTime = DateTime.now()
+            .add(const Duration(hours: 24))
+            .millisecondsSinceEpoch;
+        await prefs.setInt('filters_unlocked_until', newUnlockTime);
+        onUnlocked();
       },
     );
   }
@@ -1808,7 +1960,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           Container(
             width: 1,
             height: 28,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.12),
           ),
           Expanded(
             child: _buildSummaryColumn(
@@ -1821,7 +1975,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           Container(
             width: 1,
             height: 28,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.12),
           ),
           Expanded(
             child: _buildSummaryColumn(
@@ -1829,7 +1985,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               balance,
               balance >= 0
                   ? Theme.of(context).colorScheme.onSurface
-                  : Colors.redAccent,
+                  : Colors.red,
               currency,
             ),
           ),
@@ -1850,7 +2006,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ),
         const SizedBox(height: 4),
@@ -1876,7 +2034,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             Icon(
               Icons.receipt_long_outlined,
               size: 56,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 12),
             Text(
@@ -1884,7 +2044,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 6),
@@ -1892,7 +2054,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               'Try selecting another time range or tap the floating "+" button to add entries.',
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               textAlign: TextAlign.center,
             ),

@@ -43,7 +43,7 @@ class CustomTextField extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 14,
-              color: textThemeColor.withOpacity(0.8),
+              color: textThemeColor.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
@@ -73,7 +73,7 @@ class CustomTextField extends StatelessWidget {
             filled: !isUnderline,
             fillColor: isUnderline 
                 ? Colors.transparent 
-                : (isDark ? Colors.white.withOpacity(0.05) : AppColors.neutralLight.withOpacity(0.5)),
+                : (isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.neutralLight.withValues(alpha: 0.5)),
             border: isUnderline 
                 ? UnderlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white38 : AppColors.neutral, width: 1.2))
                 : OutlineInputBorder(

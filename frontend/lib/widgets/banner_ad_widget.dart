@@ -4,7 +4,8 @@ import '../services/ad_service.dart';
 import '../theme/app_colors.dart';
 
 class BannerAdWidget extends StatefulWidget {
-  const BannerAdWidget({super.key});
+  final ValueChanged<bool>? onAdLoaded;
+  const BannerAdWidget({super.key, this.onAdLoaded});
 
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -16,13 +17,29 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   bool _isError = false;
   AdSize? _adaptiveSize;
 
+  void _notifyParent(bool isLoaded) {
+    if (widget.onAdLoaded != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onAdLoaded!(isLoaded);
+        }
+      });
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     
     // Only load the ad if ads are enabled and we haven't loaded one already
-    if (AdService.adsEnabled && _bannerAd == null) {
-      _loadAdaptiveBanner();
+    if (AdService.adsEnabled) {
+      if (_bannerAd == null) {
+        _loadAdaptiveBanner();
+      } else {
+        _notifyParent(_isLoaded && !_isError);
+      }
+    } else {
+      _notifyParent(false);
     }
   }
 
@@ -40,6 +57,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     if (size == null) {
       debugPrint("[BannerAdWidget] Failed to calculate anchored adaptive banner size.");
       setState(() => _isError = true);
+      _notifyParent(false);
       return;
     }
 
@@ -65,6 +83,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             _isLoaded = true;
             _isError = false;
           });
+          _notifyParent(true);
         },
         onAdFailedToLoad: (ad, error) {
           debugPrint("[BannerAdWidget] Failed to load banner ad: $error");
@@ -74,6 +93,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
               _isError = true;
               _isLoaded = false;
             });
+            _notifyParent(false);
           }
         },
       ),
@@ -111,7 +131,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.04),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
           ),
         ),
         child: Stack(
@@ -135,7 +155,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
                     'Loading sponsored content...',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

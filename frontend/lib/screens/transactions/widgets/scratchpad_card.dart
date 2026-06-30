@@ -111,7 +111,7 @@ class _ScratchpadCardState extends State<ScratchpadCard> {
                 fillColor: Colors.transparent,
                 hintText: context.translate('hint_scratchpad'),
                 hintStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
                   fontSize: 15,
                 ),
                 border: InputBorder.none,

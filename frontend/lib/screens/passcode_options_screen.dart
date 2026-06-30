@@ -158,7 +158,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.grey.shade200.withOpacity(0.1),
+                    color: Colors.grey.shade200.withValues(alpha: 0.1),
                     width: 1.5,
                   ),
                 ),
@@ -197,7 +197,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.grey.shade200.withOpacity(0.1),
+                    color: Colors.grey.shade200.withValues(alpha: 0.1),
                     width: 1.5,
                   ),
                 ),
@@ -235,7 +235,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.grey.shade200.withOpacity(0.1),
+                    color: Colors.grey.shade200.withValues(alpha: 0.1),
                     width: 1.5,
                   ),
                 ),

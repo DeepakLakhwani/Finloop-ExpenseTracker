@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -11,6 +12,22 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  static const String _prefsKey = 'notifications_enabled';
+
+  Future<bool> areNotificationsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefsKey) ?? true;
+  }
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefsKey, enabled);
+    if (enabled) {
+      await requestPermissionsAndSchedule();
+    } else {
+      await cancelDailyReminder();
+    }
+  }
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -44,8 +61,13 @@ class NotificationService {
 
     _initialized = true;
 
-    // Request permissions and schedule daily notification
-    await requestPermissionsAndSchedule();
+    // Check if enabled before scheduling
+    final enabled = await areNotificationsEnabled();
+    if (enabled) {
+      await requestPermissionsAndSchedule();
+    } else {
+      await cancelDailyReminder();
+    }
   }
 
   Future<void> requestPermissionsAndSchedule() async {
@@ -115,10 +137,14 @@ class NotificationService {
       'Have you recorded your transaction for today?',
       scheduledTime,
       notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // Inexact scheduling to prevent SecurityException/crash on Android 12+
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time, // Re-schedules daily
     );
+  }
+
+  Future<void> cancelDailyReminder() async {
+    await _localNotifications.cancel(0);
   }
 }

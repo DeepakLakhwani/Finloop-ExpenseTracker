@@ -18,11 +18,11 @@ class AppColors {
 
   // Background colors
   static const Color backgroundLight = Color(0xFFF8FAFF); // Exact light background color
-  static const Color backgroundDark = Color(0xFF2B2B2B); // Premium charcoal background
+  static const Color backgroundDark = Color(0xFF1A1919); // Premium charcoal background
   
   // Surface colors
   static const Color surfaceLight = Colors.white; // Exact light surface/card color
-  static const Color surfaceDark = Color(0xFF303030); // Balanced charcoal card surface
+  static const Color surfaceDark = Color(0xFF242323); // Balanced charcoal card surface
 
   // Status colors
   static const Color success = Color(0xFF10B981);

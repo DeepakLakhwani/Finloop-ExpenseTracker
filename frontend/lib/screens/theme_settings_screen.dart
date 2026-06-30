@@ -55,7 +55,7 @@ class ThemeSettingsScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? primaryColor.withOpacity(0.05) : Colors.transparent,
+          color: isSelected ? primaryColor.withValues(alpha: 0.05) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: isSelected ? primaryColor : Colors.grey.shade200, width: 2),
         ),
