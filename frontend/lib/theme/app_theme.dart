@@ -28,14 +28,8 @@ class AppTheme {
         fontWeight: FontWeight.bold,
         color: AppColors.secondary,
       ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16,
-        color: AppColors.secondary,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14,
-        color: AppColors.neutralDark,
-      ),
+      bodyLarge: GoogleFonts.inter(fontSize: 16, color: AppColors.secondary),
+      bodyMedium: GoogleFonts.inter(fontSize: 14, color: AppColors.neutralDark),
       labelLarge: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -58,23 +52,15 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.neutralLight,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 18,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
@@ -121,14 +107,8 @@ class AppTheme {
         fontWeight: FontWeight.bold,
         color: Colors.white,
       ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16,
-        color: Colors.white70,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14,
-        color: Colors.white60,
-      ),
+      bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
+      bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white60),
       labelLarge: GoogleFonts.inter(
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -151,23 +131,15 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white.withValues(alpha: 0.05),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 18,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,

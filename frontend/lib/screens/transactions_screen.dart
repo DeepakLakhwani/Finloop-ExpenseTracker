@@ -14,6 +14,7 @@ import '../services/app_review_service.dart';
 import 'add_transaction_screen.dart';
 import '../widgets/banner_ad_widget.dart';
 import '../services/ad_service.dart';
+import '../services/pdf_service.dart';
 import 'transactions/widgets/transaction_tile.dart';
 import 'transactions/widgets/scratchpad_card.dart';
 import '../main.dart';
@@ -150,8 +151,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       }
     });
   }
-
-
 
   void _adjustPeriod(int offset) {
     setState(() {
@@ -1285,14 +1284,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         labelColor: AppColors.primary,
-        unselectedLabelColor: Theme.of(context)
-            .colorScheme
-            .onSurface
-            .withValues(alpha: 0.6),
-        labelStyle: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
+        unselectedLabelColor: Theme.of(
+          context,
+        ).colorScheme.onSurface.withValues(alpha: 0.6),
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         unselectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.normal,
           fontSize: 14,
@@ -1491,6 +1486,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   ),
                 ),
             ],
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.print_outlined,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+            onPressed: _showPrintPdfDialog,
           ),
         ],
       ),
@@ -2204,6 +2206,409 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       return dateVal.toDate();
     } catch (_) {
       return DateTime.now();
+    }
+  }
+
+  void _showPrintPdfDialog() {
+    final uniqueAccounts = <String, Map<String, dynamic>>{};
+    for (var acc in _userAccounts) {
+      final id = acc['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        uniqueAccounts[id] = acc;
+      }
+    }
+
+    final bool hasAccount = uniqueAccounts.containsKey(_filterAccountId);
+    String? localSelectedAccountId = hasAccount ? _filterAccountId : null;
+    DateTime localStartDate = DateTime(_focusedDate.year, _focusedDate.month, 1);
+    DateTime localEndDate = DateTime(_focusedDate.year, _focusedDate.month + 1, 0);
+    bool localIncludeSummary = true;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (builderContext, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor: Theme.of(dialogContext).colorScheme.surface,
+              title: Text(
+                'Export Statement',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(dialogContext).colorScheme.onSurface,
+                ),
+              ),
+              content: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Account',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String?>(
+                      value: localSelectedAccountId,
+                      isExpanded: true,
+                      dropdownColor: Theme.of(dialogContext).colorScheme.surface,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: <DropdownMenuItem<String?>>[
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('All Accounts', style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface)),
+                        ),
+                        ...uniqueAccounts.values.map((acc) {
+                          return DropdownMenuItem<String?>(
+                            value: acc['id'].toString(),
+                            child: Text(acc['name']?.toString() ?? '', style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface)),
+                          );
+                        }),
+                      ],
+                      onChanged: (val) {
+                        setDialogState(() {
+                          localSelectedAccountId = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Start Date',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: dialogContext,
+                                    initialDate: localStartDate,
+                                    firstDate: DateTime(1970),
+                                    lastDate: DateTime(2100),
+                                  );
+                                  if (picked != null) {
+                                    setDialogState(() {
+                                      localStartDate = picked;
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.1),
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        DateFormat('dd/MM/yyyy').format(localStartDate),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(dialogContext).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'End Date',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: dialogContext,
+                                    initialDate: localEndDate,
+                                    firstDate: DateTime(1970),
+                                    lastDate: DateTime(2100),
+                                  );
+                                  if (picked != null) {
+                                    setDialogState(() {
+                                      localEndDate = picked;
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.1),
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        DateFormat('dd/MM/yyyy').format(localEndDate),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(dialogContext).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                     const SizedBox(height: 16),
+                     Row(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         SizedBox(
+                           height: 24,
+                           width: 24,
+                           child: Checkbox(
+                             value: localIncludeSummary,
+                             activeColor: AppColors.primary,
+                             shape: RoundedRectangleBorder(
+                               borderRadius: BorderRadius.circular(4),
+                             ),
+                             onChanged: (val) {
+                               setDialogState(() {
+                                 localIncludeSummary = val ?? true;
+                               });
+                             },
+                           ),
+                         ),
+                         const SizedBox(width: 10),
+                         Expanded(
+                           child: Column(
+                             crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               Text(
+                                 'Include period summary',
+                                 style: TextStyle(
+                                   fontSize: 13,
+                                   fontWeight: FontWeight.bold,
+                                   color: Theme.of(dialogContext).colorScheme.onSurface,
+                                 ),
+                               ),
+                               if (localIncludeSummary)
+                                 Padding(
+                                   padding: const EdgeInsets.only(top: 4),
+                                   child: Text(
+                                     'Selecting this option generates the total amounts of this period.',
+                                     style: TextStyle(
+                                       fontSize: 11,
+                                       color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.5),
+                                     ),
+                                   ),
+                                 ),
+                             ],
+                           ),
+                         ),
+                       ],
+                     ),
+                     const SizedBox(height: 24),
+                     IntrinsicHeight(
+                       child: Row(
+                         crossAxisAlignment: CrossAxisAlignment.stretch,
+                         children: [
+                           Expanded(
+                             child: OutlinedButton(
+                               onPressed: () => Navigator.pop(dialogContext),
+                               style: OutlinedButton.styleFrom(
+                                 padding: const EdgeInsets.symmetric(vertical: 14),
+                                 side: BorderSide(
+                                   color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.12),
+                                 ),
+                                 shape: RoundedRectangleBorder(
+                                   borderRadius: BorderRadius.circular(12),
+                                 ),
+                               ),
+                               child: Text(
+                                 'Cancel',
+                                 style: TextStyle(
+                                   color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                                   fontWeight: FontWeight.w600,
+                                   fontSize: 14,
+                                 ),
+                               ),
+                             ),
+                           ),
+                           const SizedBox(width: 12),
+                           Expanded(
+                             child: ElevatedButton(
+                               onPressed: () {
+                                 Navigator.pop(dialogContext);
+                                 _generatePdf(localSelectedAccountId, localStartDate, localEndDate, localIncludeSummary);
+                               },
+                               style: ElevatedButton.styleFrom(
+                                 backgroundColor: AppColors.primary,
+                                 elevation: 0,
+                                 padding: const EdgeInsets.symmetric(vertical: 14),
+                                 shape: RoundedRectangleBorder(
+                                   borderRadius: BorderRadius.circular(12),
+                                 ),
+                               ),
+                               child: const Text(
+                                 'Generate',
+                                 style: TextStyle(
+                                   color: Colors.white,
+                                   fontWeight: FontWeight.bold,
+                                   fontSize: 14,
+                                 ),
+                               ),
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _generatePdf(String? accountId, DateTime start, DateTime end, bool includeSummary) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+      ),
+    );
+
+    try {
+      final firestore = FirestoreService();
+      final allTxs = await firestore.getTransactionsList();
+
+      final inclusiveEnd = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
+
+      final filtered = allTxs.where((tx) {
+        final rawDate = tx['date'];
+        DateTime? date;
+        if (rawDate is DateTime) {
+          date = rawDate;
+        } else if (rawDate is Timestamp) {
+          date = rawDate.toDate();
+        } else if (rawDate is String) {
+          date = DateTime.tryParse(rawDate);
+        }
+
+        if (date == null) return false;
+        if (date.isBefore(start) || date.isAfter(inclusiveEnd)) return false;
+
+        if (accountId != null) {
+          final fromId = tx['account_id']?.toString() ?? tx['accountId']?.toString();
+          final toId = tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
+          return fromId == accountId || toId == accountId;
+        }
+        return true;
+      }).toList();
+
+      filtered.sort((a, b) {
+        DateTime dateA;
+        if (a['date'] is Timestamp) {
+          dateA = (a['date'] as Timestamp).toDate();
+        } else if (a['date'] is DateTime) {
+          dateA = a['date'] as DateTime;
+        } else {
+          dateA = DateTime.tryParse(a['date']?.toString() ?? '') ?? DateTime.now();
+        }
+
+        DateTime dateB;
+        if (b['date'] is Timestamp) {
+          dateB = (b['date'] as Timestamp).toDate();
+        } else if (b['date'] is DateTime) {
+          dateB = b['date'] as DateTime;
+        } else {
+          dateB = DateTime.tryParse(b['date']?.toString() ?? '') ?? DateTime.now();
+        }
+
+        return dateA.compareTo(dateB);
+      });
+
+      String accountName = 'All Accounts';
+      if (accountId != null) {
+        final matched = _userAccounts.firstWhere(
+          (acc) => acc['id']?.toString() == accountId,
+          orElse: () => {},
+        );
+        if (matched.isNotEmpty) {
+          accountName = matched['name']?.toString() ?? 'Account';
+        }
+      }
+
+      if (context.mounted) Navigator.pop(context);
+
+      if (filtered.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No transactions found for the selected criteria')),
+          );
+        }
+        return;
+      }
+
+      final settingsProvider = context.read<SettingsProvider>();
+      final currencySymbol = settingsProvider.currency;
+
+      await PdfService.generateAndPrintStatement(
+        transactions: filtered,
+        accountName: accountName,
+        startDate: start,
+        endDate: end,
+        currencySymbol: currencySymbol,
+        includeSummary: includeSummary,
+      );
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      debugPrint('Error generating PDF: $e');
     }
   }
 }

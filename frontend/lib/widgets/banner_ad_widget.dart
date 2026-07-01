@@ -30,7 +30,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Only load the ad if ads are enabled and we haven't loaded one already
     if (AdService.adsEnabled) {
       if (_bannerAd == null) {
@@ -46,16 +46,21 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   Future<void> _loadAdaptiveBanner() async {
     // 1. Get the screen width dynamically to calculate adaptive size
     final double screenWidth = MediaQuery.of(context).size.width;
-    
+
     // Subtract some horizontal padding to match app layout
     final int targetWidth = (screenWidth - 32).toInt().clamp(0, 1000);
 
     // 2. Fetch the anchored adaptive banner size for the current orientation
     final Orientation orientation = MediaQuery.of(context).orientation;
-    final AdSize? size = await AdSize.getAnchoredAdaptiveBannerAdSize(orientation, targetWidth);
+    final AdSize? size = await AdSize.getAnchoredAdaptiveBannerAdSize(
+      orientation,
+      targetWidth,
+    );
 
     if (size == null) {
-      debugPrint("[BannerAdWidget] Failed to calculate anchored adaptive banner size.");
+      debugPrint(
+        "[BannerAdWidget] Failed to calculate anchored adaptive banner size.",
+      );
       setState(() => _isError = true);
       _notifyParent(false);
       return;
@@ -78,7 +83,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             ad.dispose();
             return;
           }
-          debugPrint("[BannerAdWidget] Adaptive Banner Ad loaded successfully.");
+          debugPrint(
+            "[BannerAdWidget] Adaptive Banner Ad loaded successfully.",
+          );
           setState(() {
             _isLoaded = true;
             _isError = false;
@@ -117,7 +124,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     }
 
     final double bannerHeight = _adaptiveSize?.height.toDouble() ?? 50.0;
-    final double containerWidth = _adaptiveSize?.width.toDouble() ?? MediaQuery.of(context).size.width - 32;
+    final double containerWidth =
+        _adaptiveSize?.width.toDouble() ??
+        MediaQuery.of(context).size.width - 32;
 
     return Center(
       child: AnimatedContainer(
@@ -131,7 +140,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.04),
           ),
         ),
         child: Stack(
@@ -147,7 +158,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
                     height: 14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -155,7 +168,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
                     'Loading sponsored content...',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -163,8 +178,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
               ),
 
             // 2. Banner Ad View
-            if (_isLoaded && _bannerAd != null)
-              AdWidget(ad: _bannerAd!),
+            if (_isLoaded && _bannerAd != null) AdWidget(ad: _bannerAd!),
           ],
         ),
       ),

@@ -208,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _buildNavItem(
                 0,
-                Icons.list_alt_rounded,
+                Icons.receipt_long_rounded,
                 context.translate('transactions'),
               ),
               _buildNavItem(
@@ -218,7 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               _buildNavItem(
                 2,
-                Icons.account_balance_wallet_outlined,
+                Icons.account_balance_wallet_rounded,
                 context.translate('accounts'),
               ),
               _buildNavItem(

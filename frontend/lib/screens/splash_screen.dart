@@ -39,20 +39,23 @@ class _SplashScreenState extends State<SplashScreen> {
         // Sign in anonymously in the background to ensure uid exists for Firestore
         await FirebaseAuth.instance.signInAnonymously();
       }
-      
+
       // Initialize the user doc and seed default categories & accounts
       if (FirebaseAuth.instance.currentUser != null) {
         final firestoreService = FirestoreService();
         await firestoreService.initializeUser();
       } else {
-        throw Exception("Failed to acquire a secure session. Please check your internet connection.");
+        throw Exception(
+          "Failed to acquire a secure session. Please check your internet connection.",
+        );
       }
     } catch (e) {
       debugPrint("Error during anonymous initialization: $e");
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = "Unable to connect to Finloop.\nPlease check your network connection and try again.";
+          _errorMessage =
+              "Unable to connect to Finloop.\nPlease check your network connection and try again.";
         });
       }
       return;
@@ -113,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Brand Name
                 const Text(
                   'FinLoop',
@@ -125,7 +128,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Tagline
                 Text(
                   'FINANCIAL CLARITY',
@@ -137,7 +140,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Divider Line
                 Container(
                   width: 150,
@@ -148,7 +151,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                
+
                 if (_isLoading)
                   const SizedBox(
                     width: 24,
@@ -158,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       strokeWidth: 2.5,
                     ),
                   ),
-                
+
                 if (_errorMessage != null) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -179,7 +182,10 @@ class _SplashScreenState extends State<SplashScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -197,7 +203,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ],
             ),
           ),
-          
+
           // Bottom Encryption Text
           Positioned(
             bottom: 40,

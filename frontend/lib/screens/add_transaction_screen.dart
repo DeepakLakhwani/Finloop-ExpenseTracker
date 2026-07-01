@@ -122,7 +122,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       if (mounted) {
         setState(() => _isLoadingData = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${context.translate('error_load_data')}: $e')),
+          SnackBar(
+            content: Text('${context.translate('error_load_data')}: $e'),
+          ),
         );
       }
     }
@@ -248,9 +250,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Map<String, dynamic>? _findById(List<dynamic> list, String? id) {
     if (id == null) return null;
     try {
-      return list.firstWhere(
-        (item) => item['id'].toString() == id,
-      ) as Map<String, dynamic>;
+      return list.firstWhere((item) => item['id'].toString() == id)
+          as Map<String, dynamic>;
     } catch (_) {
       return null;
     }
@@ -258,8 +259,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   void _showSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submitAndClose() async {
@@ -334,9 +336,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       builder: (context) {
         return AlertDialog(
           title: Text(context.translate('delete_tx_title')),
-          content: Text(
-            context.translate('delete_tx_confirm'),
-          ),
+          content: Text(context.translate('delete_tx_confirm')),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -376,7 +376,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Future<void> _pickAndUploadAttachment() async {
     final picker = ImagePicker();
-    
+
     // Show bottom sheet to choose source
     final ImageSource? source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -386,9 +386,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(24),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
           child: Column(
@@ -398,7 +396,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -444,7 +444,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         source: source,
         imageQuality: 85,
       );
-      
+
       setState(() => _isPickingImage = false);
       if (image == null) return;
 
@@ -471,7 +471,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       });
       debugPrint('PlatformException picking image: $e');
       if (e.code == 'photo_access_denied' || e.code == 'camera_access_denied') {
-        _showSnackBar('Access denied. Please grant library/camera permissions in your device settings.');
+        _showSnackBar(
+          'Access denied. Please grant library/camera permissions in your device settings.',
+        );
       } else if (e.code == 'already_active') {
         _showSnackBar('Image picker is already active.');
       } else {
@@ -503,11 +505,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: AppColors.primary,
-              size: 28,
-            ),
+            child: Icon(icon, color: AppColors.primary, size: 28),
           ),
           const SizedBox(height: 8),
           Text(
@@ -536,10 +534,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: SizedBox(
                 width: double.infinity,
                 height: double.infinity,
-                child: Image.network(
-                  url,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.network(url, fit: BoxFit.contain),
               ),
             ),
             Positioned(
@@ -595,7 +590,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           IconButton(
             icon: Icon(
               _isStarred ? Icons.star : Icons.star_border_outlined,
-              color: _isStarred ? Colors.amber : Theme.of(context).colorScheme.onSurface,
+              color: _isStarred
+                  ? Colors.amber
+                  : Theme.of(context).colorScheme.onSurface,
             ),
             onPressed: () {
               setState(() {
@@ -608,8 +605,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       body: _isLoadingData
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -625,12 +621,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           GestureDetector(
                             onTap: _pickDate,
                             child: Text(
-                              DateFormat('dd/MM/yyyy (EEE)')
-                                  .format(_selectedDate),
+                              DateFormat(
+                                'dd/MM/yyyy (EEE)',
+                              ).format(_selectedDate),
                               style: TextStyle(
                                 fontSize: 14,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -641,8 +637,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               DateFormat('h:mm a').format(_selectedDate),
                               style: TextStyle(
                                 fontSize: 14,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                           ),
@@ -659,8 +654,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color:
-                                  Theme.of(context).colorScheme.onSurface,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -669,13 +663,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               controller: _amountController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                               decoration: const InputDecoration(
                                 hintText: '0.00',
@@ -689,10 +682,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 contentPadding: EdgeInsets.zero,
                               ),
                               validator: (val) {
-                                final parsed =
-                                    val == null ? null : double.tryParse(val);
+                                final parsed = val == null
+                                    ? null
+                                    : double.tryParse(val);
                                 if (parsed == null || parsed <= 0) {
-                                  return context.translate('err_invalid_amount');
+                                  return context.translate(
+                                    'err_invalid_amount',
+                                  );
                                 }
                                 return null;
                               },
@@ -745,18 +741,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           onTap: _showCategorySelectionDialog,
                           child: Text(
                             (() {
-                              final cat = _findById(_categories, _selectedCategoryId);
-                              if (cat == null) return context.translate('select_category_hint');
-                              return context.getLocalizedCategory(cat['key']?.toString(), cat['name']?.toString() ?? 'Unknown');
+                              final cat = _findById(
+                                _categories,
+                                _selectedCategoryId,
+                              );
+                              if (cat == null)
+                                return context.translate(
+                                  'select_category_hint',
+                                );
+                              return context.getLocalizedCategory(
+                                cat['key']?.toString(),
+                                cat['name']?.toString() ?? 'Unknown',
+                              );
                             })(),
                             style: TextStyle(
                               fontSize: 14,
                               color: _selectedCategoryId != null
                                   ? Theme.of(context).colorScheme.onSurface
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.4),
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -767,17 +770,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           onTap: () =>
                               _showAccountSelectionDialog(isToAccount: false),
                           child: Text(
-                            _findById(_accounts, _selectedAccountId)?[
-                                    'name'] ??
+                            _findById(_accounts, _selectedAccountId)?['name'] ??
                                 context.translate('select_account_hint'),
                             style: TextStyle(
                               fontSize: 14,
                               color: _selectedAccountId != null
                                   ? Theme.of(context).colorScheme.onSurface
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.4),
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -795,19 +795,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                       isToAccount: false,
                                     ),
                                     child: Text(
-                                      _findById(_accounts,
-                                              _selectedAccountId)?['name'] ??
-                                          context.translate('select_account_hint'),
+                                      _findById(
+                                            _accounts,
+                                            _selectedAccountId,
+                                          )?['name'] ??
+                                          context.translate(
+                                            'select_account_hint',
+                                          ),
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _selectedAccountId != null
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface
                                             : Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withValues(alpha: 0.4),
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.4),
                                       ),
                                     ),
                                   ),
@@ -819,19 +823,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                       isToAccount: true,
                                     ),
                                     child: Text(
-                                      _findById(_accounts, _toAccountId)?[
-                                              'name'] ??
-                                          context.translate('select_account_hint'),
+                                      _findById(
+                                            _accounts,
+                                            _toAccountId,
+                                          )?['name'] ??
+                                          context.translate(
+                                            'select_account_hint',
+                                          ),
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _toAccountId != null
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface
                                             : Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withValues(alpha: 0.4),
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.4),
                                       ),
                                     ),
                                   ),
@@ -843,10 +851,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           IconButton(
                             icon: Icon(
                               Icons.swap_vert,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                             onPressed: () {
                               setState(() {
@@ -887,10 +894,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.08),
                             width: 0.8,
                           ),
                         ),
@@ -902,11 +908,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               controller: _descriptionController,
                               style: TextStyle(
                                 fontSize: 16,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                               decoration: InputDecoration(
-                                hintText: context.translate('label_description'),
+                                hintText: context.translate(
+                                  'label_description',
+                                ),
                                 filled: false,
                                 border: InputBorder.none,
                                 enabledBorder: InputBorder.none,
@@ -914,8 +921,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 errorBorder: InputBorder.none,
                                 focusedErrorBorder: InputBorder.none,
                                 isDense: true,
-                                contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                               ),
                             ),
                           ),
@@ -927,10 +935,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   : Icons.camera_alt_outlined,
                               color: _attachmentUrl != null
                                   ? AppColors.primary
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.5),
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
                             ),
                             onPressed: _isUploadingAttachment
                                 ? null
@@ -950,10 +956,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.08),
                           ),
                         ),
                         child: const Center(
@@ -963,7 +968,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               SizedBox(
                                 height: 24,
                                 width: 24,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                               SizedBox(height: 8),
                               Text(
@@ -982,10 +989,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.08),
                           ),
                         ),
                         child: ClipRRect(
@@ -994,21 +1000,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             fit: StackFit.expand,
                             children: [
                               GestureDetector(
-                                onTap: () => _viewFullscreenImage(_attachmentUrl!),
+                                onTap: () =>
+                                    _viewFullscreenImage(_attachmentUrl!),
                                 child: Image.network(
                                   _attachmentUrl!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
                                     return const Center(
-                                      child: Icon(Icons.broken_image_outlined, size: 40),
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 40,
+                                      ),
                                     );
                                   },
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    );
-                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        );
+                                      },
                                 ),
                               ),
                               Positioned(
@@ -1020,7 +1034,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.white, size: 20),
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
                                     onPressed: () {
                                       setState(() {
                                         _attachmentUrl = null;
@@ -1058,7 +1076,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                               )
                             : Text(
-                                isEditing ? context.translate('btn_update') : context.translate('btn_save'),
+                                isEditing
+                                    ? context.translate('btn_update')
+                                    : context.translate('btn_save'),
                                 style: TextStyle(
                                   color: _getButtonTextColor(),
                                   fontWeight: FontWeight.bold,
@@ -1082,10 +1102,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context)
-              .colorScheme
-              .onSurface
-              .withValues(alpha: 0.08),
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.08),
         ),
       ),
       child: Row(
@@ -1113,11 +1132,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           decoration: BoxDecoration(
             color: isSelected
                 ? (Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF1E1E1E)
-                    : Colors.white)
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.white)
                 : (Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF2C2C2C)
-                    : const Color(0xFFF1F1F1)),
+                      ? const Color(0xFF2C2C2C)
+                      : const Color(0xFFF1F1F1)),
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: isSelected ? _getActiveColor() : Colors.transparent,
@@ -1130,10 +1149,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               style: TextStyle(
                 color: isSelected
                     ? _getActiveColor()
-                    : Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -1161,10 +1179,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -1174,10 +1191,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.08),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
                     width: 0.8,
                   ),
                 ),
@@ -1185,10 +1201,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Row(
                 children: [
                   Expanded(child: child),
-                  if (trailing != null) ...[
-                    const SizedBox(width: 8),
-                    trailing,
-                  ],
+                  if (trailing != null) ...[const SizedBox(width: 8), trailing],
                 ],
               ),
             ),
@@ -1211,9 +1224,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: _getActiveColor(),
-                  onPrimary: _getButtonTextColor(),
-                ),
+              primary: _getActiveColor(),
+              onPrimary: _getButtonTextColor(),
+            ),
             dialogTheme: DialogThemeData(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -1246,9 +1259,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: _getActiveColor(),
-                  onPrimary: _getButtonTextColor(),
-                ),
+              primary: _getActiveColor(),
+              onPrimary: _getButtonTextColor(),
+            ),
             dialogTheme: DialogThemeData(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),

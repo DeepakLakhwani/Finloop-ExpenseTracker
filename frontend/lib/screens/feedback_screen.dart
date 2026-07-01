@@ -64,27 +64,36 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         final pickedFile = result.files.first;
 
         // Check if we have valid image data (bytes on web, path on mobile)
-        final hasData = kIsWeb ? pickedFile.bytes != null : pickedFile.path != null;
+        final hasData = kIsWeb
+            ? pickedFile.bytes != null
+            : pickedFile.path != null;
         if (!hasData) {
-          showTopNotification(context.translate('err_read_image'), isError: true);
+          showTopNotification(
+            context.translate('err_read_image'),
+            isError: true,
+          );
           return;
         }
 
         if (pickedFile.size > 5 * 1024 * 1024) {
-          showTopNotification(context.translate('err_image_too_large'), isError: true);
+          showTopNotification(
+            context.translate('err_image_too_large'),
+            isError: true,
+          );
           return;
         }
         setState(() => _selectedFile = pickedFile);
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Error picking image: $e');
-      showTopNotification('${context.translate('err_gallery_access')}: $e', isError: true);
+      showTopNotification(
+        '${context.translate('err_gallery_access')}: $e',
+        isError: true,
+      );
     }
   }
 
   void _removeImage() => setState(() => _selectedFile = null);
-
-
 
   // FIX #3: Safely unwrap result.data — it may be null or not a Map if the
   // Cloud Function throws or returns an unexpected shape.
@@ -208,7 +217,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         setState(() {
           _isSubmitting = false;
         });
-        showTopNotification('${context.translate('err_submission_failed')}: $e', isError: true);
+        showTopNotification(
+          '${context.translate('err_submission_failed')}: $e',
+          isError: true,
+        );
       }
     }
   }
@@ -340,7 +352,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  context.translate('desc_feedback_support_email'),
+                                  context.translate(
+                                    'desc_feedback_support_email',
+                                  ),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     height: 1.4,
@@ -391,6 +405,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               return t;
                           }
                         }
+
                         // FIX #6: Replace deprecated selectedColor with the
                         // color resolver API to avoid lint warnings in newer
                         // Flutter versions (3.19+).
@@ -490,7 +505,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           return context.translate('err_email_empty');
                         }
                         final emailRegExp = RegExp(
-                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                        );
                         if (!emailRegExp.hasMatch(value.trim())) {
                           return context.translate('err_email_invalid');
                         }
@@ -521,8 +537,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
-                        hintText:
-                            context.translate('hint_message_input'),
+                        hintText: context.translate('hint_message_input'),
                         hintStyle: const TextStyle(
                           color: Colors.grey,
                           fontSize: 14,
@@ -603,15 +618,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                         fit: BoxFit.cover,
                                       )
                                     : (_selectedFile!.path != null
-                                        ? Image.file(
-                                            File(_selectedFile!.path!),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : const Icon(
-                                            Icons.image_outlined,
-                                            size: 32,
-                                            color: Colors.grey,
-                                          )),
+                                          ? Image.file(
+                                              File(_selectedFile!.path!),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : const Icon(
+                                              Icons.image_outlined,
+                                              size: 32,
+                                              color: Colors.grey,
+                                            )),
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -651,7 +666,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                 color: AppColors.error,
                               ),
                               onPressed: _removeImage,
-                              tooltip: context.translate('tooltip_remove_attachment'),
+                              tooltip: context.translate(
+                                'tooltip_remove_attachment',
+                              ),
                             ),
                           ],
                         ),
@@ -737,7 +754,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
               ),
             ),
-
           ],
         ),
       ),
