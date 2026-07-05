@@ -14,6 +14,7 @@ import 'feedback_screen.dart';
 import 'settings/widgets/settings_tile.dart';
 import 'settings/privacy_policy_screen.dart';
 import 'settings/budgets_management_screen.dart';
+import 'settings/general_settings_screen.dart';
 import '../services/app_review_service.dart';
 
 // Main settings hub (previously ProfileScreen in profile_screen.dart)
@@ -55,30 +56,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = context.watch<SettingsProvider>();
-    final currencySymbol = settingsProvider.currency;
-    final currencyCode = settingsProvider.currencyCode;
-    final languageProvider = context.watch<LanguageProvider>();
-
-    // Appearance Status
-    final themeMode = context.watch<ThemeProvider>().themeMode;
-    String appearanceStatus = context.translate('appearance_system');
-    if (themeMode == ThemeMode.light) {
-      appearanceStatus = context.translate('appearance_light');
-    } else if (themeMode == ThemeMode.dark) {
-      appearanceStatus = context.translate('appearance_dark');
-    }
-
-    // Currency Status
-    final currencyStatus = '$currencySymbol $currencyCode';
+    // Watch providers so the settings screen rebuilds when they change
+    context.watch<SettingsProvider>();
+    context.watch<ThemeProvider>();
+    context.watch<LanguageProvider>();
 
     // Passcode Status
     final passcodeStatus = _isPasscodeOn ? 'On' : 'Off';
-
-    // Language Status
-    final languageStatus =
-        LanguageProvider.supportedLanguages[languageProvider.languageCode] ??
-        'English';
 
     return Scaffold(
       body: SafeArea(
@@ -118,22 +102,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     SettingsTile(
-                      title: context.translate('appearance'),
-                      icon: Icons.palette_outlined,
-                      onTap: _showAppearanceDialog,
-                      status: appearanceStatus,
-                    ),
-                    SettingsTile(
-                      title: context.translate('currency'),
-                      icon: Icons.payments_outlined,
-                      onTap: _showCurrencyDialog,
-                      status: currencyStatus,
-                    ),
-                    SettingsTile(
-                      title: context.translate('language'),
-                      icon: Icons.language_outlined,
-                      onTap: _showLanguageDialog,
-                      status: languageStatus,
+                      title: context.translate('general'),
+                      icon: Icons.tune_outlined,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const GeneralSettingsScreen(),
+                        ),
+                      ),
                     ),
                     SettingsTile(
                       title: context.translate('budgets'),
@@ -237,325 +213,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showAppearanceDialog() {
-    final themeProvider = context.read<ThemeProvider>();
-    ThemeMode currentMode = themeProvider.themeMode;
-
-    final List<Map<String, dynamic>> options = [
-      {
-        'mode': ThemeMode.system,
-        'label': context.translate('appearance_system'),
-        'icon': Icons.settings_brightness_outlined,
-      },
-      {
-        'mode': ThemeMode.light,
-        'label': context.translate('appearance_light'),
-        'icon': Icons.light_mode_outlined,
-      },
-      {
-        'mode': ThemeMode.dark,
-        'label': context.translate('appearance_dark'),
-        'icon': Icons.dark_mode_outlined,
-      },
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
-                  child: Text(
-                    context.translate('appearance'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const Divider(),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: options.length,
-                  itemBuilder: (context, index) {
-                    final item = options[index];
-                    final ThemeMode mode = item['mode'];
-                    final String label = item['label'];
-                    final IconData icon = item['icon'];
-                    final isSelected = currentMode == mode;
-
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.08),
-                        child: Icon(
-                          icon,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        label,
-                        style: TextStyle(
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, color: AppColors.primary)
-                          : null,
-                      onTap: () {
-                        context.read<ThemeProvider>().setThemeMode(mode);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(context.translate('settings_saved')),
-                            backgroundColor: AppColors.primary,
-                          ),
-                        );
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showCurrencyDialog() {
-    final settingsProvider = context.read<SettingsProvider>();
-    String currentCurrency = settingsProvider.currencyCode;
-
-    final List<Map<String, String>> currenciesList = [
-      {'code': 'USD', 'name': 'US Dollar', 'symbol': '\$'},
-      {'code': 'EUR', 'name': 'Euro', 'symbol': '€'},
-      {'code': 'GBP', 'name': 'British Pound Sterling', 'symbol': '£'},
-      {'code': 'JPY', 'name': 'Japanese Yen', 'symbol': '¥'},
-      {'code': 'CNY', 'name': 'Chinese Yuan Renminbi', 'symbol': '¥'},
-      {'code': 'INR', 'name': 'Indian Rupee', 'symbol': '₹'},
-      {'code': 'CAD', 'name': 'Canadian Dollar', 'symbol': 'C\$'},
-      {'code': 'AUD', 'name': 'Australian Dollar', 'symbol': 'A\$'},
-      {'code': 'CHF', 'name': 'Swiss Franc', 'symbol': 'Fr'},
-      {'code': 'SGD', 'name': 'Singapore Dollar', 'symbol': 'S\$'},
-      {'code': 'HKD', 'name': 'Hong Kong Dollar', 'symbol': 'HK\$'},
-      {'code': 'NZD', 'name': 'New Zealand Dollar', 'symbol': 'NZ\$'},
-      {'code': 'KRW', 'name': 'South Korean Won', 'symbol': '₩'},
-      {'code': 'AED', 'name': 'UAE Dirham', 'symbol': 'د.إ'},
-      {'code': 'SAR', 'name': 'Saudi Riyal', 'symbol': 'ر.س'},
-      {'code': 'RUB', 'name': 'Russian Ruble', 'symbol': '₽'},
-      {'code': 'THB', 'name': 'Thai Baht', 'symbol': '฿'},
-      {'code': 'MYR', 'name': 'Malaysian Ringgit', 'symbol': 'RM'},
-      {'code': 'ZAR', 'name': 'South African Rand', 'symbol': 'R'},
-      {'code': 'TRY', 'name': 'Turkish Lira', 'symbol': '₺'},
-    ];
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
-                  child: Text(
-                    context.translate('select_currency'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const Divider(),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: currenciesList.length,
-                    itemBuilder: (context, index) {
-                      final item = currenciesList[index];
-                      final code = item['code']!;
-                      final name = item['name']!;
-                      final symbol = item['symbol']!;
-                      final isSelected = currentCurrency == code;
-
-                      final translatedName = context.translate(
-                        'curr_${code.toLowerCase()}',
-                      );
-                      final displayName =
-                          translatedName == 'curr_${code.toLowerCase()}'
-                          ? name
-                          : translatedName;
-
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.08),
-                          child: Text(
-                            symbol,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          '$code - $displayName',
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? const Icon(Icons.check, color: AppColors.primary)
-                            : null,
-                        onTap: () {
-                          context.read<SettingsProvider>().setCurrency(code);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                context.translate('settings_saved'),
-                              ),
-                              backgroundColor: AppColors.primary,
-                            ),
-                          );
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showLanguageDialog() {
-    final languageProvider = context.read<LanguageProvider>();
-    String currentLanguageCode = languageProvider.languageCode;
-
-    final languages = LanguageProvider.supportedLanguages;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
-                  child: Text(
-                    context.translate('select_language'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const Divider(),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.4,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: languages.length,
-                    itemBuilder: (context, index) {
-                      final entry = languages.entries.elementAt(index);
-                      final code = entry.key;
-                      final name = entry.value;
-                      final isSelected = currentLanguageCode == code;
-
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.08),
-                          child: Text(
-                            code.toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          name,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? const Icon(Icons.check, color: AppColors.primary)
-                            : null,
-                        onTap: () async {
-                          await context.read<LanguageProvider>().setLanguage(
-                            code,
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context.translate('settings_saved'),
-                                ),
-                                backgroundColor: AppColors.primary,
-                              ),
-                            );
-                            Navigator.pop(context);
-                          }
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 

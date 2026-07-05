@@ -112,7 +112,7 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
                 ),
                 Text(
                   '${context.translate('active')}: $_selectedCurrency',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -258,7 +258,7 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
                 ),
               ),
               if (isSelected)
-                const Icon(
+                Icon(
                   Icons.check_circle_rounded,
                   color: AppColors.primary,
                   size: 22,

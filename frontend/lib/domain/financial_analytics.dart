@@ -152,11 +152,81 @@ class FinancialAnalytics {
     return const InsightInfo(key: 'insight_no_data');
   }
 
+  /// Calculates total income amount for the current calendar month.
+  double get totalCurrentMonthIncome {
+    final now = DateTime.now();
+    double total = 0.0;
+    for (var tx in allTransactions) {
+      final date = _parseDate(tx['date']);
+      if (date.year == now.year &&
+          date.month == now.month &&
+          tx['type'] == 'Income') {
+        total += double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
+      }
+    }
+    return total;
+  }
+
+  /// Groups, sorts, and filters income data for the current month into primary categories.
+  List<MapEntry<String, double>> get incomePieData {
+    final now = DateTime.now();
+    final categoryMap = <String, double>{};
+
+    for (var tx in allTransactions) {
+      final date = _parseDate(tx['date']);
+      if (date.year == now.year &&
+          date.month == now.month &&
+          tx['type'] == 'Income') {
+        final amt = double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
+        final catName = tx['category_name']?.toString() ?? 'Other';
+        final catKey = tx['category_key']?.toString() ?? '';
+        final compoundKey = '$catKey::$catName';
+        categoryMap[compoundKey] = (categoryMap[compoundKey] ?? 0.0) + amt;
+      }
+    }
+
+    final sortedCategories = categoryMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return sortedCategories;
+  }
+
+  /// Calculates chronological income totals for the past 6 months.
+  List<double> get monthlyIncome {
+    final result = <double>[];
+    for (var m in trendMonths) {
+      final sum = allTransactions
+          .where((tx) {
+            final date = _parseDate(tx['date']);
+            return date.year == m.year &&
+                date.month == m.month &&
+                tx['type'] == 'Income';
+          })
+          .fold<double>(
+            0.0,
+            (sum, tx) =>
+                sum +
+                (double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0),
+          );
+      result.add(sum);
+    }
+    return result;
+  }
+
+  /// Computes the optimal Y-axis bounds for the income trend charts.
+  double get incomeMaxY {
+    double maxIncome = monthlyIncome.fold(
+      0.0,
+      (max, val) => val > max ? val : max,
+    );
+    return maxIncome > 0 ? maxIncome * 1.15 : 100;
+  }
+
   /// Calculates total net balance across all bank accounts and wallets (excluding credit cards).
   double get totalBalance {
     double total = 0.0;
     for (var acc in userAccounts) {
-      if (acc['type'] != 'Credit Card') {
+      if (acc['type'] != 'Credit Card' && acc['type'] != 'Card') {
         total += double.tryParse(acc['balance']?.toString() ?? '0.0') ?? 0.0;
       }
     }

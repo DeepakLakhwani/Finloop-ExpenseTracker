@@ -178,11 +178,23 @@ class _AccountActionScreenState extends State<AccountActionScreen> {
   IconData _getAccountIcon(String type) {
     switch (type) {
       case 'Bank Account':
+      case 'Account':
         return Icons.account_balance;
       case 'Wallet':
         return Icons.account_balance_wallet;
       case 'Credit Card':
+      case 'Card':
         return Icons.credit_card;
+      case 'Savings':
+        return Icons.savings;
+      case 'Investments':
+        return Icons.trending_up;
+      case 'Loan':
+        return Icons.handshake;
+      case 'Insurance':
+        return Icons.security;
+      case 'Others':
+        return Icons.token;
       default:
         return Icons.money;
     }

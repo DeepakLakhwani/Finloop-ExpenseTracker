@@ -86,7 +86,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                 ),
                 Text(
                   '${context.translate('active')}: ${LanguageProvider.supportedLanguages[_selectedLanguageCode]}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -212,7 +212,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                 ),
               ),
               if (isSelected)
-                const Icon(
+                Icon(
                   Icons.check_circle_rounded,
                   color: AppColors.primary,
                   size: 22,

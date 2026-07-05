@@ -95,31 +95,14 @@ class _AccountCategory {
     required this.name,
     required this.dbType,
     required this.icon,
+    this.id,
   });
 
   final String name;
   final String dbType;
   final IconData icon;
+  final String? id;
 }
-
-const List<_AccountCategory> _kCategories = [
-  _AccountCategory(
-    name: 'Bank',
-    dbType: 'Bank Account',
-    icon: Icons.account_balance_outlined,
-  ),
-  _AccountCategory(name: 'Cash', dbType: 'Cash', icon: Icons.payments_outlined),
-  _AccountCategory(
-    name: 'Cards',
-    dbType: 'Credit Card',
-    icon: Icons.credit_card_outlined,
-  ),
-  _AccountCategory(
-    name: 'Wallet',
-    dbType: 'Wallet',
-    icon: Icons.account_balance_wallet_outlined,
-  ),
-];
 
 // ---------------------------------------------------------------------------
 // Main screen
@@ -136,9 +119,11 @@ class ManageAccountsScreen extends StatefulWidget {
 
 class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
   List<Map<String, dynamic>> _accounts = [];
+  List<Map<String, dynamic>> _customMainAccounts = [];
   bool _isLoading = true;
   Object? _error;
   StreamSubscription<List<Map<String, dynamic>>>? _sub;
+  StreamSubscription<List<Map<String, dynamic>>>? _customMainSub;
 
   // Guard against concurrent navigations triggered by rapid taps.
   bool _isNavigating = false;
@@ -148,12 +133,16 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     super.initState();
     // Use addPostFrameCallback so that context.read is safe even if the widget
     // tree hasn't fully settled during hot-reload / deep linking scenarios.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _listenToAccounts());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listenToAccounts();
+      _listenToCustomMainAccounts();
+    });
   }
 
   @override
   void dispose() {
     _sub?.cancel();
+    _customMainSub?.cancel();
     super.dispose();
   }
 
@@ -190,6 +179,304 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       _error = null;
     });
     _listenToAccounts();
+    _listenToCustomMainAccounts();
+  }
+
+  void _listenToCustomMainAccounts() {
+    if (!mounted) return;
+    _customMainSub?.cancel();
+    _customMainSub = context.read<FirestoreService>().getMainAccounts().listen(
+      (customCats) {
+        if (!mounted) return;
+        setState(() {
+          _customMainAccounts = customCats;
+        });
+      },
+      onError: (Object e) {
+        debugPrint(
+          '[ManageAccounts] Error listening to custom main accounts: $e',
+        );
+      },
+    );
+  }
+
+  IconData _mapStringToIcon(String name) {
+    switch (name) {
+      case 'account_balance':
+      case 'account_balance_outlined':
+        return Icons.account_balance_outlined;
+      case 'payments':
+      case 'payments_outlined':
+        return Icons.payments_outlined;
+      case 'credit_card':
+      case 'credit_card_outlined':
+        return Icons.credit_card_outlined;
+      case 'savings':
+      case 'savings_outlined':
+        return Icons.savings_outlined;
+      case 'trending_up':
+      case 'trending_up_outlined':
+        return Icons.trending_up_outlined;
+      case 'handshake':
+      case 'handshake_outlined':
+        return Icons.handshake_outlined;
+      case 'security':
+      case 'security_outlined':
+        return Icons.security_outlined;
+      case 'token':
+      case 'token_outlined':
+        return Icons.token_outlined;
+      case 'account_balance_wallet':
+      case 'account_balance_wallet_outlined':
+        return Icons.account_balance_wallet_outlined;
+      default:
+        return Icons.token_outlined;
+    }
+  }
+
+  void _showAddMenu() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final surfaceColor = Theme.of(context).colorScheme.surface;
+        final textColor = Theme.of(context).colorScheme.onSurface;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: textColor.withAlpha(40),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                context.translate('title_add_new'),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                title: Text(
+                  context.translate('title_new_account'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  context.translate('desc_new_account'),
+                  style: TextStyle(
+                    color: textColor.withAlpha(120),
+                    fontSize: 12,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openAddAccount();
+                },
+              ),
+              const Divider(height: 20, thickness: 0.5),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.category_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                title: Text(
+                  context.translate('title_new_category'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  context.translate('desc_new_category'),
+                  style: TextStyle(
+                    color: textColor.withAlpha(120),
+                    fontSize: 12,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCreateMainAccountDialog();
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCreateMainAccountDialog() {
+    final controller = TextEditingController();
+    String selectedIcon = 'token_outlined';
+
+    final iconsList = [
+      {
+        'name': 'account_balance_outlined',
+        'icon': Icons.account_balance_outlined,
+      },
+      {'name': 'payments_outlined', 'icon': Icons.payments_outlined},
+      {'name': 'credit_card_outlined', 'icon': Icons.credit_card_outlined},
+      {'name': 'savings_outlined', 'icon': Icons.savings_outlined},
+      {'name': 'trending_up_outlined', 'icon': Icons.trending_up_outlined},
+      {'name': 'handshake_outlined', 'icon': Icons.handshake_outlined},
+      {'name': 'security_outlined', 'icon': Icons.security_outlined},
+      {'name': 'token_outlined', 'icon': Icons.token_outlined},
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                context.translate('title_new_category'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: context.translate('hint_category_name'),
+                      labelText: context.translate('label_name'),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    context.translate('label_select_icon'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withAlpha(160),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.maxFinite,
+                    height: 90,
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                      itemCount: iconsList.length,
+                      itemBuilder: (context, idx) {
+                        final item = iconsList[idx];
+                        final isSelected = selectedIcon == item['name'];
+                        return GestureDetector(
+                          onTap: () {
+                            setDialogState(() {
+                              selectedIcon = item['name'] as String;
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withAlpha(40)
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.grey.withAlpha(50),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              item['icon'] as IconData,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    context.translate('cancel'),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withAlpha(160),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final name = controller.text.trim();
+                    if (name.isNotEmpty) {
+                      await context.read<FirestoreService>().createMainAccount({
+                        'name': name,
+                        'icon': selectedIcon,
+                      });
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    }
+                  },
+                  child: Text(
+                    context.translate('save'),
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -209,7 +496,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
+      builder: (_) => Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
         ),
@@ -301,7 +588,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
                       Icons.add,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
-                    onPressed: _openAddAccount,
+                    onPressed: _showAddMenu,
                     tooltip: 'Add account',
                   ),
                 ),
@@ -331,11 +618,67 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
         ? MediaQuery.of(context).padding.bottom + 80
         : MediaQuery.of(context).padding.bottom + 16;
 
+    // System-defined types that are not in the default 3 categories:
+    final extraSystemTypes = {
+      'Savings': Icons.savings_outlined,
+      'Investments': Icons.trending_up_outlined,
+      'Loan': Icons.handshake_outlined,
+      'Insurance': Icons.security_outlined,
+      'Others': Icons.token_outlined,
+    };
+
+    // Find which extra system types have active accounts:
+    final activeExtraCategories = <_AccountCategory>[];
+    for (final entry in extraSystemTypes.entries) {
+      final dbType = entry.key;
+      final icon = entry.value;
+      final hasAccounts = _accounts.any((acc) => acc['type'] == dbType);
+      if (hasAccounts) {
+        activeExtraCategories.add(
+          _AccountCategory(name: dbType, dbType: dbType, icon: icon),
+        );
+      }
+    }
+
+    final allCategories = [
+      ..._customMainAccounts.map((cat) {
+        final id = cat['id'] as String?;
+        final name = cat['name'] as String? ?? 'Others';
+        final iconName = cat['icon'] as String? ?? 'token_outlined';
+        return _AccountCategory(
+          id: id,
+          name: name,
+          dbType: name,
+          icon: _mapStringToIcon(iconName),
+        );
+      }),
+      ...activeExtraCategories,
+    ];
+
+    // Sort categories: 1. Account, 2. Cash, 3. Card, then others.
+    allCategories.sort((a, b) {
+      int getWeight(String dbType) {
+        if (dbType == 'Account' || dbType == 'Bank' || dbType == 'Bank Account')
+          return 1;
+        if (dbType == 'Cash') return 2;
+        if (dbType == 'Card' || dbType == 'Credit Card' || dbType == 'Cards')
+          return 3;
+        return 100;
+      }
+
+      final wA = getWeight(a.dbType);
+      final wB = getWeight(b.dbType);
+      if (wA != wB) {
+        return wA.compareTo(wB);
+      }
+      return a.name.compareTo(b.name);
+    });
+
     return ListView(
       padding: EdgeInsets.fromLTRB(0, 10, 0, bottomPad),
       children: [
         _DuesBanner(accounts: _accounts, currency: currency),
-        for (final cat in _kCategories)
+        for (final cat in allCategories)
           _AccountCategorySection(
             category: cat,
             accounts: _accounts
@@ -409,7 +752,8 @@ class _DuesBanner extends StatelessWidget {
     // Filter only cards that have an outstanding balance.
     final cardsWithDues = accounts
         .where((acc) {
-          if (acc['type'] != 'Credit Card') return false;
+          if (acc['type'] != 'Credit Card' && acc['type'] != 'Card')
+            return false;
           final limit = _parseDouble(acc['limit']);
           final available = _parseDouble(acc['balance']);
           return limit > 0 && (limit - available) > 0.01;
@@ -484,7 +828,7 @@ class _DueCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${acc['cardIssuer'] ?? 'Credit Card'} (${acc['name'] ?? ''})',
+                    '${acc['cardIssuer'] ?? 'Card'} (${acc['name'] ?? ''})',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -561,7 +905,8 @@ class _AccountCategorySection extends StatelessWidget {
   final String currency;
   final void Function(Map<String, dynamic> acc) onAccountTap;
 
-  bool get _isCreditCard => category.dbType == 'Credit Card';
+  bool get _isCreditCard =>
+      category.dbType == 'Card' || category.dbType == 'Credit Card';
 
   /// For credit cards: sum of outstanding debt (positive = money owed).
   /// For all other types: sum of available balances.
@@ -601,21 +946,24 @@ class _AccountCategorySection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _isCreditCard
-                        ? Colors.redAccent.withAlpha(25)
-                        : AppColors.primary.withAlpha(25),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     category.icon,
-                    color: _isCreditCard ? Colors.redAccent : AppColors.primary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     size: 18,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    context.translate('type_${category.name.toLowerCase()}'),
+                    () {
+                      final key =
+                          'type_${category.name.toLowerCase().replaceAll(' ', '_')}';
+                      final val = context.translate(key);
+                      return val == key ? category.name : val;
+                    }(),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,

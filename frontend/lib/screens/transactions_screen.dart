@@ -81,7 +81,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
-      final firestore = FirestoreService();
+      final firestore = context.read<FirestoreService>();
       _transactionsStream = firestore.getTransactions();
       _scratchpadStream = firestore.getScratchpadSnapshot();
       _fetchUserAccounts();
@@ -139,7 +139,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   void _fetchUserAccounts() {
-    FirestoreService().getAccounts().listen((accounts) {
+    context.read<FirestoreService>().getAccounts().listen((accounts) {
       if (mounted) {
         Future.microtask(() {
           if (mounted) {
@@ -200,7 +200,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(
+              CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
               ),
               const SizedBox(height: 16),
@@ -221,7 +221,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     }
 
     if (_transactionsStream == null) {
-      final firestore = FirestoreService();
+      final firestore = context.read<FirestoreService>();
       _transactionsStream = firestore.getTransactions();
       _scratchpadStream = firestore.getScratchpadSnapshot();
       _fetchUserAccounts();
@@ -244,7 +244,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   child: StreamBuilder<List<Map<String, dynamic>>>(
                     stream:
                         _transactionsStream ??
-                        FirestoreService().getTransactions(),
+                        context.read<FirestoreService>().getTransactions(),
                     builder: (context, snapshot) {
                       if (snapshot.hasError) {
                         debugPrint("StreamBuilder error: ${snapshot.error}");
@@ -497,7 +497,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 8),
             ...dayTxs.asMap().entries.map((entry) {
               final idx = entry.key;
               final tx = entry.value;
@@ -1366,7 +1365,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   _searchQuery = '';
                 });
               },
-              child: const Text(
+              child: Text(
                 'Cancel',
                 style: TextStyle(
                   color: AppColors.primary,
@@ -1479,7 +1478,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   child: Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
@@ -1490,7 +1489,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           IconButton(
             icon: Icon(
               Icons.print_outlined,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
             onPressed: _showPrintPdfDialog,
           ),
@@ -1817,7 +1818,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: Row(
           children: [
-            const Icon(Icons.lock_outline, color: AppColors.primary),
+            Icon(Icons.lock_outline, color: AppColors.primary),
             const SizedBox(width: 8),
             Text(
               context.translate('title_unlock_filters'),
@@ -2156,7 +2157,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     }
 
     final creditCardIds = _userAccounts
-        .where((acc) => acc['type'] == 'Credit Card')
+        .where((acc) => acc['type'] == 'Credit Card' || acc['type'] == 'Card')
         .map((acc) => acc['id']?.toString())
         .whereType<String>()
         .toSet();
@@ -2220,8 +2221,16 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
     final bool hasAccount = uniqueAccounts.containsKey(_filterAccountId);
     String? localSelectedAccountId = hasAccount ? _filterAccountId : null;
-    DateTime localStartDate = DateTime(_focusedDate.year, _focusedDate.month, 1);
-    DateTime localEndDate = DateTime(_focusedDate.year, _focusedDate.month + 1, 0);
+    DateTime localStartDate = DateTime(
+      _focusedDate.year,
+      _focusedDate.month,
+      1,
+    );
+    DateTime localEndDate = DateTime(
+      _focusedDate.year,
+      _focusedDate.month + 1,
+      0,
+    );
     bool localIncludeSummary = true;
 
     showDialog(
@@ -2229,56 +2238,162 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (builderContext, setDialogState) {
-            return AlertDialog(
+            final cs = Theme.of(dialogContext).colorScheme;
+            final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(28),
               ),
-              backgroundColor: Theme.of(dialogContext).colorScheme.surface,
-              title: Text(
-                'Export Statement',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(dialogContext).colorScheme.onSurface,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            const Color(0xFF1E2120),
+                            const Color(0xFF121414),
+                          ]
+                        : [
+                            const Color(0xFFF8F9FA),
+                            Colors.white,
+                          ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-              ),
-              content: SizedBox(
-                width: 320,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Premium Header Row
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.picture_as_pdf_rounded,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Export PDF Statement',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.onSurface,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Generate a printable PDF statement',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: cs.onSurface.withValues(alpha: 0.5),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: cs.onSurface.withValues(alpha: 0.08),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Select Account label
                     Text(
                       'Select Account',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 8),
+
+                    // Dropdown
                     DropdownButtonFormField<String?>(
-                      value: localSelectedAccountId,
+                      initialValue: localSelectedAccountId,
                       isExpanded: true,
-                      dropdownColor: Theme.of(dialogContext).colorScheme.surface,
+                      dropdownColor: cs.surface,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        filled: true,
+                        fillColor: isDark
+                            ? const Color(0xFF1E2824)
+                            : const Color(0xFFF3F4F6),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.1),
+                            color: cs.onSurface.withValues(alpha: isDark ? 0.08 : 0.06),
                           ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                       items: <DropdownMenuItem<String?>>[
                         DropdownMenuItem<String?>(
                           value: null,
-                          child: Text('All Accounts', style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface)),
+                          child: Text(
+                            'All Accounts',
+                            style: TextStyle(
+                              color: cs.onSurface,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                         ...uniqueAccounts.values.map((acc) {
                           return DropdownMenuItem<String?>(
                             value: acc['id'].toString(),
-                            child: Text(acc['name']?.toString() ?? '', style: TextStyle(color: Theme.of(dialogContext).colorScheme.onSurface)),
+                            child: Text(
+                              acc['name']?.toString() ?? '',
+                              style: TextStyle(
+                                color: cs.onSurface,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           );
                         }),
                       ],
@@ -2288,7 +2403,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
+
+                    // Date pickers row
                     Row(
                       children: [
                         Expanded(
@@ -2300,7 +2417,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: cs.onSurface.withValues(alpha: 0.5),
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -2318,25 +2436,38 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                     });
                                   }
                                 },
+                                borderRadius: BorderRadius.circular(16),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1E2824)
+                                        : const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.1),
+                                      color: cs.onSurface.withValues(alpha: isDark ? 0.08 : 0.06),
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         DateFormat('dd/MM/yyyy').format(localStartDate),
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: Theme.of(dialogContext).colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                          color: cs.onSurface,
                                         ),
                                       ),
-                                      const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 16,
+                                        color: AppColors.primary,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -2354,7 +2485,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: cs.onSurface.withValues(alpha: 0.5),
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -2372,25 +2504,38 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                     });
                                   }
                                 },
+                                borderRadius: BorderRadius.circular(16),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF1E2824)
+                                        : const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.1),
+                                      color: cs.onSurface.withValues(alpha: isDark ? 0.08 : 0.06),
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         DateFormat('dd/MM/yyyy').format(localEndDate),
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: Theme.of(dialogContext).colorScheme.onSurface,
+                                          fontWeight: FontWeight.w600,
+                                          color: cs.onSurface,
                                         ),
                                       ),
-                                      const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                                      Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 16,
+                                        color: AppColors.primary,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -2400,110 +2545,137 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         ),
                       ],
                     ),
-                     const SizedBox(height: 16),
-                     Row(
-                       crossAxisAlignment: CrossAxisAlignment.start,
-                       children: [
-                         SizedBox(
-                           height: 24,
-                           width: 24,
-                           child: Checkbox(
-                             value: localIncludeSummary,
-                             activeColor: AppColors.primary,
-                             shape: RoundedRectangleBorder(
-                               borderRadius: BorderRadius.circular(4),
-                             ),
-                             onChanged: (val) {
-                               setDialogState(() {
-                                 localIncludeSummary = val ?? true;
-                               });
-                             },
-                           ),
-                         ),
-                         const SizedBox(width: 10),
-                         Expanded(
-                           child: Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Text(
-                                 'Include period summary',
-                                 style: TextStyle(
-                                   fontSize: 13,
-                                   fontWeight: FontWeight.bold,
-                                   color: Theme.of(dialogContext).colorScheme.onSurface,
-                                 ),
-                               ),
-                               if (localIncludeSummary)
-                                 Padding(
-                                   padding: const EdgeInsets.only(top: 4),
-                                   child: Text(
-                                     'Selecting this option generates the total amounts of this period.',
-                                     style: TextStyle(
-                                       fontSize: 11,
-                                       color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.5),
-                                     ),
-                                   ),
-                                 ),
-                             ],
-                           ),
-                         ),
-                       ],
-                     ),
-                     const SizedBox(height: 24),
-                     IntrinsicHeight(
-                       child: Row(
-                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                         children: [
-                           Expanded(
-                             child: OutlinedButton(
-                               onPressed: () => Navigator.pop(dialogContext),
-                               style: OutlinedButton.styleFrom(
-                                 padding: const EdgeInsets.symmetric(vertical: 14),
-                                 side: BorderSide(
-                                   color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.12),
-                                 ),
-                                 shape: RoundedRectangleBorder(
-                                   borderRadius: BorderRadius.circular(12),
-                                 ),
-                               ),
-                               child: Text(
-                                 'Cancel',
-                                 style: TextStyle(
-                                   color: Theme.of(dialogContext).colorScheme.onSurface.withValues(alpha: 0.6),
-                                   fontWeight: FontWeight.w600,
-                                   fontSize: 14,
-                                 ),
-                               ),
-                             ),
-                           ),
-                           const SizedBox(width: 12),
-                           Expanded(
-                             child: ElevatedButton(
-                               onPressed: () {
-                                 Navigator.pop(dialogContext);
-                                 _generatePdf(localSelectedAccountId, localStartDate, localEndDate, localIncludeSummary);
-                               },
-                               style: ElevatedButton.styleFrom(
-                                 backgroundColor: AppColors.primary,
-                                 elevation: 0,
-                                 padding: const EdgeInsets.symmetric(vertical: 14),
-                                 shape: RoundedRectangleBorder(
-                                   borderRadius: BorderRadius.circular(12),
-                                 ),
-                               ),
-                               child: const Text(
-                                 'Generate',
-                                 style: TextStyle(
-                                   color: Colors.white,
-                                   fontWeight: FontWeight.bold,
-                                   fontSize: 14,
-                                 ),
-                               ),
-                             ),
-                           ),
-                         ],
-                       ),
-                     ),
+                    const SizedBox(height: 20),
+
+                    // Include period summary row (tappable)
+                    InkWell(
+                      onTap: () {
+                        setDialogState(() {
+                          localIncludeSummary = !localIncludeSummary;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: localIncludeSummary,
+                                activeColor: AppColors.primary,
+                                checkColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                onChanged: (val) {
+                                  setDialogState(() {
+                                    localIncludeSummary = val ?? true;
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Include period summary',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: cs.onSurface,
+                                    ),
+                                  ),
+                                  if (localIncludeSummary)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        'Selecting this option generates the total amounts of this period.',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          height: 1.4,
+                                          color: cs.onSurface.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Buttons
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                side: BorderSide(
+                                  color: cs.onSurface.withValues(alpha: 0.12),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: cs.onSurface.withValues(alpha: 0.6),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                                _playRewardedAdThenGeneratePdf(
+                                  localSelectedAccountId,
+                                  localStartDate,
+                                  localEndDate,
+                                  localIncludeSummary,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                elevation: 3,
+                                shadowColor: AppColors.primary.withValues(alpha: 0.3),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                'Generate',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -2514,20 +2686,66 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  Future<void> _generatePdf(String? accountId, DateTime start, DateTime end, bool includeSummary) async {
+  void _playRewardedAdThenGeneratePdf(
+    String? accountId,
+    DateTime start,
+    DateTime end,
+    bool includeSummary,
+  ) {
+    showTopNotification(context.translate('msg_ad_preparing'));
+
+    bool rewardGranted = false;
+
+    AdService.showRewarded(
+      onRewardEarned: () {
+        rewardGranted = true;
+        showTopNotification(context.translate('msg_export_compiling'));
+        _generatePdf(accountId, start, end, includeSummary);
+      },
+      onAdClosed: () {
+        if (!rewardGranted) {
+          showTopNotification(
+            context.translate('err_ad_unwatched'),
+            isError: true,
+          );
+        }
+      },
+      onAdFailed: () {
+        showTopNotification(context.translate('msg_ad_failed_fallback'));
+        _generatePdf(accountId, start, end, includeSummary);
+      },
+    );
+  }
+
+  Future<void> _generatePdf(
+    String? accountId,
+    DateTime start,
+    DateTime end,
+    bool includeSummary,
+  ) async {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)),
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+        ),
       ),
     );
 
     try {
-      final firestore = FirestoreService();
+      final firestore = context.read<FirestoreService>();
       final allTxs = await firestore.getTransactionsList();
 
-      final inclusiveEnd = DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
+      final inclusiveEnd = DateTime(
+        end.year,
+        end.month,
+        end.day,
+        23,
+        59,
+        59,
+        999,
+      );
 
       final filtered = allTxs.where((tx) {
         final rawDate = tx['date'];
@@ -2544,8 +2762,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         if (date.isBefore(start) || date.isAfter(inclusiveEnd)) return false;
 
         if (accountId != null) {
-          final fromId = tx['account_id']?.toString() ?? tx['accountId']?.toString();
-          final toId = tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
+          final fromId =
+              tx['account_id']?.toString() ?? tx['accountId']?.toString();
+          final toId =
+              tx['to_account_id']?.toString() ?? tx['toAccountId']?.toString();
           return fromId == accountId || toId == accountId;
         }
         return true;
@@ -2558,7 +2778,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         } else if (a['date'] is DateTime) {
           dateA = a['date'] as DateTime;
         } else {
-          dateA = DateTime.tryParse(a['date']?.toString() ?? '') ?? DateTime.now();
+          dateA =
+              DateTime.tryParse(a['date']?.toString() ?? '') ?? DateTime.now();
         }
 
         DateTime dateB;
@@ -2567,7 +2788,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         } else if (b['date'] is DateTime) {
           dateB = b['date'] as DateTime;
         } else {
-          dateB = DateTime.tryParse(b['date']?.toString() ?? '') ?? DateTime.now();
+          dateB =
+              DateTime.tryParse(b['date']?.toString() ?? '') ?? DateTime.now();
         }
 
         return dateA.compareTo(dateB);
@@ -2589,7 +2811,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       if (filtered.isEmpty) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No transactions found for the selected criteria')),
+            const SnackBar(
+              content: Text('No transactions found for the selected criteria'),
+            ),
           );
         }
         return;

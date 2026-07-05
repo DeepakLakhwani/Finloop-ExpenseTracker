@@ -172,7 +172,7 @@ class AdService {
         onAdFailedToLoad: (error) {
           _isPreloadingInterstitial = false;
           _preloadedInterstitialAd = null;
-          _log("Failed to preload Interstitial Ad: $error");
+          _log("Failed to preload Interstitial Ad: $error. Hint: If debugging on a physical device, ensure its AdMob Test Device ID is added to testDeviceIds in AdService.initialize(). Check logs for 'setTestDeviceIds'.");
         },
       ),
     );
@@ -270,7 +270,7 @@ class AdService {
         onAdFailedToLoad: (error) {
           _isPreloadingRewarded = false;
           _preloadedRewardedAd = null;
-          _log("Failed to preload Rewarded Ad: $error");
+          _log("Failed to preload Rewarded Ad: $error. Hint: If debugging on a physical device, ensure its AdMob Test Device ID is added to testDeviceIds in AdService.initialize(). Check logs for 'setTestDeviceIds'.");
         },
       ),
     );

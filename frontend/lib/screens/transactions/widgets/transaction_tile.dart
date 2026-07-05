@@ -84,7 +84,7 @@ class TransactionTile extends StatelessWidget {
                         child: Text(
                           '• ${transaction['notes']}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(
                               context,
@@ -110,6 +110,21 @@ class TransactionTile extends StatelessWidget {
                     ],
                   ],
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  isTransfer
+                      ? '${transaction['account_name'] ?? 'Account'} ➔ ${transaction['to_account_name'] ?? 'Account'}'
+                      : (transaction['account_name'] ?? 'No Account'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.45),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if (showDate) ...[
                   const SizedBox(height: 2),
                   Text(
@@ -129,35 +144,14 @@ class TransactionTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Right: Amount and Account Name
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$currency${NumberFormat('#,##0.00').format(amount)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: amountFontSize == 12.0 ? 14.0 : amountFontSize,
-                  color: amountColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                isTransfer
-                    ? '${transaction['account_name'] ?? 'Account'} ➔ ${transaction['to_account_name'] ?? 'Account'}'
-                    : (transaction['account_name'] ?? 'No Account'),
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.45),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          // Right: Amount
+          Text(
+            '$currency${NumberFormat('#,##0.00').format(amount)}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: amountFontSize == 12.0 ? 14.0 : amountFontSize,
+              color: amountColor,
+            ),
           ),
         ],
       ),

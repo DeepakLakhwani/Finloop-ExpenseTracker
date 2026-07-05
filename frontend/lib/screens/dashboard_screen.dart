@@ -19,8 +19,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
-  static const _primaryColor = Color(0xFF42A5F5);
-
   @override
   void initState() {
     super.initState();
@@ -126,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   PreferredSizeWidget? _appBarForIndex(int index) {
     switch (index) {
       case 1:
-        return _styledAppBar(title: context.translate('analytics'));
+        return _styledAppBar(title: context.translate('charts_analytics'));
       case 2:
         return _styledAppBar(
           title: context.translate('manage_accounts'),
@@ -236,7 +234,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
     final color = isSelected
-        ? _primaryColor
+        ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
 
     return GestureDetector(

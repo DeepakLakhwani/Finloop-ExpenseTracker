@@ -50,21 +50,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     // Subtract some horizontal padding to match app layout
     final int targetWidth = (screenWidth - 32).toInt().clamp(0, 1000);
 
-    // 2. Fetch the anchored adaptive banner size for the current orientation
-    final Orientation orientation = MediaQuery.of(context).orientation;
-    final AdSize? size = await AdSize.getAnchoredAdaptiveBannerAdSize(
-      orientation,
-      targetWidth,
-    );
+    // 2. Fetch standard banner size of height 50
+    final AdSize size = AdSize(width: targetWidth, height: 50);
 
-    if (size == null) {
-      debugPrint(
-        "[BannerAdWidget] Failed to calculate anchored adaptive banner size.",
-      );
-      setState(() => _isError = true);
-      _notifyParent(false);
-      return;
-    }
+
 
     if (!mounted) return;
 
@@ -123,7 +112,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return const SizedBox.shrink();
     }
 
-    final double bannerHeight = _adaptiveSize?.height.toDouble() ?? 50.0;
+    final double bannerHeight = _isLoaded
+        ? (_adaptiveSize?.height.toDouble() ?? 50.0)
+        : 50.0;
     final double containerWidth =
         _adaptiveSize?.width.toDouble() ??
         MediaQuery.of(context).size.width - 32;
@@ -153,7 +144,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(

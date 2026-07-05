@@ -77,15 +77,19 @@ class _FinloopAppState extends State<FinloopApp> {
             .get();
         if (userDoc.exists && mounted) {
           final data = userDoc.data()!;
-          context.read<ThemeProvider>().loadSettings(data['themeMode']);
+          context.read<ThemeProvider>().loadSettings(
+            data['themeMode'],
+            data['accentColor'],
+          );
           context.read<SettingsProvider>().loadSettings(
             data['defaultCurrency'],
           );
           context.read<LanguageProvider>().loadSettings(data['language']);
         }
       } else {
-        // Even if user is not logged in, load language from SharedPreferences
+        // Even if user is not logged in, load language and theme from SharedPreferences
         if (mounted) {
+          context.read<ThemeProvider>().loadSettings(null);
           context.read<LanguageProvider>().loadSettings(null);
         }
       }
@@ -106,8 +110,8 @@ class _FinloopAppState extends State<FinloopApp> {
       scaffoldMessengerKey: snackbarKey,
       debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.getLightTheme(themeProvider.accentColor),
+      darkTheme: AppTheme.getDarkTheme(themeProvider.accentColor),
       home: const SplashScreen(),
     );
   }

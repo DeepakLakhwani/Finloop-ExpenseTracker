@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/security_service.dart';
@@ -42,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
       // Initialize the user doc and seed default categories & accounts
       if (FirebaseAuth.instance.currentUser != null) {
-        final firestoreService = FirestoreService();
+        final firestoreService = context.read<FirestoreService>();
         await firestoreService.initializeUser();
       } else {
         throw Exception(

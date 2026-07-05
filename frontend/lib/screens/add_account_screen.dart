@@ -48,6 +48,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     '#B91C1C', // Ruby Red
   ];
 
+  List<Map<String, dynamic>> _customMainAccounts = [];
+
   @override
   void initState() {
     super.initState();
@@ -65,7 +67,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       text: initialBalance.toStringAsFixed(2),
     );
 
-    if (_type == 'Credit Card') {
+    if (_type == 'Credit Card' || _type == 'Card') {
       _limitController.text = widget.initialAccount?['limit']?.toString() ?? '';
       _usedAmountController.text =
           widget.initialAccount?['usedAmount']?.toString() ?? '';
@@ -73,6 +75,24 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       _statementDate = widget.initialAccount?['statementDate'] ?? 15;
       _dueDate = widget.initialAccount?['dueDate'] ?? 30;
       _selectedColorHex = widget.initialAccount?['color'] ?? '#1E3A8A';
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _fetchCustomMainAccounts(),
+    );
+  }
+
+  Future<void> _fetchCustomMainAccounts() async {
+    try {
+      final firestore = context.read<FirestoreService>();
+      final customCats = await firestore.getMainAccountsList();
+      if (mounted) {
+        setState(() {
+          _customMainAccounts = customCats;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching custom main accounts: $e');
     }
   }
 
@@ -102,7 +122,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
       Map<String, dynamic> accountData;
 
-      if (_type == 'Credit Card') {
+      if (_type == 'Credit Card' || _type == 'Card') {
         accountData = {
           'name': _name,
           'type': _type,
@@ -130,7 +150,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         // Editing an existing account — just update, never create opening transactions
         await firestore.updateAccount(initialId, accountData);
       } else {
-        if (_type == 'Credit Card') {
+        if (_type == 'Credit Card' || _type == 'Card') {
           // No opening transaction for credit cards to prevent reporting skew
           await firestore.createAccount(accountData);
         } else if (_balance > 0) {
@@ -182,9 +202,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${context.translate('err_save_account')}$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.translate('err_save_account')}$e')),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -200,7 +220,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(context.translate('cancel'), style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              context.translate('cancel'),
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -228,9 +251,11 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${context.translate('err_delete_account')}$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.translate('err_delete_account')}$e'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -254,7 +279,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isEditing ? context.translate('title_edit_account') : context.translate('title_new_account'),
+          isEditing
+              ? context.translate('title_edit_account')
+              : context.translate('title_new_account'),
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.bold,
@@ -282,7 +309,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Credit card live preview
-                    if (_type == 'Credit Card') ...[
+                    if (_type == 'Credit Card' || _type == 'Card') ...[
                       CardPreview(
                         currency: currency,
                         limitText: _limitController.text,
@@ -324,22 +351,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         value: _type,
                         style: _fieldTextStyle(context),
                         dropdownColor: _dropdownColor(context),
-                        decoration: _underlineDecoration(label: context.translate('label_account_type')),
-                        items: [
-                          DropdownMenuItem(value: 'Cash', child: Text(context.translate('type_cash'))),
-                          DropdownMenuItem(
-                            value: 'Bank Account',
-                            child: Text(context.translate('type_bank')),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Credit Card',
-                            child: Text(context.translate('type_cards')),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Wallet',
-                            child: Text(context.translate('type_wallet')),
-                          ),
-                        ],
+                        decoration: _underlineDecoration(
+                          label: context.translate('label_account_type'),
+                        ),
+                        items: _buildDropdownItems(),
                         onChanged: (val) {
                           if (val != null) setState(() => _type = val);
                         },
@@ -347,7 +362,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                     ),
 
                     // ── Non-credit-card: Balance field ────────────────────────
-                    if (_type != 'Credit Card') ...[
+                    if (_type != 'Credit Card' && _type != 'Card') ...[
                       const SizedBox(height: 20),
                       _buildRow(
                         icon: Icons.savings_outlined,
@@ -361,7 +376,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                               padding: const EdgeInsets.only(right: 8),
                               child: Text(
                                 currency,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primary,
                                 ),
@@ -446,7 +461,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                             final limit =
                                 double.tryParse(_limitController.text) ?? 0;
                             if (used > limit) {
-                              return context.translate('err_used_exceeds_limit');
+                              return context.translate(
+                                'err_used_exceeds_limit',
+                              );
                             }
                             return null;
                           },
@@ -469,12 +486,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<int>(
-                              value: _statementDate,
+                              initialValue: _statementDate,
                               menuMaxHeight: 280,
                               dropdownColor: _dropdownColor(context),
                               style: _fieldTextStyle(context),
                               decoration: _underlineDecoration(
-                                label: context.translate('label_statement_date'),
+                                label: context.translate(
+                                  'label_statement_date',
+                                ),
                                 labelSize: 12,
                               ),
                               items: List.generate(
@@ -482,7 +501,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                                 (i) => DropdownMenuItem<int>(
                                   value: i + 1,
                                   child: Text(
-                                    context.translate('label_day_count')
+                                    context
+                                        .translate('label_day_count')
                                         .replaceAll('{day}', '${i + 1}'),
                                   ),
                                 ),
@@ -497,7 +517,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                           const SizedBox(width: 20),
                           Expanded(
                             child: DropdownButtonFormField<int>(
-                              value: _dueDate,
+                              initialValue: _dueDate,
                               menuMaxHeight: 280,
                               dropdownColor: _dropdownColor(context),
                               style: _fieldTextStyle(context),
@@ -510,7 +530,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                                 (i) => DropdownMenuItem<int>(
                                   value: i + 1,
                                   child: Text(
-                                    context.translate('label_day_count')
+                                    context
+                                        .translate('label_day_count')
                                         .replaceAll('{day}', '${i + 1}'),
                                   ),
                                 ),
@@ -578,6 +599,57 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     );
   }
 
+  List<DropdownMenuItem<String>> _buildDropdownItems() {
+    final systemTypes = [
+      {'value': 'Account', 'label': context.translate('type_bank')},
+      {'value': 'Cash', 'label': context.translate('type_cash')},
+      {'value': 'Card', 'label': context.translate('type_cards')},
+      {'value': 'Savings', 'label': context.translate('type_savings')},
+      {'value': 'Investments', 'label': context.translate('type_investments')},
+      {'value': 'Loan', 'label': context.translate('type_loan')},
+      {'value': 'Insurance', 'label': context.translate('type_insurance')},
+      {'value': 'Others', 'label': context.translate('type_others')},
+    ];
+
+    final Set<String> addedValues = {};
+    final List<DropdownMenuItem<String>> items = [];
+
+    for (final sys in systemTypes) {
+      final val = sys['value']!;
+      final translatedLabel = sys['label']!;
+      // Since translate returns the key itself on missing key, resolve to a friendly name
+      final label =
+          (translatedLabel == 'type_savings' ||
+              translatedLabel == 'type_investments' ||
+              translatedLabel == 'type_loan' ||
+              translatedLabel == 'type_insurance' ||
+              translatedLabel == 'type_others')
+          ? val
+          : translatedLabel;
+
+      if (!addedValues.contains(val)) {
+        addedValues.add(val);
+        items.add(DropdownMenuItem(value: val, child: Text(label)));
+      }
+    }
+
+    for (final custom in _customMainAccounts) {
+      final val = custom['name'] as String?;
+      if (val != null && val.isNotEmpty && !addedValues.contains(val)) {
+        addedValues.add(val);
+        items.add(DropdownMenuItem(value: val, child: Text(val)));
+      }
+    }
+
+    // Fallback for current value if not already added (e.g. legacy 'Wallet')
+    if (!addedValues.contains(_type)) {
+      addedValues.add(_type);
+      items.add(DropdownMenuItem(value: _type, child: Text(_type)));
+    }
+
+    return items;
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   /// Wraps a field with its leading icon in a consistent Row.
@@ -616,7 +688,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
       prefixText: prefixText,
-      prefixStyle: const TextStyle(
+      prefixStyle: TextStyle(
         color: AppColors.primary,
         fontWeight: FontWeight.bold,
       ),
@@ -629,7 +701,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       enabledBorder: const UnderlineInputBorder(
         borderSide: BorderSide(color: Colors.grey, width: 1.2),
       ),
-      focusedBorder: const UnderlineInputBorder(
+      focusedBorder: UnderlineInputBorder(
         borderSide: BorderSide(color: AppColors.primary, width: 2),
       ),
     );

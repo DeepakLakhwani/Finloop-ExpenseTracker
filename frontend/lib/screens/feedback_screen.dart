@@ -3,6 +3,7 @@ import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -181,36 +182,26 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         'appVersion': feedbackVersionStr,
       };
 
-      // Show immediate success feedback and pop the screen
-      showTopNotification(
-        context.translate('msg_feedback_success'),
-        isError: false,
+      final firestoreService = context.read<FirestoreService>();
+      await firestoreService.submitFeedback(feedbackData);
+      await _sendEmail(
+        type: _feedbackType,
+        message: feedbackData['message'] as String,
+        imageUrl: imageUrl,
+        deviceInfo: deviceInfo,
+        timestamp: timestampStr,
+        appVersion: appVersionStr,
+        email: userEmail,
       );
 
-      _messageController.clear();
       if (mounted) {
+        showTopNotification(
+          context.translate('msg_feedback_success'),
+          isError: false,
+        );
+        _messageController.clear();
         Navigator.pop(context);
       }
-
-      // Execute network operations in the background silently
-      () async {
-        try {
-          await FirestoreService().submitFeedback(feedbackData);
-          await _sendEmail(
-            type: _feedbackType,
-            message: feedbackData['message'] as String,
-            imageUrl: imageUrl,
-            deviceInfo: deviceInfo,
-            timestamp: timestampStr,
-            appVersion: appVersionStr,
-            email: userEmail,
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            debugPrint('Background feedback submission error: $e');
-          }
-        }
-      }();
     } catch (e) {
       if (kDebugMode) debugPrint('Error initiating feedback: $e');
       if (mounted) {
@@ -254,7 +245,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             onPressed: _isSubmitting ? null : () => Navigator.pop(context),
           ),
           title: Text(
-            context.translate('feedback_title'),
+            context.translate('feedback'),
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -288,8 +279,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                   AppColors.primary.withValues(alpha: 0.05),
                                 ]
                               : [
-                                  const Color(0xFFEBF2FF),
-                                  const Color(0xFFF9FBFF),
+                                  AppColors.primary.withValues(alpha: 0.08),
+                                  AppColors.primary.withValues(alpha: 0.02),
                                 ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -306,7 +297,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.support_agent_rounded,
                                 color: AppColors.primary,
                                 size: 24,
@@ -344,7 +335,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           ),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.mail_outline_rounded,
                                 color: AppColors.primary,
                                 size: 16,
@@ -412,6 +403,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         return ChoiceChip(
                           label: Text(getLocalizedType(type)),
                           selected: isSelected,
+                          showCheckmark: false,
                           color: WidgetStateProperty.resolveWith((states) {
                             if (states.contains(WidgetState.selected)) {
                               return AppColors.primary.withValues(alpha: 0.15);
@@ -488,7 +480,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
+                          borderSide: BorderSide(
                             color: AppColors.primary,
                             width: 1.5,
                           ),
@@ -562,7 +554,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(
+                          borderSide: BorderSide(
                             color: AppColors.primary,
                             width: 1.5,
                           ),

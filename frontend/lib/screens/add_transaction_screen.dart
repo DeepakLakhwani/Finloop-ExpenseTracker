@@ -36,6 +36,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _amountController = TextEditingController();
   final _notesController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _noteFocusNode = FocusNode();
+  final _descriptionFocusNode = FocusNode();
 
   late String _type;
   String? _selectedAccountId;
@@ -96,6 +98,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _amountController.dispose();
     _notesController.dispose();
     _descriptionController.dispose();
+    _noteFocusNode.dispose();
+    _descriptionFocusNode.dispose();
     super.dispose();
   }
 
@@ -271,9 +275,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  void _showCategorySelectionDialog() {
-    showDialog(
+  void _showCategorySelectionDialog({bool autoNext = false}) {
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return CategorySelectionDialog(
           categories: _categories,
@@ -282,6 +288,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           activeColor: _getActiveColor(),
           onCategorySelected: (id) {
             setState(() => _selectedCategoryId = id);
+            if (autoNext) {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  _showAccountSelectionDialog(
+                    isToAccount: false,
+                    autoNext: true,
+                  );
+                }
+              });
+            }
           },
           onCategoriesChanged: () async {
             await _fetchData();
@@ -291,14 +307,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  void _showAccountSelectionDialog({required bool isToAccount}) {
-    showDialog(
+  void _showAccountSelectionDialog({
+    required bool isToAccount,
+    bool autoNext = false,
+  }) {
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return AccountSelectionDialog(
           accounts: _accounts,
           isToAccount: isToAccount,
           activeColor: _getActiveColor(),
+          selectedAccountId: isToAccount ? _toAccountId : _selectedAccountId,
           onAccountSelected: (id) {
             setState(() {
               if (isToAccount) {
@@ -307,6 +329,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 _selectedAccountId = id;
               }
             });
+            if (autoNext) {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  if (_type == 'Transfer' && !isToAccount) {
+                    _showAccountSelectionDialog(
+                      isToAccount: true,
+                      autoNext: true,
+                    );
+                  } else {
+                    _noteFocusNode.requestFocus();
+                  }
+                }
+              });
+            }
           },
         );
       },
@@ -665,6 +701,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(context).unfocus();
+                                if (_type != 'Transfer') {
+                                  _showCategorySelectionDialog(autoNext: true);
+                                } else {
+                                  _showAccountSelectionDialog(
+                                    isToAccount: false,
+                                    autoNext: true,
+                                  );
+                                }
+                              },
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -871,6 +919,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       label: context.translate('label_note'),
                       child: TextFormField(
                         controller: _notesController,
+                        focusNode: _noteFocusNode,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) {
+                          _descriptionFocusNode.requestFocus();
+                        },
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.onSurface,
@@ -906,6 +959,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _descriptionController,
+                              focusNode: _descriptionFocusNode,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _submitAndClose(),
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Theme.of(context).colorScheme.onSurface,

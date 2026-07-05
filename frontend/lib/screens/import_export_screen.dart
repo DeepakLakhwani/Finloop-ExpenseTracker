@@ -110,9 +110,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
   String _inferAccountType(String name) {
     final lower = name.toLowerCase();
-    if (lower.contains('bank')) return 'Bank Account';
-    if (lower.contains('card')) return 'Credit Card';
-    if (lower.contains('wallet')) return 'Wallet';
+    if (lower.contains('bank')) return 'Account';
+    if (lower.contains('card')) return 'Card';
+    if (lower.contains('wallet')) return 'Cash';
     return 'Cash';
   }
 
@@ -150,10 +150,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
   void _promptExport() {
     if (_fromDate == null || _toDate == null) {
-      _showNotification(
-        context.translate('select_date_hint'),
-        isError: true,
-      );
+      _showNotification(context.translate('select_date_hint'), isError: true);
       return;
     }
 
@@ -161,9 +158,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.translate('title_unlock_premium_export')),
-        content: Text(
-          context.translate('desc_premium_export'),
-        ),
+        content: Text(context.translate('desc_premium_export')),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
@@ -251,7 +246,10 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      _showNotification(context.translate('err_sign_in_to_export'), isError: true);
+      _showNotification(
+        context.translate('err_sign_in_to_export'),
+        isError: true,
+      );
       return;
     }
 
@@ -291,10 +289,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
       }).toList();
 
       if (filtered.isEmpty) {
-        _showNotification(
-          context.translate('err_no_tx_found'),
-          isError: true,
-        );
+        _showNotification(context.translate('err_no_tx_found'), isError: true);
         return;
       }
 
@@ -332,7 +327,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
 
       if (!mounted) return;
       _showNotification(context.translate('msg_export_success'));
-      await Share.shareXFiles([XFile(filePath)], text: 'Exported Transactions');
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(filePath)], text: 'Exported Transactions'),
+      );
     } catch (e, stack) {
       debugPrint('Export error: $e\n$stack');
       if (!mounted) return;
@@ -347,7 +344,10 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
   Future<void> _importTransactions() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
-      _showNotification(context.translate('err_sign_in_to_import'), isError: true);
+      _showNotification(
+        context.translate('err_sign_in_to_import'),
+        isError: true,
+      );
       return;
     }
 
@@ -537,7 +537,9 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.isBackupMode ? context.translate('backup_restore_title') : '${context.translate('header_import_tx')} & ${context.translate('header_export_tx')}',
+          widget.isBackupMode
+              ? context.translate('backup_restore_title')
+              : '${context.translate('header_import_tx')} & ${context.translate('header_export_tx')}',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -731,7 +733,9 @@ class _ExportCard extends StatelessWidget {
             label: Text(
               isExporting
                   ? context.translate('btn_exporting')
-                  : (isBackupMode ? context.translate('btn_export_backup') : context.translate('btn_export_excel')),
+                  : (isBackupMode
+                        ? context.translate('btn_export_backup')
+                        : context.translate('btn_export_excel')),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -793,11 +797,7 @@ class _DatePickerField extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.calendar_today,
-                  color: AppColors.primary,
-                  size: 16,
-                ),
+                Icon(Icons.calendar_today, color: AppColors.primary, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -882,7 +882,7 @@ class _ImportCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.info_outline,
                   color: AppColors.primary,
                   size: 20,
@@ -926,7 +926,9 @@ class _ImportCard extends StatelessWidget {
             label: Text(
               isImporting
                   ? context.translate('btn_importing')
-                  : (isBackupMode ? context.translate('btn_upload_backup') : context.translate('btn_upload_excel')),
+                  : (isBackupMode
+                        ? context.translate('btn_upload_backup')
+                        : context.translate('btn_upload_excel')),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

@@ -156,7 +156,7 @@ class _BackupScreenState extends State<BackupScreen> {
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               context.translate('restore'),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
@@ -280,9 +280,8 @@ class _BackupScreenState extends State<BackupScreen> {
                   child: Switch(
                     value: _autoBackupEnabled,
                     onChanged: _toggleAutoBackup,
-                    // Fix #13: Add activeColor to tint the track as well as the thumb
-                    activeColor: AppColors.primary,
                     activeThumbColor: AppColors.primary,
+                    activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -471,7 +470,7 @@ class CardActionItem extends StatelessWidget {
                       backgroundColor: Theme.of(
                         context,
                       ).colorScheme.onSurface.withValues(alpha: 0.08),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
+                      valueColor: AlwaysStoppedAnimation<Color>(
                         AppColors.primary,
                       ),
                     ),
@@ -481,7 +480,7 @@ class CardActionItem extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: Text(
                       '${(progress! * 100).toInt()}%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,

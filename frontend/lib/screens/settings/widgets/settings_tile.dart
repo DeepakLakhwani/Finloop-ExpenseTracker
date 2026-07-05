@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_colors.dart';
 
 class SettingsTile extends StatelessWidget {
   final String title;
@@ -36,10 +35,14 @@ class SettingsTile extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.onSurface,
+              size: 20,
+            ),
           ),
           title: Text(
             title,
@@ -67,9 +70,12 @@ class SettingsTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                   ],
-                  const Icon(
+                  Icon(
                     Icons.chevron_right,
-                    color: AppColors.neutralLight,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.4),
                     size: 20,
                   ),
                 ],

@@ -165,12 +165,13 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
   }
 
   // ✅ Fix #6: safe hex color parsing with fallback
-  Color _parseCardColor(String? hex, {Color fallback = AppColors.primary}) {
+  Color _parseCardColor(String? hex, {Color? fallback}) {
+    final resolvedFallback = fallback ?? AppColors.primary;
     try {
-      if (hex == null || hex.isEmpty) return fallback;
+      if (hex == null || hex.isEmpty) return resolvedFallback;
       return Color(int.parse(hex.replaceAll('#', '0xFF')));
     } catch (_) {
-      return fallback;
+      return resolvedFallback;
     }
   }
 
@@ -398,7 +399,8 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
     final available =
         double.tryParse(_account['balance']?.toString() ?? '0.0') ?? 0.0;
     final used = limit > 0 ? (limit - available) : 0.0;
-    final isCreditCard = _account['type'] == 'Credit Card';
+    final isCreditCard =
+        _account['type'] == 'Credit Card' || _account['type'] == 'Card';
 
     // ✅ Fix #6: safe color parsing
     final cardColor = isCreditCard
@@ -427,7 +429,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
               color: AppColors.primary,
               size: 22,

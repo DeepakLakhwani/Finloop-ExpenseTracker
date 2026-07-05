@@ -116,24 +116,21 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   itemCount: budgets.length,
                   itemBuilder: (context, index) {
                     final budget = budgets[index];
                     return Card(
-                      elevation: 0,
-                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 1,
+                      margin: const EdgeInsets.only(bottom: 8),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                        ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         leading: CircleAvatar(
                           backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                          child: const Icon(Icons.track_changes, color: AppColors.primary),
+                          child: Icon(Icons.track_changes, color: AppColors.primary),
                         ),
                         title: Text(
                           context.getLocalizedCategory(

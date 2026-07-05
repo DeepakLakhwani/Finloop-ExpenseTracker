@@ -22,8 +22,68 @@ class CategorySelectionDialog extends StatelessWidget {
     required this.onCategoriesChanged,
   });
 
+  Color _parseColor(String? hex) {
+    if (hex == null || !hex.startsWith('#')) return const Color(0xFFE57373);
+    try {
+      return Color(int.parse(hex.replaceFirst('#', 'FF'), radix: 16));
+    } catch (_) {
+      return const Color(0xFFE57373);
+    }
+  }
+
+  IconData _getCategoryIcon(String? iconName) {
+    switch (iconName) {
+      case 'work':
+        return Icons.work_outline;
+      case 'payments':
+        return Icons.payments_outlined;
+      case 'card_giftcard':
+        return Icons.card_giftcard_outlined;
+      case 'stars':
+        return Icons.stars_outlined;
+      case 'account_balance_wallet':
+        return Icons.account_balance_wallet_outlined;
+      case 'home':
+        return Icons.home_outlined;
+      case 'restaurant':
+        return Icons.restaurant_outlined;
+      case 'directions_car':
+        return Icons.directions_car_outlined;
+      case 'shopping_bag':
+        return Icons.shopping_bag_outlined;
+      case 'movie':
+        return Icons.movie_outlined;
+      case 'medical_services':
+        return Icons.medical_services_outlined;
+      case 'school':
+        return Icons.school_outlined;
+      case 'credit_card':
+        return Icons.credit_card_outlined;
+      case 'people':
+        return Icons.people_outline;
+      case 'flight':
+        return Icons.flight_outlined;
+      case 'pets':
+        return Icons.pets_outlined;
+      case 'sports_esports':
+        return Icons.sports_esports_outlined;
+      case 'fitness_center':
+        return Icons.fitness_center_outlined;
+      case 'local_cafe':
+        return Icons.local_cafe_outlined;
+      case 'build':
+        return Icons.build_outlined;
+      case 'swap_horiz':
+        return Icons.swap_horiz;
+      default:
+        return Icons.category_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: context.read<FirestoreService>().getCategories(),
       builder: (context, snapshot) {
@@ -35,148 +95,178 @@ class CategorySelectionDialog extends StatelessWidget {
                 .where((c) => c['type'] == activeType)
                 .toList();
 
-            return AlertDialog(
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 24,
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Select Category',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  // Drag Handle
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  
+                  // Header Row
                   Row(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 20),
-                        tooltip: 'Manage Categories',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ManageCategoriesScreen(type: activeType),
-                            ),
-                          ).then((_) {
-                            onCategoriesChanged();
-                            setDialogState(() {});
-                          });
-                        },
+                      Text(
+                        context.translate('select_category_hint'),
+                        style: TextStyle(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => Navigator.pop(context),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.edit_outlined, 
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                            tooltip: 'Manage Categories',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ManageCategoriesScreen(type: activeType),
+                                ),
+                              ).then((_) {
+                                onCategoriesChanged();
+                                setDialogState(() {});
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: typeCategories.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Text(
-                          'No categories found. Click the pencil icon to add one!',
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final itemWidth = (constraints.maxWidth - 10) / 2;
-                            return Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: typeCategories.map((cat) {
+                  const Divider(height: 24),
+
+                  // Content
+                  Flexible(
+                    child: typeCategories.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Text(
+                              'No categories found. Click the pencil icon to add one!',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : SingleChildScrollView(
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 2.8,
+                              ),
+                              itemCount: typeCategories.length,
+                              itemBuilder: (context, index) {
+                                final cat = typeCategories[index];
                                 final isSelected =
                                     selectedCategoryId == cat['id'].toString();
-                                return GestureDetector(
+                                final catColor = _parseColor(cat['color']);
+                                final catIcon = _getCategoryIcon(cat['icon']);
+                                
+                                // Strip emojis from display name if they are in the database string
+                                String displayName = context.getLocalizedCategory(
+                                  cat['key']?.toString(),
+                                  cat['name'] ?? '',
+                                );
+                                // Clean up any lingering emojis at the start of fallback name if it falls back
+                                if (displayName.startsWith(RegExp(r'[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]', unicode: true))) {
+                                  displayName = displayName.replaceFirst(RegExp(r'^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*', unicode: true), '');
+                                }
+
+                                return InkWell(
                                   onTap: () {
                                     onCategorySelected(cat['id'].toString());
                                     Navigator.pop(context);
                                   },
+                                  borderRadius: BorderRadius.circular(12),
                                   child: Container(
-                                    width: itemWidth,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 10,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? (Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? activeColor.withValues(alpha: 0.2)
-                                                : Colors.white)
-                                          : (Theme.of(context).brightness ==
-                                                    Brightness.dark
-                                                ? const Color(0xFF2C2C2C)
-                                                : Colors.white),
-                                      borderRadius: BorderRadius.circular(14),
+                                          ? catColor.withValues(alpha: 0.1)
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
+                                      borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: isSelected
-                                            ? activeColor
-                                            : (Theme.of(context).brightness ==
-                                                      Brightness.dark
-                                                  ? const Color(0xFF3C3C3C)
-                                                  : const Color(0xFFEFEFEF)),
-                                        width: isSelected ? 2.0 : 1.0,
+                                            ? catColor
+                                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                                        width: isSelected ? 1.5 : 1.0,
                                       ),
-                                      boxShadow: [
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: catColor.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Icon(
+                                            catIcon,
+                                            color: catColor,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            displayName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.w500,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ),
                                         if (isSelected)
-                                          BoxShadow(
-                                            color: activeColor.withValues(alpha: 
-                                              0.25,
-                                            ),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 5),
-                                          )
-                                        else
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 
-                                              0.06,
-                                            ),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 3),
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            color: catColor,
+                                            size: 16,
                                           ),
                                       ],
                                     ),
-                                    child: Text(
-                                      context.getLocalizedCategory(
-                                        cat['key']?.toString(),
-                                        (cat['name'] == '👪 Family & Personal' ||
-                                                cat['name'] == '👪 Family')
-                                            ? '👪 Family'
-                                            : cat['name'] ?? '',
-                                      ),
-                                      style: TextStyle(
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        color: isSelected
-                                            ? activeColor
-                                            : Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface
-                                                  .withValues(alpha: 0.8),
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
                                   ),
                                 );
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ),
+                              },
+                            ),
+                          ),
+                  ),
+                ],
               ),
             );
           },

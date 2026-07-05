@@ -33,7 +33,7 @@ class BackupGuidanceCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.security_rounded, color: AppColors.primary, size: 24),
+                child: Icon(Icons.security_rounded, color: AppColors.primary, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(

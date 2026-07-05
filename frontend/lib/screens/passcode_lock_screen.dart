@@ -22,9 +22,7 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
   @override
   void initState() {
     super.initState();
-    if (!widget.verificationOnly) {
-      _triggerBiometrics();
-    }
+    _triggerBiometrics();
   }
 
   @override
@@ -33,12 +31,18 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
     super.dispose();
   }
 
-  void _triggerBiometrics() async {
+  void _triggerBiometrics({bool force = false}) async {
     final enabled = await _securityService.isBiometricEnabled();
+    final shouldRequest = (force || widget.verificationOnly)
+        ? enabled
+        : await _securityService.shouldRequestBiometric();
     final available = await _biometricService.isBiometricAvailable();
-    if (enabled && available) {
+    if (shouldRequest && available) {
       final success = await _biometricService.authenticate();
       if (success && mounted) {
+        if (!widget.verificationOnly) {
+          await _securityService.recordBiometricAuth();
+        }
         _onAuthSuccess();
       }
     }
@@ -122,7 +126,7 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
             const Spacer(flex: 2),
 
             // Instruction / Icon
-            const Icon(Icons.lock_outline, size: 36, color: AppColors.primary),
+            Icon(Icons.lock_outline, size: 36, color: AppColors.primary),
             const SizedBox(height: 16),
             Text(
               widget.verificationOnly
@@ -258,7 +262,6 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
   }
 
   Widget _buildBiometricButton() {
-    if (widget.verificationOnly) return const SizedBox(width: 70, height: 70);
 
     return FutureBuilder<bool>(
       future: _securityService.isBiometricEnabled(),
@@ -267,12 +270,12 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
         if (!enabled) return const SizedBox(width: 70, height: 70);
 
         return GestureDetector(
-          onTap: _triggerBiometrics,
+          onTap: () => _triggerBiometrics(force: true),
           behavior: HitTestBehavior.opaque,
           child: SizedBox(
             width: 70,
             height: 70,
-            child: const Center(
+            child: Center(
               child: Icon(
                 Icons.fingerprint,
                 color: AppColors.primary,
