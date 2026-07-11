@@ -192,6 +192,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -200,7 +201,6 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                   child: Text(
                     context.translate('btn_watch_export'),
                     style: const TextStyle(
-                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
@@ -717,29 +717,30 @@ class _ExportCard extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: isExporting ? null : onExport,
               icon: isExporting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         strokeWidth: 2,
                       ),
                     )
-                  : const Icon(Icons.download_rounded, color: Colors.white),
+                  : Icon(Icons.download_rounded, color: Theme.of(context).colorScheme.onPrimary),
               label: Text(
                 isExporting
                     ? context.translate('btn_exporting')
                     : (isBackupMode
                           ? context.translate('btn_export_backup')
                           : context.translate('btn_export_excel')),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 backgroundColor: AppColors.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),

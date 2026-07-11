@@ -187,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     onPressed: _initializeApp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primary,
+                      foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,

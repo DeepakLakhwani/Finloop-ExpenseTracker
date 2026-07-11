@@ -18,10 +18,10 @@ import '../theme/app_colors.dart';
 abstract final class _K {
   static const double chartHeight = 200;
 
-  static final List<Color> palette = [
+  static List<Color> get palette => [
     Colors.green,
     AppColors.primary,
-    Color(0xFFE57373),
+    const Color(0xFFE57373),
     Colors.purple,
     Colors.amber,
     Colors.teal,

@@ -1752,6 +1752,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
                             backgroundColor: AppColors.primary,
+                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -1760,7 +1761,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             context.translate('btn_apply'),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -1863,6 +1863,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1871,7 +1872,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   child: Text(
                     context.translate('btn_watch_unlock'),
                     style: const TextStyle(
-                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
@@ -2649,6 +2649,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                                 elevation: 3,
                                 shadowColor: AppColors.primary.withValues(
                                   alpha: 0.3,
@@ -2663,7 +2664,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               child: Text(
                                 context.translate('btn_generate'),
                                 style: const TextStyle(
-                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),

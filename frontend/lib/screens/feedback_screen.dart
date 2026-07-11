@@ -718,16 +718,16 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     // ── Submit Button ───────────────────────────────────────
                     ElevatedButton.icon(
                       onPressed: _isSubmitting ? null : _submitFeedback,
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.send_rounded,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 18,
                       ),
                       label: Text(
                         context.translate('feedback'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(

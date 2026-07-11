@@ -30,7 +30,7 @@ class CustomButton extends StatelessWidget {
     switch (type) {
       case CustomButtonType.primary:
         backgroundColor = AppColors.primary;
-        foregroundColor = Colors.white;
+        foregroundColor = Theme.of(context).colorScheme.onPrimary;
         break;
       case CustomButtonType.secondary:
         backgroundColor = isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.neutralLight;

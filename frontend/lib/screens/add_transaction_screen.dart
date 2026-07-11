@@ -1369,11 +1369,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         child: _isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: _getButtonTextColor(),
                                   strokeWidth: 2,
                                 ),
                               )
