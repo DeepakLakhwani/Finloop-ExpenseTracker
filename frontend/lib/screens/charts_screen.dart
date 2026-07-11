@@ -136,10 +136,8 @@ class _ChartsScreenState extends State<ChartsScreen> {
     final analytics = FinancialAnalytics(
       allTransactions: _allTransactions,
       userAccounts: _userAccounts,
+      userCategories: _userCategories,
     );
-    final dividerColor = Theme.of(
-      context,
-    ).colorScheme.onSurface.withValues(alpha: 0.08);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -259,7 +257,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 categories: _userCategories,
                 isIncome: true,
               ),
-              Divider(height: 48, thickness: 1, color: dividerColor),
+              const SizedBox(height: 12),
               _MonthlyTrendsCard(
                 months: analytics.trendMonths,
                 dataValues: analytics.monthlyIncome,
@@ -268,7 +266,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 formatY: _formatY,
                 isIncome: true,
               ),
-              Divider(height: 48, thickness: 1, color: dividerColor),
+              const SizedBox(height: 12),
               _AvailableBudgetCard(
                 balance: analytics.totalBalance,
                 currency: currency,
@@ -284,7 +282,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 categories: _userCategories,
                 isIncome: false,
               ),
-              Divider(height: 48, thickness: 1, color: dividerColor),
+              const SizedBox(height: 12),
               if (_allBudgets.isNotEmpty) ...[
                 _BudgetsCard(
                   budgets: _allBudgets,
@@ -292,7 +290,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
                   currency: currency,
                   categories: _userCategories,
                 ),
-                Divider(height: 48, thickness: 1, color: dividerColor),
+                const SizedBox(height: 12),
               ],
               _MonthlyTrendsCard(
                 months: analytics.trendMonths,
@@ -302,7 +300,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 formatY: _formatY,
                 isIncome: false,
               ),
-              Divider(height: 48, thickness: 1, color: dividerColor),
+              const SizedBox(height: 12),
               _SmartInsightCard(
                 text: () {
                   final info = analytics.insightInfo;
@@ -495,7 +493,7 @@ class _DistributionCardState extends State<_DistributionCard> {
             ),
             const SizedBox(height: 2),
             Text(
-              '${widget.currency}${NumberFormat('#,##0.00').format(value)}',
+              '${widget.currency}${context.formatAmount(value)}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -530,7 +528,7 @@ class _DistributionCardState extends State<_DistributionCard> {
           ),
           const SizedBox(height: 2),
           Text(
-            '${widget.currency}${NumberFormat('#,##0').format(widget.totalExpenses)}',
+            '${widget.currency}${context.formatAmount(widget.totalExpenses)}',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -745,7 +743,7 @@ class _DistributionCardState extends State<_DistributionCard> {
                         
                         // Value/Amount
                         Text(
-                          '${widget.currency}${NumberFormat('#,##0.00').format(value)}',
+                          '${widget.currency}${context.formatAmount(value)}',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -968,7 +966,7 @@ class _MonthlyTrendsCardState extends State<_MonthlyTrendsCard>
                               children: [
                                 TextSpan(
                                   text:
-                                      '${widget.currency}${NumberFormat('#,##0.00').format(widget.dataValues[idx])}',
+                                      '${widget.currency}${context.formatAmount(widget.dataValues[idx])}',
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 14,
@@ -1235,44 +1233,46 @@ class _AvailableBudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.account_balance_wallet_outlined,
-            color: AppColors.primary,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.translate('available_balance'),
-              style: TextStyle(
-                color: onSurface.withValues(alpha: 0.6),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+    return _SurfaceCard(
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 4),
-            Text(
-              '$currency${balance.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: onSurface,
-              ),
+            child: Icon(
+              Icons.account_balance_wallet_outlined,
+              color: AppColors.primary,
+              size: 24,
             ),
-          ],
-        ),
-      ],
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.translate('available_balance'),
+                style: TextStyle(
+                  color: onSurface.withValues(alpha: 0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$currency${balance.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: onSurface,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1288,9 +1288,8 @@ class _SurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 32),
       child: child,
     );
   }
@@ -1370,7 +1369,7 @@ class _BudgetsCard extends StatelessWidget {
         date = DateTime.tryParse(dateRaw.toString()) ?? DateTime.now();
       }
 
-      return date.year == now.year && date.month == now.month;
+      return context.read<SettingsProvider>().isDateInFocusedMonth(date, now);
     }).toList();
 
     return _SurfaceCard(

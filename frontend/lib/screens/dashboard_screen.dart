@@ -18,12 +18,21 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  late final PageController _pageController = PageController(
+    initialPage: _selectedIndex,
+  );
 
   @override
   void initState() {
     super.initState();
     // Defer context-dependent calls until after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) => _initAndFetch());
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _initAndFetch() async {
@@ -169,18 +178,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ── Body ────────────────────────────────────────────────────────────────────
 
   Widget _buildBody() {
-    switch (_selectedIndex) {
-      case 0:
-        return const TransactionsScreen();
-      case 1:
-        return const ChartsScreen();
-      case 2:
-        return const ManageAccountsScreen(isTab: true);
-      case 3:
-        return const SettingsScreen();
-      default:
-        return const Center(child: Text('Coming Soon'));
-    }
+    return PageView(
+      controller: _pageController,
+      physics:
+          const NeverScrollableScrollPhysics(), // Disable swipe gestures to prevent interaction conflicts
+      children: const [
+        TransactionsScreen(),
+        ChartsScreen(),
+        ManageAccountsScreen(isTab: true),
+        SettingsScreen(),
+      ],
+    );
   }
 
   // ── Bottom Nav ──────────────────────────────────────────────────────────────
@@ -243,6 +251,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           TransactionsScreen.onTransactionsTabTapped();
         }
         setState(() => _selectedIndex = index);
+        _pageController.jumpToPage(index);
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

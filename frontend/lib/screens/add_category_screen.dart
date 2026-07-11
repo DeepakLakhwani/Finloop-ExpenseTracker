@@ -164,7 +164,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
               
               // Color Label
               Text(
-                'Category Color',
+                context.translate('label_category_color'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -227,7 +227,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
               // Icon Label
               Text(
-                'Category Icon',
+                context.translate('label_category_icon'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

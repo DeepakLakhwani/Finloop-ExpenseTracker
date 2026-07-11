@@ -4,16 +4,56 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FinancialAnalytics {
   final List<Map<String, dynamic>> allTransactions;
   final List<Map<String, dynamic>> userAccounts;
+  final List<Map<String, dynamic>> userCategories;
 
   FinancialAnalytics({
     required this.allTransactions,
     required this.userAccounts,
+    required this.userCategories,
   });
 
   DateTime _parseDate(dynamic val) {
     if (val is Timestamp) return val.toDate();
     if (val is String) return DateTime.parse(val);
     return DateTime.now();
+  }
+
+  Map<String, String> _resolveCategory(Map<String, dynamic> tx) {
+    final catId = tx['category_id']?.toString() ?? tx['categoryId']?.toString();
+    final txCatName = tx['category_name']?.toString() ?? tx['categoryName']?.toString() ?? '';
+    final txCatKey = tx['category_key']?.toString() ?? tx['categoryKey']?.toString() ?? '';
+
+    if (catId != null && catId.isNotEmpty) {
+      for (var cat in userCategories) {
+        if (cat['id']?.toString() == catId) {
+          final key = cat['key']?.toString() ?? '';
+          final name = cat['name']?.toString() ?? '';
+          return {'key': key, 'name': name};
+        }
+      }
+    }
+
+    if (txCatKey.isNotEmpty) {
+      for (var cat in userCategories) {
+        if (cat['key']?.toString() == txCatKey) {
+          final key = cat['key']?.toString() ?? '';
+          final name = cat['name']?.toString() ?? '';
+          return {'key': key, 'name': name};
+        }
+      }
+    }
+
+    if (txCatName.isNotEmpty) {
+      for (var cat in userCategories) {
+        if (cat['name']?.toString() == txCatName) {
+          final key = cat['key']?.toString() ?? '';
+          final name = cat['name']?.toString() ?? '';
+          return {'key': key, 'name': name};
+        }
+      }
+    }
+
+    return {'key': txCatKey, 'name': txCatName.isNotEmpty ? txCatName : 'Other'};
   }
 
   /// Calculates total expense amount for the current calendar month.
@@ -42,9 +82,8 @@ class FinancialAnalytics {
           date.month == now.month &&
           tx['type'] == 'Expense') {
         final amt = double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
-        final catName = tx['category_name']?.toString() ?? 'Other';
-        final catKey = tx['category_key']?.toString() ?? '';
-        final compoundKey = '$catKey::$catName';
+        final resolved = _resolveCategory(tx);
+        final compoundKey = '${resolved['key']}::${resolved['name']}';
         categoryMap[compoundKey] = (categoryMap[compoundKey] ?? 0.0) + amt;
       }
     }
@@ -178,9 +217,8 @@ class FinancialAnalytics {
           date.month == now.month &&
           tx['type'] == 'Income') {
         final amt = double.tryParse(tx['amount']?.toString() ?? '0.0') ?? 0.0;
-        final catName = tx['category_name']?.toString() ?? 'Other';
-        final catKey = tx['category_key']?.toString() ?? '';
-        final compoundKey = '$catKey::$catName';
+        final resolved = _resolveCategory(tx);
+        final compoundKey = '${resolved['key']}::${resolved['name']}';
         categoryMap[compoundKey] = (categoryMap[compoundKey] ?? 0.0) + amt;
       }
     }

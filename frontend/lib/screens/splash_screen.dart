@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -64,14 +65,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    final hasPasscode = await SecurityService().hasPasscode();
+    final shouldLock = await SecurityService().shouldShowLockScreen();
 
     if (!mounted) return;
 
-    if (hasPasscode) {
+    if (shouldLock) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const PasscodeLockScreen()),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: '/lock_screen'),
+          builder: (context) => const PasscodeLockScreen(),
+        ),
       );
     } else {
       Navigator.pushReplacement(
@@ -107,11 +111,12 @@ class _SplashScreenState extends State<SplashScreen> {
                     ],
                   ),
                   child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        fit: BoxFit.contain,
+                    child: ClipOval(
+                      child: SvgPicture.asset(
+                        'assets/icon/newicon.svg',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
@@ -119,8 +124,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 const SizedBox(height: 40),
 
                 // Brand Name
-                const Text(
-                  'FinLoop',
+                const _AnimatedBrandName(
+                  text: 'FinLoop',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -222,6 +227,91 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AnimatedBrandName extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const _AnimatedBrandName({required this.text, required this.style});
+
+  @override
+  State<_AnimatedBrandName> createState() => _AnimatedBrandNameState();
+}
+
+class _AnimatedBrandNameState extends State<_AnimatedBrandName>
+    with TickerProviderStateMixin {
+  static const Duration _letterDuration = Duration(milliseconds: 600);
+  static const Duration _staggerDelay = Duration(milliseconds: 100);
+
+  late final List<AnimationController> _controllers;
+  late final List<Animation<double>> _slideAnimations;
+  late final List<Animation<double>> _fadeAnimations;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = List.generate(widget.text.length, (index) {
+      final controller = AnimationController(
+        vsync: this,
+        duration: _letterDuration,
+      );
+
+      // Delay the start of each character's animation
+      Future.delayed(_staggerDelay * index, () {
+        if (mounted) {
+          controller.forward();
+        }
+      });
+
+      return controller;
+    });
+
+    _slideAnimations = _controllers.map((controller) {
+      return Tween<double>(
+        begin: -60.0,
+        end: 0.0,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutBack));
+    }).toList();
+
+    _fadeAnimations = _controllers.map((controller) {
+      return Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeIn));
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(widget.text.length, (index) {
+        final char = widget.text[index];
+        return AnimatedBuilder(
+          animation: _controllers[index],
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(0, _slideAnimations[index].value),
+              child: Opacity(
+                opacity: _fadeAnimations[index].value,
+                child: Text(char, style: widget.style),
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/settings_provider.dart';
@@ -12,12 +11,6 @@ import '../theme/app_colors.dart';
 import 'account_entries_screen.dart';
 import 'add_account_screen.dart';
 import 'add_transaction_screen.dart';
-
-// ---------------------------------------------------------------------------
-// Shared formatter (instantiated once, not on every build)
-// ---------------------------------------------------------------------------
-
-final _fmt = NumberFormat('#,##0.00');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -73,6 +66,7 @@ String _dueCountdownText(BuildContext context, int dueDay) {
 /// A zero or positive credit balance renders in green; debt renders in red with
 /// a leading minus sign.
 String _formatBalance({
+  required BuildContext context,
   required double balance,
   required bool isCreditCard,
   required String currency,
@@ -80,10 +74,10 @@ String _formatBalance({
   if (isCreditCard) {
     // balance > 0  → outstanding debt  → show as negative
     // balance <= 0 → no debt           → show 0.00
-    if (balance > 0.01) return '-$currency ${_fmt.format(balance)}';
-    return '$currency ${_fmt.format(0.0)}';
+    if (balance > 0.01) return '-$currency ${context.formatAmount(balance)}';
+    return '$currency ${context.formatAmount(0.0)}';
   }
-  return '$currency ${_fmt.format(balance)}';
+  return '$currency ${context.formatAmount(balance)}';
 }
 
 // ---------------------------------------------------------------------------
@@ -797,11 +791,18 @@ class _DueCard extends StatelessWidget {
     final dueDay = (acc['dueDate'] as int?) ?? 30;
     final countdownText = _dueCountdownText(context, dueDay);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       margin: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.orangeAccent.withAlpha(20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: Colors.orangeAccent.withOpacity(isDark ? 0.15 : 0.25),
+          width: 1.5,
+        ),
+      ),
+      color: Colors.orangeAccent.withOpacity(isDark ? 0.08 : 0.05),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -837,7 +838,7 @@ class _DueCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$currency${_fmt.format(outstanding)} ${context.translate('label_outstanding')} • $countdownText',
+                    '$currency${context.formatAmount(outstanding)} ${context.translate('label_outstanding')} • $countdownText',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -931,9 +932,6 @@ class _AccountCategorySection extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Theme.of(context).colorScheme.surface,
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -974,6 +972,7 @@ class _AccountCategorySection extends StatelessWidget {
                 Text(
                   // For credit cards, total > 0 means money owed → show as negative.
                   _formatBalance(
+                    context: context,
                     balance: total,
                     isCreditCard: _isCreditCard,
                     currency: currency,
@@ -981,9 +980,13 @@ class _AccountCategorySection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: _isCreditCard && total > 0.01
-                        ? const Color(0xFFE74C3C)
-                        : Theme.of(context).colorScheme.onSurface,
+                    color: _isCreditCard
+                        ? (total > 0.01
+                            ? const Color(0xFFE74C3C)
+                            : const Color(0xFF2ECC71))
+                        : (total >= 0.0
+                            ? const Color(0xFF2ECC71)
+                            : const Color(0xFFE74C3C)),
                   ),
                 ),
               ],
@@ -1056,13 +1059,10 @@ class _SubAccountTile extends StatelessWidget {
       displayBalance = _parseDouble(acc['balance']);
     }
 
-    // For credit cards: any outstanding debt is "negative" from the user's pov.
-    // For regular accounts: a negative balance is an overdraft.
-    final isDebt = isCreditCard
-        ? displayBalance > 0.01
-        : displayBalance < -0.01;
+
 
     final balanceText = _formatBalance(
+      context: context,
       balance: displayBalance,
       isCreditCard: isCreditCard,
       currency: currency,
@@ -1086,7 +1086,7 @@ class _SubAccountTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    acc['name']?.toString() ?? '—',
+                    context.getLocalizedAccountName(acc['name']?.toString()),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -1096,7 +1096,7 @@ class _SubAccountTile extends StatelessWidget {
                   if (isCreditCard) ...[
                     const SizedBox(height: 3),
                     Text(
-                      '${context.translate('label_limit')}: $currency${_fmt.format(limit)}  |  ${context.translate('label_available')}: $currency${_fmt.format(available)}',
+                      '${context.translate('label_limit')}: $currency${context.formatAmount(limit)}  |  ${context.translate('label_available')}: $currency${context.formatAmount(available)}',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
@@ -1114,9 +1114,7 @@ class _SubAccountTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: isDebt
-                    ? const Color(0xFFE74C3C)
-                    : const Color(0xFF2ECC71),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],

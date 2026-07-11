@@ -21,7 +21,6 @@ class _CurrencySettingsScreenState extends State<CurrencySettingsScreen> {
     {'code': 'EUR', 'name': 'Euro', 'symbol': '€'},
     {'code': 'GBP', 'name': 'British Pound Sterling', 'symbol': '£'},
     {'code': 'JPY', 'name': 'Japanese Yen', 'symbol': '¥'},
-    {'code': 'CNY', 'name': 'Chinese Yuan Renminbi', 'symbol': '¥'},
     {'code': 'INR', 'name': 'Indian Rupee', 'symbol': '₹'},
     {'code': 'CAD', 'name': 'Canadian Dollar', 'symbol': 'C\$'},
     {'code': 'AUD', 'name': 'Australian Dollar', 'symbol': 'A\$'},

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../add_transaction_screen.dart';
 import '../../../services/ad_service.dart';
 import '../../../providers/language_provider.dart';
+import '../../../providers/settings_provider.dart';
 
 class TransactionTile extends StatelessWidget {
   final Map<String, dynamic> transaction;
@@ -146,7 +147,7 @@ class TransactionTile extends StatelessWidget {
           const SizedBox(width: 16),
           // Right: Amount
           Text(
-            '$currency${NumberFormat('#,##0.00').format(amount)}',
+            '$currency${context.formatAmount(amount)}',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: amountFontSize == 12.0 ? 14.0 : amountFontSize,

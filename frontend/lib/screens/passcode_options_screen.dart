@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import 'passcode_lock_screen.dart';
 import 'passcode_setup_screen.dart';
 import '../providers/language_provider.dart';
+import 'settings/widgets/settings_tile.dart';
 
 class PasscodeOptionsScreen extends StatefulWidget {
   const PasscodeOptionsScreen({super.key});
@@ -56,19 +57,23 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
       await _securityService.clearPasscode();
       if (!mounted) return;
 
+      final theme = Theme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle_outline, color: Colors.white),
+              Icon(Icons.check_circle_outline, color: theme.colorScheme.onPrimary),
               const SizedBox(width: 12),
               Text(
                 context.translate('msg_passcode_disabled'),
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onPrimary,
+                ),
               ),
             ],
           ),
-          backgroundColor: AppColors.secondary,
+          backgroundColor: theme.colorScheme.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -106,16 +111,9 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
       final success = await _biometricService.authenticate();
       if (success) {
         await _securityService.setBiometricEnabled(true);
-        // Default to "Immediately" (0 seconds)
-        await _securityService.setBiometricTimeout(0);
         setState(() {
           _biometricEnabled = true;
-          _biometricTimeout = 0;
         });
-        // Immediately show the request time picker
-        if (mounted) {
-          _showRequestTimePicker();
-        }
       } else {
         setState(() {
           _biometricEnabled = false;
@@ -125,7 +123,6 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
       await _securityService.setBiometricEnabled(false);
       setState(() {
         _biometricEnabled = false;
-        _biometricTimeout = 0;
       });
     }
   }
@@ -243,6 +240,69 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
     }
   }
 
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, bottom: 10, top: 24),
+      child: Text(
+        _toTitleCase(title),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+        ),
+      ),
+    );
+  }
+
+  String _toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
+
+  Widget _buildSectionCard(List<Widget> children) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final List<Widget> dividedChildren = [];
+    for (int i = 0; i < children.length; i++) {
+      dividedChildren.add(children[i]);
+      if (i < children.length - 1) {
+        dividedChildren.add(
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+            indent: 60,
+          ),
+        );
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: dividedChildren,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,182 +326,50 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16),
+      body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            _buildSectionHeader(context.translate('passcode_settings')),
+            _buildSectionCard([
+              SettingsTile(
+                title: context.translate('btn_turn_off_passcode'),
+                icon: Icons.lock_open_outlined,
+                onTap: _verifyAndTurnOff,
               ),
-              color: Theme.of(context).colorScheme.surface,
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                children: [
-                  // Turn Off Passcode
-                  InkWell(
-                    onTap: _verifyAndTurnOff,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.lock_open_outlined,
-                            color: Colors.grey,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              context.translate('btn_turn_off_passcode'),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  Divider(
-                    height: 1,
-                    thickness: 0.5,
-                    color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-                  ),
-
-                  // Change Passcode
-                  InkWell(
-                    onTap: _verifyAndChange,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.lock_reset_outlined,
-                            color: Colors.grey,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              context.translate('btn_change_passcode'),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Biometric Toggle if available
-                  if (_biometricAvailable) ...[
-                    Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.fingerprint_outlined,
-                            color: Colors.grey,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              context.translate('btn_biometric_login'),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          Transform.scale(
-                            scale: 0.8,
-                            child: Switch.adaptive(
-                              value: _biometricEnabled,
-                              activeThumbColor: AppColors.primary,
-                              activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                              onChanged: _toggleBiometric,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Request Time — only visible when biometric is enabled
-                  if (_biometricAvailable && _biometricEnabled) ...[
-                    Divider(
-                      height: 1,
-                      thickness: 0.5,
-                      color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-                    ),
-                    InkWell(
-                      onTap: _showRequestTimePicker,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.schedule_outlined,
-                              color: Colors.grey,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                context.translate('bio_request_time'),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              _timeoutLabel(context, _biometricTimeout),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+              SettingsTile(
+                title: context.translate('btn_change_passcode'),
+                icon: Icons.lock_reset_outlined,
+                onTap: _verifyAndChange,
               ),
-            ),
+              if (_biometricAvailable)
+                SettingsTile(
+                  title: context.translate('btn_biometric_login'),
+                  icon: Icons.fingerprint_outlined,
+                  onTap: () => _toggleBiometric(!_biometricEnabled),
+                  trailing: Transform.scale(
+                    scale: 0.8,
+                    child: Switch.adaptive(
+                      value: _biometricEnabled,
+                      activeColor: AppColors.primary,
+                      activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                      onChanged: _toggleBiometric,
+                    ),
+                  ),
+                ),
+            ]),
+            
+            // Request Time is always shown because passcode is active on this screen
+            _buildSectionHeader(context.translate('bio_request_time')),
+            _buildSectionCard([
+              SettingsTile(
+                title: context.translate('bio_request_time'),
+                icon: Icons.schedule_outlined,
+                status: _timeoutLabel(context, _biometricTimeout),
+                onTap: _showRequestTimePicker,
+              ),
+            ]),
+            const SizedBox(height: 40),
           ],
         ),
       ),

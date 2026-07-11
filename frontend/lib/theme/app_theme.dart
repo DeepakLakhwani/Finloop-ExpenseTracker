@@ -81,6 +81,18 @@ class AppTheme {
         prefixIconColor: AppColors.neutral,
         hintStyle: const TextStyle(color: AppColors.neutral, fontSize: 14),
       ),
+      cardTheme: CardThemeData(
+        color: AppColors.surfaceLight,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Colors.black.withValues(alpha: 0.04),
+            width: 1.5,
+          ),
+        ),
+      ),
     );
   }
 
@@ -161,6 +173,18 @@ class AppTheme {
         ),
         prefixIconColor: Colors.white38,
         hintStyle: const TextStyle(color: Colors.white38, fontSize: 14),
+      ),
+      cardTheme: CardThemeData(
+        color: AppColors.surfaceDark,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Colors.white.withValues(alpha: 0.06),
+            width: 1.5,
+          ),
+        ),
       ),
     );
   }

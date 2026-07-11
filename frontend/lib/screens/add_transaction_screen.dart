@@ -363,6 +363,266 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  void _showAmountKeypad() {
+    FocusScope.of(context).unfocus();
+    final currency = context.read<SettingsProvider>().currency;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final theme = Theme.of(context);
+            final isDark = theme.brightness == Brightness.dark;
+            
+            String input = _amountController.text;
+            if (input == '0.00' || input == '0' || input == '0.0') {
+              input = '';
+            }
+            
+            void updateInput(String value) {
+              setSheetState(() {
+                if (value == '.') {
+                  if (input.isEmpty) {
+                    input = '0.';
+                  } else if (!input.contains('.')) {
+                    input += '.';
+                  }
+                } else if (value == 'backspace') {
+                  if (input.isNotEmpty) {
+                    input = input.substring(0, input.length - 1);
+                  }
+                } else if (value == 'clear') {
+                  input = '';
+                } else {
+                  if (input.contains('.')) {
+                    final parts = input.split('.');
+                    if (parts.length > 1 && parts[1].length >= 2) {
+                      return;
+                    }
+                  }
+                  if (input.length < 10) {
+                    input += value;
+                  }
+                }
+                _amountController.text = input;
+              });
+            }
+
+            Widget buildKey(String label, {IconData? icon, String? customValue}) {
+              final value = customValue ?? label;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                  child: Material(
+                    color: isDark 
+                        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) 
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => updateInput(value),
+                      child: Container(
+                        height: 54,
+                        alignment: Alignment.center,
+                        child: icon != null
+                            ? Icon(icon, color: theme.colorScheme.onSurface, size: 22)
+                            : Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: isDark 
+                          ? theme.colorScheme.surfaceContainerLow 
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.02),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          currency,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: _getActiveColor().withValues(alpha: 0.8),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            input.isEmpty ? '0.00' : input,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: input.isEmpty
+                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
+                                  : _getActiveColor(),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      buildKey('1'),
+                      buildKey('2'),
+                      buildKey('3'),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      buildKey('4'),
+                      buildKey('5'),
+                      buildKey('6'),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      buildKey('7'),
+                      buildKey('8'),
+                      buildKey('9'),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      buildKey('.', customValue: '.'),
+                      buildKey('0'),
+                      buildKey('', icon: Icons.backspace_outlined, customValue: 'backspace'),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: OutlinedButton(
+                            onPressed: () => updateInput('clear'),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              context.translate('clear'),
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final parsed = double.tryParse(input);
+                              if (parsed != null && parsed > 0) {
+                                _amountController.text = input;
+                                Navigator.pop(context);
+                                
+                                if (_type != 'Transfer') {
+                                  _showCategorySelectionDialog(autoNext: true);
+                                } else {
+                                  _showAccountSelectionDialog(
+                                    isToAccount: false,
+                                    autoNext: true,
+                                  );
+                                }
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(context.translate('err_invalid_amount')),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _getActiveColor(),
+                              foregroundColor: _getButtonTextColor(),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Confirm',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _deleteTransaction() async {
     // FIX: Block delete while another operation is in progress
     if (_isSubmitting) return;
@@ -697,22 +957,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _amountController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) {
-                                FocusScope.of(context).unfocus();
-                                if (_type != 'Transfer') {
-                                  _showCategorySelectionDialog(autoNext: true);
-                                } else {
-                                  _showAccountSelectionDialog(
-                                    isToAccount: false,
-                                    autoNext: true,
-                                  );
-                                }
-                              },
+                              readOnly: true,
+                              onTap: _showAmountKeypad,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

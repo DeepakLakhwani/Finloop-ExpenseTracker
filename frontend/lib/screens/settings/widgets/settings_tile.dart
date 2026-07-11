@@ -6,6 +6,8 @@ class SettingsTile extends StatelessWidget {
   final VoidCallback onTap;
   final Widget? trailing;
   final String? status;
+  final Color? iconColor;
+  final Color? iconBgColor;
 
   const SettingsTile({
     super.key,
@@ -14,73 +16,68 @@ class SettingsTile extends StatelessWidget {
     required this.onTap,
     this.trailing,
     this.status,
+    this.iconColor,
+    this.iconBgColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    // Crisp, prominent icon color matching the text.
+    final finalIconColor = iconColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.85);
+
     return Container(
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
+      color: Colors.transparent, // Let the Card handle the background color
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20, // Spacious padding matching the reference image
+          vertical: 6,
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 2,
-          ),
-          onTap: onTap,
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-            ),
+        horizontalTitleGap: 16, // Elegant gap between icon and title
+        onTap: onTap,
+        leading: SizedBox(
+          width: 24,
+          height: 24,
+          child: Center(
             child: Icon(
               icon,
-              color: Theme.of(context).colorScheme.onSurface,
-              size: 20,
+              color: finalIconColor,
+              size: 22,
             ),
           ),
-          title: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          trailing:
-              trailing ??
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (status != null) ...[
-                    Text(
-                      status!,
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.4),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Icon(
-                    Icons.chevron_right,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.4),
-                    size: 20,
-                  ),
-                ],
-              ),
         ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.w500, // Medium weight for crisp, legible text
+            fontSize: 16, // Clean readable size
+            color: theme.colorScheme.onSurface,
+            letterSpacing: -0.2,
+          ),
+        ),
+        trailing: trailing ??
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (status != null) ...[
+                  Text(
+                    status!,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Icon(
+                  Icons.arrow_forward_rounded, // Precise horizontal arrow matching the image
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                  size: 18,
+                ),
+              ],
+            ),
       ),
     );
   }

@@ -469,7 +469,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '$currency${NumberFormat('#,##0.00').format(dayIncome)}',
+                          '$currency${context.formatAmount(dayIncome)}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.green,
@@ -484,7 +484,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '$currency${NumberFormat('#,##0.00').format(dayExpense)}',
+                          '$currency${context.formatAmount(dayExpense)}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.red,
@@ -543,10 +543,16 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       1,
     ).weekday;
 
+    final startOnSunday =
+        context.read<SettingsProvider>().startDayOfWeek == 'Sunday';
+    final int padCount = startOnSunday
+        ? (firstDayWeekday % 7)
+        : (firstDayWeekday - 1);
+
     // List of calendar cells
     final List<DateTime?> calendarCells = [];
     // Pad start days
-    for (int i = 1; i < firstDayWeekday; i++) {
+    for (int i = 0; i < padCount; i++) {
       calendarCells.add(null);
     }
     // Fill active days
@@ -570,6 +576,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           date.day == _selectedCalendarDay.day;
     }).toList();
 
+    final weekdays = startOnSunday
+        ? ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+        : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
     return Column(
       children: [
         // Weekday labels
@@ -577,78 +587,20 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Text(
-                'M',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'T',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'W',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'T',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'F',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'S',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'S',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.38),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+            children: weekdays
+                .map(
+                  (label) => Text(
+                    label,
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.38),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ),
         const SizedBox(height: 4),
@@ -896,7 +848,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '$currency${NumberFormat('#,##0.00').format(weekIncome)}',
+                            '$currency${context.formatAmount(weekIncome)}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.green,
@@ -911,7 +863,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '$currency${NumberFormat('#,##0.00').format(weekExpense)}',
+                            '$currency${context.formatAmount(weekExpense)}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.red,
@@ -1065,7 +1017,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '$currency${NumberFormat('#,##0.00').format(monthIncome)}',
+                            '$currency${context.formatAmount(monthIncome)}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.green,
@@ -1080,7 +1032,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '$currency${NumberFormat('#,##0.00').format(monthExpense)}',
+                            '$currency${context.formatAmount(monthExpense)}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.red,
@@ -1273,7 +1225,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         color: Theme.of(context).colorScheme.surface,
         border: const Border(
           bottom: BorderSide(
-            color: Color.fromARGB(60, 167, 163, 163),
+            color: Color.fromARGB(20, 167, 163, 163),
             width: 1.0,
           ),
         ),
@@ -1294,10 +1246,32 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         indicatorColor: AppColors.primary,
         indicatorSize: TabBarIndicatorSize.tab,
         dividerColor: Colors.transparent,
-        indicatorWeight: 2,
+        indicatorWeight: 2.5,
         padding: EdgeInsets.zero,
         labelPadding: const EdgeInsets.symmetric(horizontal: 20),
-        tabs: _tabs.map((tab) => Tab(text: tab)).toList(),
+        tabs: _tabs.map((tab) {
+          final String label;
+          switch (tab) {
+            case 'Daily':
+              label = context.translate('daily');
+              break;
+            case 'Weekly':
+              label = context.translate('weekly');
+              break;
+            case 'Monthly':
+              label = context.translate('monthly');
+              break;
+            case 'Calendar':
+              label = context.translate('calendar');
+              break;
+            case 'Notes':
+              label = context.translate('notes');
+              break;
+            default:
+              label = tab;
+          }
+          return Tab(text: label);
+        }).toList(),
       ),
     );
   }
@@ -1330,7 +1304,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search by category, note, amount...',
+                    hintText: context.translate('hint_search_transactions'),
                     prefixIcon: const Icon(Icons.search, size: 18),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -1366,7 +1340,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 });
               },
               child: Text(
-                'Cancel',
+                context.translate('cancel'),
                 style: TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -1541,7 +1515,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Filter Transactions',
+                        context.translate('filter_transactions'),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -1555,14 +1529,14 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             localAccountId = null;
                           });
                         },
-                        child: const Text('Reset All'),
+                        child: Text(context.translate('btn_reset_all')),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   Text(
-                    'Transaction Type',
+                    context.translate('transaction_type'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1580,7 +1554,15 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     ) {
                       final isSelected = localType == type;
                       return ChoiceChip(
-                        label: Text(type),
+                        label: Text(
+                          type == 'All'
+                              ? context.translate('all')
+                              : type == 'Income'
+                              ? context.translate('income')
+                              : type == 'Expense'
+                              ? context.translate('expense')
+                              : context.translate('transfer'),
+                        ),
                         selected: isSelected,
                         selectedColor: AppColors.primary.withValues(alpha: 0.2),
                         backgroundColor: Colors.transparent,
@@ -1614,7 +1596,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   const SizedBox(height: 24),
 
                   Text(
-                    'Filter by Account',
+                    context.translate('filter_by_account'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1628,7 +1610,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Text(
-                            'No accounts added yet',
+                            context.translate('msg_no_accounts_in_category'),
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(
@@ -1642,7 +1624,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                           runSpacing: 8,
                           children: [
                             ChoiceChip(
-                              label: const Text('All Accounts'),
+                              label: Text(
+                                context.translate('filter_all_accounts'),
+                              ),
                               selected: localAccountId == null,
                               selectedColor: AppColors.primary.withValues(
                                 alpha: 0.2,
@@ -1675,7 +1659,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               final accId = acc['id']?.toString();
                               final isSelected = localAccountId == accId;
                               return ChoiceChip(
-                                label: Text(acc['name'] ?? ''),
+                                label: Text(
+                                  context.getLocalizedAccountName(acc['name']),
+                                ),
                                 selected: isSelected,
                                 selectedColor: AppColors.primary.withValues(
                                   alpha: 0.2,
@@ -1732,7 +1718,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             ),
                           ),
                           child: Text(
-                            'Clear',
+                            context.translate('btn_clear'),
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.bold,
@@ -1770,9 +1756,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Text(
-                            'Apply',
-                            style: TextStyle(
+                          child: Text(
+                            context.translate('btn_apply'),
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -1954,7 +1940,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         children: [
           Expanded(
             child: _buildSummaryColumn(
-              'Income',
+              context.translate('income'),
               income,
               Colors.green,
               currency,
@@ -1969,7 +1955,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           ),
           Expanded(
             child: _buildSummaryColumn(
-              'Expense',
+              context.translate('expense'),
               expense,
               Colors.red,
               currency,
@@ -1984,8 +1970,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           ),
           Expanded(
             child: _buildSummaryColumn(
-              'Balance',
-              balance,
+              context.translate('balance'),
+              balance.abs(),
               balance >= 0
                   ? Theme.of(context).colorScheme.onSurface
                   : Colors.red,
@@ -2016,7 +2002,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         ),
         const SizedBox(height: 4),
         Text(
-          '$currency${NumberFormat('#,##0.00').format(val)}',
+          '$currency${context.formatAmount(val)}',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -2043,7 +2029,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              'No Entries For This Period',
+              context.translate('title_no_entries_period'),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -2054,7 +2040,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              'Try selecting another time range or tap the floating "+" button to add entries.',
+              context.translate('desc_no_entries_period'),
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(
@@ -2081,8 +2067,10 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           tab == 'Calendar' ||
           tab == 'Summary' ||
           tab == 'Weekly') {
-        return date.year == _focusedDate.year &&
-            date.month == _focusedDate.month;
+        return context.read<SettingsProvider>().isDateInFocusedMonth(
+          date,
+          _focusedDate,
+        );
       } else {
         return date.year == _focusedDate.year;
       }
@@ -2239,40 +2227,31 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         return StatefulBuilder(
           builder: (builderContext, setDialogState) {
             final cs = Theme.of(dialogContext).colorScheme;
-            final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+            final isDark =
+                Theme.of(dialogContext).brightness == Brightness.dark;
 
             return Dialog(
               backgroundColor: Colors.transparent,
               insetPadding: const EdgeInsets.symmetric(horizontal: 24),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark
-                        ? [
-                            const Color(0xFF1E2120),
-                            const Color(0xFF121414),
-                          ]
-                        : [
-                            const Color(0xFFF8F9FA),
-                            Colors.white,
-                          ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(28),
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
-                    width: 1.5,
+                    color: cs.onSurface.withValues(alpha: 0.08),
+                    width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.3 : 0.05,
+                      ),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -2286,12 +2265,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.15),
+                            color: cs.onSurface.withValues(alpha: 0.05),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.picture_as_pdf_rounded,
-                            color: AppColors.primary,
+                            color: cs.onSurface.withValues(alpha: 0.7),
                             size: 22,
                           ),
                         ),
@@ -2301,7 +2280,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Export PDF Statement',
+                                context.translate('title_export_pdf_statement'),
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -2311,7 +2290,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Generate a printable PDF statement',
+                                context.translate('desc_export_pdf_statement'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: cs.onSurface.withValues(alpha: 0.5),
@@ -2333,7 +2312,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
                     // Select Account label
                     Text(
-                      'Select Account',
+                      context.translate('select_account'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -2351,12 +2330,14 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: isDark
-                            ? const Color(0xFF1E2824)
+                            ? const Color(0xFF161817)
                             : const Color(0xFFF3F4F6),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            color: cs.onSurface.withValues(alpha: isDark ? 0.08 : 0.06),
+                            color: cs.onSurface.withValues(
+                              alpha: isDark ? 0.08 : 0.06,
+                            ),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -2375,7 +2356,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                         DropdownMenuItem<String?>(
                           value: null,
                           child: Text(
-                            'All Accounts',
+                            context.translate('all_accounts'),
                             style: TextStyle(
                               color: cs.onSurface,
                               fontSize: 14,
@@ -2413,7 +2394,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Start Date',
+                                context.translate('label_start_date'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -2444,11 +2425,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                   ),
                                   decoration: BoxDecoration(
                                     color: isDark
-                                        ? const Color(0xFF1E2824)
+                                        ? const Color(0xFF161817)
                                         : const Color(0xFFF3F4F6),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: cs.onSurface.withValues(alpha: isDark ? 0.08 : 0.06),
+                                      color: cs.onSurface.withValues(
+                                        alpha: isDark ? 0.08 : 0.06,
+                                      ),
                                     ),
                                   ),
                                   child: Row(
@@ -2456,7 +2439,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        DateFormat('dd/MM/yyyy').format(localStartDate),
+                                        DateFormat(
+                                          'dd/MM/yyyy',
+                                        ).format(localStartDate),
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
@@ -2481,7 +2466,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'End Date',
+                                context.translate('label_end_date'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -2512,11 +2497,13 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                   ),
                                   decoration: BoxDecoration(
                                     color: isDark
-                                        ? const Color(0xFF1E2824)
+                                        ? const Color(0xFF161817)
                                         : const Color(0xFFF3F4F6),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: cs.onSurface.withValues(alpha: isDark ? 0.08 : 0.06),
+                                      color: cs.onSurface.withValues(
+                                        alpha: isDark ? 0.08 : 0.06,
+                                      ),
                                     ),
                                   ),
                                   child: Row(
@@ -2524,7 +2511,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        DateFormat('dd/MM/yyyy').format(localEndDate),
+                                        DateFormat(
+                                          'dd/MM/yyyy',
+                                        ).format(localEndDate),
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
@@ -2583,7 +2572,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Include period summary',
+                                    context.translate(
+                                      'label_include_period_summary',
+                                    ),
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
@@ -2594,11 +2585,15 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                     Padding(
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(
-                                        'Selecting this option generates the total amounts of this period.',
+                                        context.translate(
+                                          'desc_include_period_summary',
+                                        ),
                                         style: TextStyle(
                                           fontSize: 11,
                                           height: 1.4,
-                                          color: cs.onSurface.withValues(alpha: 0.5),
+                                          color: cs.onSurface.withValues(
+                                            alpha: 0.5,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -2631,7 +2626,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                 ),
                               ),
                               child: Text(
-                                'Cancel',
+                                context.translate('cancel'),
                                 style: TextStyle(
                                   color: cs.onSurface.withValues(alpha: 0.6),
                                   fontWeight: FontWeight.w600,
@@ -2655,7 +2650,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 elevation: 3,
-                                shadowColor: AppColors.primary.withValues(alpha: 0.3),
+                                shadowColor: AppColors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
@@ -2663,9 +2660,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              child: const Text(
-                                'Generate',
-                                style: TextStyle(
+                              child: Text(
+                                context.translate('btn_generate'),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,

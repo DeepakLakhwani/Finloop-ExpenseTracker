@@ -9,6 +9,7 @@ class SecurityService {
   static const String _biometricEnabledKey = 'biometric_enabled';
   static const String _biometricTimeoutKey = 'biometric_timeout_seconds';
   static const String _lastBiometricAuthKey = 'last_biometric_auth_ms';
+  static const String _lastAppClosedKey = 'last_app_closed_ms';
 
   String _hashPasscode(String passcode) {
     final bytes = utf8.encode(passcode);
@@ -51,6 +52,7 @@ class SecurityService {
     await _storage.delete(key: _biometricEnabledKey);
     await _storage.delete(key: _biometricTimeoutKey);
     await _storage.delete(key: _lastBiometricAuthKey);
+    await _storage.delete(key: _lastAppClosedKey);
   }
 
   // Check if biometrics enabled
@@ -62,11 +64,6 @@ class SecurityService {
   // Set biometric toggle
   Future<void> setBiometricEnabled(bool enabled) async {
     await _storage.write(key: _biometricEnabledKey, value: enabled.toString());
-    if (!enabled) {
-      // Clear timeout settings when biometric is disabled
-      await _storage.delete(key: _biometricTimeoutKey);
-      await _storage.delete(key: _lastBiometricAuthKey);
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -107,6 +104,40 @@ class SecurityService {
 
     final lastAuthMs = int.tryParse(lastAuthStr) ?? 0;
     final elapsedMs = DateTime.now().millisecondsSinceEpoch - lastAuthMs;
+    final timeoutMs = timeoutSeconds * 1000;
+
+    return elapsedMs >= timeoutMs;
+  }
+
+  // ---------------------------------------------------------------------------
+  // App Closing / Grace Period Timeouts (Passcode Bypass)
+  // ---------------------------------------------------------------------------
+
+  /// Record when the app is minimized / closed.
+  Future<void> recordAppClosedTime() async {
+    final now = DateTime.now().millisecondsSinceEpoch.toString();
+    await _storage.write(key: _lastAppClosedKey, value: now);
+  }
+
+  /// Clear the app closed timestamp on successful unlock.
+  Future<void> clearAppClosedTime() async {
+    await _storage.delete(key: _lastAppClosedKey);
+  }
+
+  /// Checks if the app should request passcode/biometric authentication
+  /// based on the elapsed time since the app was closed.
+  Future<bool> shouldShowLockScreen() async {
+    final hasCode = await hasPasscode();
+    if (!hasCode) return false;
+
+    final lastClosedStr = await _storage.read(key: _lastAppClosedKey);
+    if (lastClosedStr == null) return true; // Cold start / first launch
+
+    final lastClosedMs = int.tryParse(lastClosedStr) ?? 0;
+    final timeoutSeconds = await getBiometricTimeout();
+    if (timeoutSeconds == 0) return true; // Immediately
+
+    final elapsedMs = DateTime.now().millisecondsSinceEpoch - lastClosedMs;
     final timeoutMs = timeoutSeconds * 1000;
 
     return elapsedMs >= timeoutMs;

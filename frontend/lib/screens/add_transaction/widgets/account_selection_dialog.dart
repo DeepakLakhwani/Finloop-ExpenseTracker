@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/settings_provider.dart';
-import 'package:intl/intl.dart';
+import '../../../providers/language_provider.dart';
 
 class AccountSelectionDialog extends StatelessWidget {
   final List<Map<String, dynamic>> accounts;
@@ -56,7 +56,6 @@ class AccountSelectionDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     final currency = context.watch<SettingsProvider>().currency;
-    final formatter = NumberFormat('#,##0.00');
 
     return Container(
       decoration: BoxDecoration(
@@ -72,7 +71,9 @@ class AccountSelectionDialog extends StatelessWidget {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -83,9 +84,11 @@ class AccountSelectionDialog extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isToAccount ? 'Select Destination Account' : 'Select Account',
+                isToAccount
+                    ? context.translate('select_destination_account')
+                    : context.translate('select_account_hint'),
                 style: TextStyle(
-                  fontSize: 18, 
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -93,7 +96,9 @@ class AccountSelectionDialog extends StatelessWidget {
               IconButton(
                 icon: Icon(
                   Icons.close,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -107,9 +112,11 @@ class AccountSelectionDialog extends StatelessWidget {
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Text(
-                      'No accounts found.',
+                      context.translate('msg_no_accounts_in_category'),
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -117,10 +124,12 @@ class AccountSelectionDialog extends StatelessWidget {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: accounts.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 8),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final acc = accounts[index];
-                      final isSelected = selectedAccountId == acc['id'].toString();
+                      final isSelected =
+                          selectedAccountId == acc['id'].toString();
                       final balance = _parseDouble(acc['balance']);
 
                       return InkWell(
@@ -130,16 +139,21 @@ class AccountSelectionDialog extends StatelessWidget {
                         },
                         borderRadius: BorderRadius.circular(16),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? activeColor.withValues(alpha: 0.08)
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
+                                : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.02),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected
                                   ? activeColor
-                                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.06),
                               width: isSelected ? 2.0 : 1.0,
                             ),
                           ),
@@ -148,12 +162,21 @@ class AccountSelectionDialog extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: (isSelected ? activeColor : Theme.of(context).colorScheme.onSurface).withValues(alpha: 0.08),
+                                  color:
+                                      (isSelected
+                                              ? activeColor
+                                              : Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurface)
+                                          .withValues(alpha: 0.08),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   _getAccountIcon(acc['type']),
-                                  color: isSelected ? activeColor : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                  color: isSelected
+                                      ? activeColor
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withValues(alpha: 0.7),
                                   size: 22,
                                 ),
                               ),
@@ -163,19 +186,30 @@ class AccountSelectionDialog extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      acc['name'] ?? '',
+                                      context.getLocalizedAccountName(
+                                        acc['name'],
+                                      ),
                                       style: TextStyle(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
                                         fontSize: 15,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      acc['type'] ?? '',
+                                      context.getLocalizedAccountType(
+                                        acc['type'],
+                                      ),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5),
                                       ),
                                     ),
                                   ],
@@ -185,11 +219,13 @@ class AccountSelectionDialog extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    '$currency${formatter.format(balance)}',
+                                    '$currency${context.formatAmount(balance)}',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                   if (isSelected) ...[

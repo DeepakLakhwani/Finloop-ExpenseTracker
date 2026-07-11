@@ -115,55 +115,89 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  itemCount: budgets.length,
-                  itemBuilder: (context, index) {
-                    final budget = budgets[index];
-                    return Card(
-                      elevation: 1,
-                      margin: const EdgeInsets.only(bottom: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                final budgetWidgets = budgets.map<Widget>((budget) {
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      child: Icon(Icons.track_changes, color: AppColors.primary),
+                    ),
+                    title: Text(
+                      context.getLocalizedCategory(
+                        budget['categoryKey']?.toString(),
+                        budget['categoryName'] ?? context.translate('label_category'),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                          child: Icon(Icons.track_changes, color: AppColors.primary),
-                        ),
-                        title: Text(
-                          context.getLocalizedCategory(
-                            budget['categoryKey']?.toString(),
-                            budget['categoryName'] ?? context.translate('label_category'),
-                          ),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          '${context.translate('label_limit')}: $currency ${budget['limitAmount']}',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 20),
-                              onPressed: () => _showBudgetForm(budget: budget),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                              onPressed: () => _deleteConfirm(budget['id']),
-                            ),
-                          ],
-                        ),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '${context.translate('label_limit')}: $currency ${budget['limitAmount']}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
-                    );
-                  },
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          onPressed: () => _showBudgetForm(budget: budget),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                          onPressed: () => _deleteConfirm(budget['id']),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList();
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: _buildSectionCard(budgetWidgets),
                 );
               },
             ),
+    );
+  }
+
+  Widget _buildSectionCard(List<Widget> children) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final List<Widget> dividedChildren = [];
+    for (int i = 0; i < children.length; i++) {
+      dividedChildren.add(children[i]);
+      if (i < children.length - 1) {
+        dividedChildren.add(
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+            indent: 60,
+          ),
+        );
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: dividedChildren,
+        ),
+      ),
     );
   }
 

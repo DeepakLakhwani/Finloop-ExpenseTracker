@@ -18,8 +18,8 @@ class AppColors {
 
   // Background colors
   static const Color backgroundLight = Color(
-    0xFFF8FAFF,
-  ); // Exact light background color
+    0xFFF4F5F7,
+  ); // Clean neutral off-white background color
   static const Color backgroundDark = Color(
     0xFF1A1919,
   ); // Premium charcoal background

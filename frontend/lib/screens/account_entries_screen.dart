@@ -323,7 +323,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$currency${NumberFormat('#,##0.00').format(amount)}',
+                  '$currency${context.formatAmount(amount)}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -334,7 +334,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Bal: $currency${NumberFormat('#,##0.00').format(closingBalance)}',
+                  'Bal: $currency${context.formatAmount(closingBalance)}',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -420,7 +420,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
           onPressed: () => Navigator.pop(context, true),
         ),
         title: Text(
-          _account['name'] ?? 'Account',
+          context.getLocalizedAccountName(_account['name']),
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -481,8 +481,8 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                           children: [
                             Text(
                               isCreditCard
-                                  ? '${_account['cardIssuer'] ?? 'Credit Card'} (${_account['type']})'
-                                  : (_account['type'] ?? 'Account'),
+                                  ? '${_account['cardIssuer'] ?? context.translate('type_cards')} (${context.getLocalizedAccountType(_account['type'])})'
+                                  : context.getLocalizedAccountType(_account['type']),
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.white.withValues(alpha: 0.7),
@@ -492,7 +492,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                             const SizedBox(height: 6),
                             if (isCreditCard) ...[
                               Text(
-                                '$currency ${NumberFormat('#,##0.00').format(available)}',
+                                '$currency ${context.formatAmount(available)}',
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
@@ -501,7 +501,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Available Credit',
+                                context.translate('available_credit'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.white.withValues(alpha: 0.65),
@@ -513,7 +513,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Used: $currency${NumberFormat('#,##0.00').format(used)}',
+                                    '${context.translate('label_used')}: $currency${context.formatAmount(used)}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.white.withValues(alpha: 0.95),
@@ -521,7 +521,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Limit: $currency${NumberFormat('#,##0.00').format(limit)}',
+                                    '${context.translate('label_limit')}: $currency${context.formatAmount(limit)}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.white.withValues(alpha: 0.95),
@@ -532,7 +532,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                               ),
                             ] else ...[
                               Text(
-                                '$currency ${NumberFormat('#,##0.00').format(balance)}',
+                                '$currency ${context.formatAmount(balance)}',
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
@@ -550,7 +550,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '${_entries.length} Transaction${_entries.length == 1 ? "" : "s"}',
+                                  context.translate('transactions_count').replaceAll('{count}', _entries.length.toString()),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.white.withValues(alpha: 0.9),
@@ -564,7 +564,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'History',
+                        context.translate('history'),
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -592,7 +592,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  'No entries in this account',
+                                  context.translate('msg_no_entries_in_account'),
                                   style: TextStyle(
                                     color: Theme.of(
                                       context,

@@ -52,19 +52,23 @@ class _PasscodeSetupScreenState extends State<PasscodeSetupScreen> {
         await _securityService.setPasscode(_enteredCode);
         if (!mounted) return;
 
+        final theme = Theme.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_outline, color: Colors.white),
+                Icon(Icons.check_circle_outline, color: theme.colorScheme.onPrimary),
                 const SizedBox(width: 12),
                 Text(
                   context.translate('msg_passcode_set'),
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onPrimary,
+                  ),
                 ),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: theme.colorScheme.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

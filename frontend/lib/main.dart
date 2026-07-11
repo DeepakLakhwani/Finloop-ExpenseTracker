@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/passcode_lock_screen.dart';
+import 'services/security_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
@@ -50,13 +52,54 @@ class FinloopApp extends StatefulWidget {
   State<FinloopApp> createState() => _FinloopAppState();
 }
 
-class _FinloopAppState extends State<FinloopApp> {
+class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     AppReviewService.logAppOpen();
     _loadInitialSettings();
     _initNotifications();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    final security = SecurityService();
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      // Record closing timestamp when app goes to background
+      await security.recordAppClosedTime();
+    } else if (state == AppLifecycleState.resumed) {
+      // App returned to foreground
+      final shouldLock = await security.shouldShowLockScreen();
+      if (shouldLock) {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          bool isLockScreenVisible = false;
+          // Look up if PasscodeLockScreen is already present in the navigator stack
+          navigatorKey.currentState?.popUntil((route) {
+            if (route.settings.name == '/lock_screen') {
+              isLockScreenVisible = true;
+            }
+            return true;
+          });
+
+          if (!isLockScreenVisible) {
+            navigatorKey.currentState?.push(
+              MaterialPageRoute(
+                settings: const RouteSettings(name: '/lock_screen'),
+                builder: (context) => const PasscodeLockScreen(),
+              ),
+            );
+          }
+        }
+      }
+    }
   }
 
   Future<void> _initNotifications() async {
@@ -83,14 +126,16 @@ class _FinloopAppState extends State<FinloopApp> {
           );
           context.read<SettingsProvider>().loadSettings(
             data['defaultCurrency'],
+            data,
           );
           context.read<LanguageProvider>().loadSettings(data['language']);
         }
       } else {
-        // Even if user is not logged in, load language and theme from SharedPreferences
+        // Even if user is not logged in, load language, theme and settings from SharedPreferences
         if (mounted) {
           context.read<ThemeProvider>().loadSettings(null);
           context.read<LanguageProvider>().loadSettings(null);
+          context.read<SettingsProvider>().loadSettings(null);
         }
       }
     } catch (e) {

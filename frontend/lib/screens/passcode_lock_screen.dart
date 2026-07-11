@@ -33,22 +33,18 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
 
   void _triggerBiometrics({bool force = false}) async {
     final enabled = await _securityService.isBiometricEnabled();
-    final shouldRequest = (force || widget.verificationOnly)
-        ? enabled
-        : await _securityService.shouldRequestBiometric();
     final available = await _biometricService.isBiometricAvailable();
-    if (shouldRequest && available) {
+    if (enabled && available) {
       final success = await _biometricService.authenticate();
       if (success && mounted) {
-        if (!widget.verificationOnly) {
-          await _securityService.recordBiometricAuth();
-        }
         _onAuthSuccess();
       }
     }
   }
 
-  void _onAuthSuccess() {
+  void _onAuthSuccess() async {
+    await _securityService.clearAppClosedTime();
+    if (!mounted) return;
     if (widget.verificationOnly) {
       Navigator.pop(context, true);
     } else {

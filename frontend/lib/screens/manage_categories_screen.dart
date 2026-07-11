@@ -247,11 +247,6 @@ class ManageCategoriesScreen extends StatelessWidget {
               final cat = categories[index];
               return Card(
                 margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-                elevation: 1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                color: Theme.of(context).colorScheme.surface,
                 clipBehavior: Clip.antiAlias,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(

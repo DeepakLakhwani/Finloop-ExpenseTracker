@@ -37,7 +37,7 @@ class NotificationService {
 
     // Android settings
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     // iOS settings
     const DarwinInitializationSettings iosSettings =
@@ -146,5 +146,125 @@ class NotificationService {
 
   Future<void> cancelDailyReminder() async {
     await _localNotifications.cancel(0);
+  }
+
+  Future<void> updateBackupReminder(String style) async {
+    // Cancel any existing backup reminder notifications (ID 1)
+    await _localNotifications.cancel(1);
+
+    if (style == 'none') return;
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'backup_reminder_channel',
+      'Backup Reminders',
+      channelDescription: 'Reminders to back up your data',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final now = tz.TZDateTime.now(tz.local);
+
+    if (style == 'weekly') {
+      // Schedule weekly reminder (e.g. every Sunday at 11:00 AM)
+      var scheduledTime = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        11,
+        0,
+      );
+
+      int daysUntilSunday = (DateTime.sunday - scheduledTime.weekday + 7) % 7;
+      if (daysUntilSunday == 0 && scheduledTime.isBefore(now)) {
+        daysUntilSunday = 7;
+      }
+      scheduledTime = scheduledTime.add(Duration(days: daysUntilSunday));
+
+      await _localNotifications.zonedSchedule(
+        1,
+        'Finloop Backup Reminder',
+        'Keep your financial data safe by exporting a backup statement today.',
+        scheduledTime,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      );
+    } else if (style == 'monthly') {
+      // Schedule monthly reminder (e.g. on the 1st of every month at 11:00 AM)
+      var scheduledTime = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        1,
+        11,
+        0,
+      );
+
+      if (scheduledTime.isBefore(now)) {
+        scheduledTime = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month + 1,
+          1,
+          11,
+          0,
+        );
+      }
+
+      await _localNotifications.zonedSchedule(
+        1,
+        'Finloop Backup Reminder',
+        'Monthly backup reminder: keep your data secure by exporting a statement backup.',
+        scheduledTime,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.dayOfMonthAndTime,
+      );
+    }
+  }
+
+  Future<void> sendInstantTestNotification() async {
+    // Request permissions first to ensure it triggers
+    await requestPermissionsAndSchedule();
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'backup_reminder_channel',
+      'Backup Reminders',
+      channelDescription: 'Reminders to back up your data',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    await _localNotifications.show(
+      99, // Test Notification ID
+      'Finloop Backup Test',
+      'This is an instant test notification for your backup reminder!',
+      notificationDetails,
+    );
   }
 }

@@ -647,110 +647,107 @@ class _ExportCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Date pickers
-          Row(
-            children: [
-              Expanded(
-                child: _DatePickerField(
-                  label: context.translate('label_from_date'),
-                  date: fromDate,
-                  isDark: isDark,
-                  onTap: onPickFromDate,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _DatePickerField(
-                  label: context.translate('label_to_date'),
-                  date: toDate,
-                  isDark: isDark,
-                  onTap: onPickToDate,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Account filter
-          Text(
-            context.translate('select_account'),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: cs.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date pickers
+            Row(
               children: [
-                _AccountChip(
-                  label: context.translate('filter_all_accounts'),
-                  isSelected: selectedAccountId == null,
-                  onSelected: () => onSelectAccount(null),
+                Expanded(
+                  child: _DatePickerField(
+                    label: context.translate('label_from_date'),
+                    date: fromDate,
+                    isDark: isDark,
+                    onTap: onPickFromDate,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                ...userAccounts.map((acc) {
-                  final id = acc['id']?.toString();
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _AccountChip(
-                      label: acc['name']?.toString() ?? '',
-                      isSelected: selectedAccountId == id,
-                      onSelected: () => onSelectAccount(id),
-                    ),
-                  );
-                }),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _DatePickerField(
+                    label: context.translate('label_to_date'),
+                    date: toDate,
+                    isDark: isDark,
+                    onTap: onPickToDate,
+                  ),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 28),
+            const SizedBox(height: 20),
 
-          // Export button
-          ElevatedButton.icon(
-            onPressed: isExporting ? null : onExport,
-            icon: isExporting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(Icons.download_rounded, color: Colors.white),
-            label: Text(
-              isExporting
-                  ? context.translate('btn_exporting')
-                  : (isBackupMode
-                        ? context.translate('btn_export_backup')
-                        : context.translate('btn_export_excel')),
-              style: const TextStyle(
+            // Account filter
+            Text(
+              context.translate('select_account'),
+              style: TextStyle(
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: cs.onSurface.withValues(alpha: 0.6),
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 56),
-              backgroundColor: AppColors.primary,
-              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _AccountChip(
+                    label: context.translate('filter_all_accounts'),
+                    isSelected: selectedAccountId == null,
+                    onSelected: () => onSelectAccount(null),
+                  ),
+                  const SizedBox(width: 8),
+                  ...userAccounts.map((acc) {
+                    final id = acc['id']?.toString();
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _AccountChip(
+                        label: acc['name']?.toString() ?? '',
+                        isSelected: selectedAccountId == id,
+                        onSelected: () => onSelectAccount(id),
+                      ),
+                    );
+                  }),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 28),
+
+            // Export button
+            ElevatedButton.icon(
+              onPressed: isExporting ? null : onExport,
+              icon: isExporting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.download_rounded, color: Colors.white),
+              label: Text(
+                isExporting
+                    ? context.translate('btn_exporting')
+                    : (isBackupMode
+                          ? context.translate('btn_export_backup')
+                          : context.translate('btn_export_excel')),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+                backgroundColor: AppColors.primary,
+                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -864,86 +861,83 @@ class _ImportCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.info_outline,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  context.translate('header_import_instructions'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: cs.onSurface,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.info_outline,
+                    color: AppColors.primary,
+                    size: 20,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.translate('desc_import_instructions'),
-            style: TextStyle(
-              fontSize: 12,
-              height: 1.5,
-              color: cs.onSurface.withValues(alpha: 0.55),
-            ),
-          ),
-          const SizedBox(height: 28),
-          ElevatedButton.icon(
-            onPressed: isImporting ? null : onImport,
-            icon: isImporting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    context.translate('header_import_instructions'),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
                     ),
-                  )
-                : const Icon(Icons.upload_file_rounded, color: Colors.white),
-            label: Text(
-              isImporting
-                  ? context.translate('btn_importing')
-                  : (isBackupMode
-                        ? context.translate('btn_upload_backup')
-                        : context.translate('btn_upload_excel')),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              context.translate('desc_import_instructions'),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.5,
+                color: cs.onSurface.withValues(alpha: 0.55),
               ),
             ),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 56),
-              backgroundColor: AppColors.success,
-              disabledBackgroundColor: AppColors.success.withValues(alpha: 0.6),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 28),
+            ElevatedButton.icon(
+              onPressed: isImporting ? null : onImport,
+              icon: isImporting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.upload_file_rounded, color: Colors.white),
+              label: Text(
+                isImporting
+                    ? context.translate('btn_importing')
+                    : (isBackupMode
+                          ? context.translate('btn_upload_backup')
+                          : context.translate('btn_upload_excel')),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 56),
+                backgroundColor: AppColors.success,
+                disabledBackgroundColor: AppColors.success.withValues(alpha: 0.6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

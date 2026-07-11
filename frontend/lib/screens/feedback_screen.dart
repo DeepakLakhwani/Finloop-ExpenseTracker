@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_colors.dart';
 import '../providers/language_provider.dart';
@@ -34,7 +34,9 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     'Support Inquiry',
   ];
 
-  PlatformFile? _selectedFile;
+  XFile? _selectedFile;
+  int? _selectedFileLength;
+  Uint8List? _selectedFileBytes;
   bool _isSubmitting = false;
 
   @override
@@ -55,35 +57,32 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   Future<void> _pickImage() async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final pickedFile = result.files.first;
-
-        // Check if we have valid image data (bytes on web, path on mobile)
-        final hasData = kIsWeb
-            ? pickedFile.bytes != null
-            : pickedFile.path != null;
-        if (!hasData) {
-          showTopNotification(
-            context.translate('err_read_image'),
-            isError: true,
-          );
-          return;
-        }
-
-        if (pickedFile.size > 5 * 1024 * 1024) {
+      if (image != null) {
+        final int size = await image.length();
+        if (size > 5 * 1024 * 1024) {
           showTopNotification(
             context.translate('err_image_too_large'),
             isError: true,
           );
           return;
         }
-        setState(() => _selectedFile = pickedFile);
+
+        Uint8List? bytes;
+        if (kIsWeb) {
+          bytes = await image.readAsBytes();
+        }
+
+        setState(() {
+          _selectedFile = image;
+          _selectedFileLength = size;
+          _selectedFileBytes = bytes;
+        });
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Error picking image: $e');
@@ -94,7 +93,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
-  void _removeImage() => setState(() => _selectedFile = null);
+  void _removeImage() => setState(() {
+        _selectedFile = null;
+        _selectedFileLength = null;
+        _selectedFileBytes = null;
+      });
 
   // FIX #3: Safely unwrap result.data — it may be null or not a Map if the
   // Cloud Function throws or returns an unexpected shape.
@@ -604,21 +607,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               child: SizedBox(
                                 width: 64,
                                 height: 64,
-                                child: _selectedFile!.bytes != null
+                                child: kIsWeb && _selectedFileBytes != null
                                     ? Image.memory(
-                                        _selectedFile!.bytes!,
+                                        _selectedFileBytes!,
                                         fit: BoxFit.cover,
                                       )
-                                    : (_selectedFile!.path != null
-                                          ? Image.file(
-                                              File(_selectedFile!.path!),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : const Icon(
-                                              Icons.image_outlined,
-                                              size: 32,
-                                              color: Colors.grey,
-                                            )),
+                                    : Image.file(
+                                        File(_selectedFile!.path),
+                                        fit: BoxFit.cover,
+                                      ),
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -640,7 +637,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${(_selectedFile!.size / 1024).toStringAsFixed(1)} KB',
+                                    '${((_selectedFileLength ?? 0) / 1024).toStringAsFixed(1)} KB',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Theme.of(context)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/settings_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/language_provider.dart';
@@ -15,6 +16,7 @@ import 'settings/widgets/settings_tile.dart';
 import 'settings/privacy_policy_screen.dart';
 import 'settings/budgets_management_screen.dart';
 import 'settings/general_settings_screen.dart';
+import 'settings/faq_screen.dart';
 import '../services/app_review_service.dart';
 
 // Main settings hub (previously ProfileScreen in profile_screen.dart)
@@ -28,12 +30,14 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _isPasscodeOn = false;
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _checkPasscodeStatus();
     _checkNotificationStatus();
+    _loadAppVersion();
   }
 
   Future<void> _checkNotificationStatus() async {
@@ -54,6 +58,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
+        });
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch providers so the settings screen rebuilds when they change
@@ -67,139 +82,139 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
-
-              // Account Settings Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    context.translate('app_settings').toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      letterSpacing: 1,
+              const SizedBox(height: 10),
+              _buildSectionHeader(context, 'app_settings'),
+              _buildSectionCard(context, [
+                SettingsTile(
+                  title: context.translate('general'),
+                  icon: Icons.tune_outlined,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GeneralSettingsScreen(),
                     ),
                   ),
                 ),
-              ),
+                SettingsTile(
+                  title: context.translate('budgets'),
+                  icon: Icons.track_changes_outlined,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BudgetsManagementScreen(),
+                    ),
+                  ),
+                ),
+                SettingsTile(
+                  title: context.translate('notifications'),
+                  icon: Icons.notifications_none,
+                  onTap: () {},
+                  trailing: Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: _notificationsEnabled,
+                      onChanged: (val) async {
+                        setState(() => _notificationsEnabled = val);
+                        await NotificationService().setNotificationsEnabled(
+                          val,
+                        );
+                      },
+                      activeThumbColor: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ]),
               const SizedBox(height: 16),
 
-              Card(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                elevation: 1,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              _buildSectionHeader(context, 'security_and_data'),
+              _buildSectionCard(context, [
+                SettingsTile(
+                  title: context.translate('passcode'),
+                  icon: Icons.lock_outline,
+                  onTap: () => _navigateToPasscode(context),
+                  status: passcodeStatus,
                 ),
-                color: Theme.of(context).colorScheme.surface,
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    SettingsTile(
-                      title: context.translate('general'),
-                      icon: Icons.tune_outlined,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const GeneralSettingsScreen(),
-                        ),
+                SettingsTile(
+                  title: context.translate('backup'),
+                  icon: Icons.cloud_upload_outlined,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const ImportExportScreen(isBackupMode: true),
                       ),
-                    ),
-                    SettingsTile(
-                      title: context.translate('budgets'),
-                      icon: Icons.track_changes_outlined,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BudgetsManagementScreen(),
-                        ),
-                      ),
-                    ),
-                    SettingsTile(
-                      title: context.translate('passcode'),
-                      icon: Icons.lock_outline,
-                      onTap: () => _navigateToPasscode(context),
-                      status: passcodeStatus,
-                    ),
-                    SettingsTile(
-                      title: context.translate('backup'),
-                      icon: Icons.cloud_upload_outlined,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const ImportExportScreen(isBackupMode: true),
-                          ),
-                        );
-                      },
-                      status: 'Excel',
-                    ),
-                    SettingsTile(
-                      title: context.translate('feedback'),
-                      icon: Icons.feedback_outlined,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FeedbackScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    SettingsTile(
-                      title: context.translate('rate_us'),
-                      icon: Icons.star_outline,
-                      onTap: () {
-                        AppReviewService.openStoreListing();
-                      },
-                    ),
-                    SettingsTile(
-                      title: context.translate('privacy_policy'),
-                      icon: Icons.privacy_tip_outlined,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PrivacyPolicyScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    SettingsTile(
-                      title: context.translate('notifications'),
-                      icon: Icons.notifications_none,
-                      onTap: () {},
-                      trailing: Transform.scale(
-                        scale: 0.8,
-                        child: Switch(
-                          value: _notificationsEnabled,
-                          onChanged: (val) async {
-                            setState(() => _notificationsEnabled = val);
-                            await NotificationService().setNotificationsEnabled(
-                              val,
-                            );
-                          },
-                          activeThumbColor: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
+                    );
+                  },
+                  status: 'Excel',
                 ),
-              ),
-              const SizedBox(height: 32),
+              ]),
+              const SizedBox(height: 16),
 
+              _buildSectionHeader(context, 'support_and_feedback'),
+              _buildSectionCard(context, [
+                SettingsTile(
+                  title: context.translate('faq'),
+                  icon: Icons.help_outline,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FaqScreen(),
+                      ),
+                    );
+                  },
+                ),
+                SettingsTile(
+                  title: context.translate('feedback'),
+                  icon: Icons.feedback_outlined,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FeedbackScreen(),
+                      ),
+                    );
+                  },
+                ),
+                SettingsTile(
+                  title: context.translate('rate_us'),
+                  icon: Icons.star_outline,
+                  onTap: () {
+                    AppReviewService.openStoreListing();
+                  },
+                ),
+              ]),
+              const SizedBox(height: 16),
+
+              _buildSectionHeader(context, 'about'),
+              _buildSectionCard(context, [
+                SettingsTile(
+                  title: context.translate('privacy_policy'),
+                  icon: Icons.privacy_tip_outlined,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PrivacyPolicyScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+              const SizedBox(height: 24),
+              
               // Version Info
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.only(left: 4),
                 child: Text(
-                  context.translate('version_info'),
+                  _appVersion.isNotEmpty
+                      ? context.translate('version_info').replaceAll('1.0.0 (1)', _appVersion)
+                      : context.translate('version_info'),
                   style: TextStyle(
                     color: Theme.of(
                       context,
@@ -211,6 +226,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 100),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String titleKey) {
+    String title = context.translate(titleKey);
+    if (title.toUpperCase() == "SETTINGS") {
+      title = "Settings";
+    } else {
+      title = _toTitleCase(title);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 10, top: 24), // Spacious gap between cards
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500, // Medium weight for header text
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45), // Sleek, modern grey
+        ),
+      ),
+    );
+  }
+
+  String _toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
+
+  Widget _buildSectionCard(BuildContext context, List<Widget> children) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final List<Widget> dividedChildren = [];
+    for (int i = 0; i < children.length; i++) {
+      dividedChildren.add(children[i]);
+      if (i < children.length - 1) {
+        dividedChildren.add(
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+            indent: 60, // Perfectly aligns with the start of the title text
+          ),
+        );
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: dividedChildren,
         ),
       ),
     );
