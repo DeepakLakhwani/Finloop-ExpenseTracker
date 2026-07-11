@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../theme/app_colors.dart';
 import '../../providers/language_provider.dart';
 
 class FaqScreen extends StatelessWidget {
@@ -382,33 +381,19 @@ class FaqScreen extends StatelessWidget {
             ),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2120) : Colors.white,
+                color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.primary.withValues(
-                    alpha: isDark ? 0.15 : 0.08,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                  width: 1.2,
-                ),
+                ],
               ),
               child: ExpansionTile(
                 backgroundColor: Colors.transparent,
                 collapsedBackgroundColor: Colors.transparent,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
                 title: Text(
                   faq['q']!,
                   style: TextStyle(
@@ -417,7 +402,7 @@ class FaqScreen extends StatelessWidget {
                     color: onSurfaceColor,
                   ),
                 ),
-                iconColor: AppColors.primary,
+                iconColor: onSurfaceColor.withValues(alpha: 0.8),
                 collapsedIconColor: onSurfaceColor.withValues(alpha: 0.5),
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 expandedCrossAxisAlignment: CrossAxisAlignment.start,

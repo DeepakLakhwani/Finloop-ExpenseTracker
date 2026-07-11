@@ -388,94 +388,84 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.08),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((opt) {
-                  final value = opt['value'] as String;
-                  final label = opt['label'] as String;
-                  final icon = opt['icon'] as IconData;
-                  final isSelected = currentDay == value;
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.02)
+                        : Colors.black.withValues(alpha: 0.01),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      children: List.generate(options.length, (index) {
+                        final opt = options[index];
+                        final value = opt['value'] as String;
+                        final label = opt['label'] as String;
+                        final icon = opt['icon'] as IconData;
+                        final isSelected = currentDay == value;
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () {
-                        settings.setStartDayOfWeek(value);
-                        Navigator.pop(context);
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary.withValues(
-                                  alpha: isDark ? 0.12 : 0.08,
-                                )
-                              : (isDark
-                                    ? Colors.white.withValues(alpha: 0.02)
-                                    : Colors.black.withValues(alpha: 0.01)),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.08),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Row(
+                        return Column(
                           children: [
-                            Icon(
-                              icon,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Theme.of(context).colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                              size: 22,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
+                            InkWell(
+                              onTap: () {
+                                settings.setStartDayOfWeek(value);
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                    : Colors.transparent,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      icon,
+                                      color: Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: isSelected ? 0.9 : 0.6),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.onSurface
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                      size: 20,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            if (isSelected)
-                              Icon(
-                                Icons.radio_button_checked,
-                                color: AppColors.primary,
-                                size: 20,
-                              )
-                            else
-                              Icon(
-                                Icons.radio_button_off,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.2),
-                                size: 20,
+                            if (index < options.length - 1)
+                              Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                               ),
                           ],
-                        ),
-                      ),
+                        );
+                      }),
                     ),
-                  );
-                }),
+                  ),
+                ),
               ],
             ),
           ),
@@ -640,180 +630,141 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     maxHeight: MediaQuery.of(context).size.height * 0.4,
                   ),
                   child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Last Used option
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: InkWell(
-                            onTap: () {
-                              settings.setDefaultAccountId('Last Used');
-                              Navigator.pop(context);
-                            },
-                            borderRadius: BorderRadius.circular(16),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: currentId == 'Last Used'
-                                    ? AppColors.primary.withValues(
-                                        alpha: isDark ? 0.12 : 0.08,
-                                      )
-                                    : (isDark
-                                          ? Colors.white.withValues(alpha: 0.02)
-                                          : Colors.black.withValues(
-                                              alpha: 0.01,
-                                            )),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: currentId == 'Last Used'
-                                      ? AppColors.primary.withValues(alpha: 0.5)
-                                      : Theme.of(context).colorScheme.onSurface
-                                            .withValues(alpha: 0.08),
-                                  width: 1.0,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.history,
-                                    color: currentId == 'Last Used'
-                                        ? AppColors.primary
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.6),
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Text(
-                                      context.translate('settings_last_used'),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: currentId == 'Last Used'
-                                            ? FontWeight.bold
-                                            : FontWeight.w600,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  if (currentId == 'Last Used')
-                                    Icon(
-                                      Icons.radio_button_checked,
-                                      color: AppColors.primary,
-                                      size: 20,
-                                    )
-                                  else
-                                    Icon(
-                                      Icons.radio_button_off,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.2),
-                                      size: 20,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.02)
+                            : Colors.black.withValues(alpha: 0.01),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          width: 1.0,
                         ),
-                        // Account list options
-                        ..._accounts.map((acc) {
-                          final id = acc['id']?.toString() ?? '';
-                          final name = acc['name']?.toString() ?? '';
-                          final isSelected = currentId == id;
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: InkWell(
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Last Used option
+                            InkWell(
                               onTap: () {
-                                settings.setDefaultAccountId(id);
+                                settings.setDefaultAccountId('Last Used');
                                 Navigator.pop(context);
                               },
-                              borderRadius: BorderRadius.circular(16),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primary.withValues(
-                                          alpha: isDark ? 0.12 : 0.08,
-                                        )
-                                      : (isDark
-                                            ? Colors.white.withValues(
-                                                alpha: 0.02,
-                                              )
-                                            : Colors.black.withValues(
-                                                alpha: 0.01,
-                                              )),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primary.withValues(
-                                            alpha: 0.5,
-                                          )
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.08),
-                                    width: 1.0,
-                                  ),
-                                ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                color: currentId == 'Last Used'
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                    : Colors.transparent,
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons.account_balance,
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : Theme.of(context)
-                                                .colorScheme
-                                                .onSurface
-                                                .withValues(alpha: 0.6),
+                                      Icons.history,
+                                      color: Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: currentId == 'Last Used' ? 0.9 : 0.6),
                                       size: 22,
                                     ),
                                     const SizedBox(width: 14),
                                     Expanded(
                                       child: Text(
-                                        context.getLocalizedAccountName(name),
+                                        context.translate('settings_last_used'),
                                         style: TextStyle(
                                           fontSize: 14,
-                                          fontWeight: isSelected
+                                          fontWeight: currentId == 'Last Used'
                                               ? FontWeight.bold
                                               : FontWeight.w600,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurface,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    if (isSelected)
-                                      Icon(
-                                        Icons.radio_button_checked,
-                                        color: AppColors.primary,
-                                        size: 20,
-                                      )
-                                    else
-                                      Icon(
-                                        Icons.radio_button_off,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.2),
-                                        size: 20,
-                                      ),
+                                    Icon(
+                                      currentId == 'Last Used'
+                                          ? Icons.radio_button_checked
+                                          : Icons.radio_button_off,
+                                      color: currentId == 'Last Used'
+                                          ? Theme.of(context).colorScheme.onSurface
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                      size: 20,
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
-                          );
-                        }),
-                      ],
+                            if (_accounts.isNotEmpty)
+                              Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                              ),
+                            // Account list options
+                            ...List.generate(_accounts.length, (index) {
+                              final acc = _accounts[index];
+                              final id = acc['id']?.toString() ?? '';
+                              final name = acc['name']?.toString() ?? '';
+                              final isSelected = currentId == id;
+
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      settings.setDefaultAccountId(id);
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                          : Colors.transparent,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.account_balance,
+                                            color: Theme.of(context).colorScheme.onSurface
+                                                .withValues(alpha: isSelected ? 0.9 : 0.6),
+                                            size: 22,
+                                          ),
+                                          const SizedBox(width: 14),
+                                          Expanded(
+                                            child: Text(
+                                              context.getLocalizedAccountName(name),
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.bold
+                                                    : FontWeight.w600,
+                                                color: Theme.of(context).colorScheme.onSurface,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            isSelected
+                                                ? Icons.radio_button_checked
+                                                : Icons.radio_button_off,
+                                            color: isSelected
+                                                ? Theme.of(context).colorScheme.onSurface
+                                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  if (index < _accounts.length - 1)
+                                    Divider(
+                                      height: 1,
+                                      thickness: 0.5,
+                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                                    ),
+                                ],
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -945,94 +896,86 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.08),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((opt) {
-                  final value = opt['value'] as bool;
-                  final label = opt['label'] as String;
-                  final icon = opt['icon'] as IconData;
-                  final color = opt['color'] as Color;
-                  final isSelected = currentRollover == value;
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.02)
+                        : Colors.black.withValues(alpha: 0.01),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      children: List.generate(options.length, (index) {
+                        final opt = options[index];
+                        final value = opt['value'] as bool;
+                        final label = opt['label'] as String;
+                        final icon = opt['icon'] as IconData;
+                        final color = opt['color'] as Color;
+                        final isSelected = currentRollover == value;
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () {
-                        settings.setBudgetRollover(value);
-                        Navigator.pop(context);
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary.withValues(
-                                  alpha: isDark ? 0.12 : 0.08,
-                                )
-                              : (isDark
-                                    ? Colors.white.withValues(alpha: 0.02)
-                                    : Colors.black.withValues(alpha: 0.01)),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.08),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Row(
+                        return Column(
                           children: [
-                            Icon(
-                              icon,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : color.withValues(alpha: 0.6),
-                              size: 22,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
+                            InkWell(
+                              onTap: () {
+                                settings.setBudgetRollover(value);
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                    : Colors.transparent,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      icon,
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.onSurface
+                                          : color.withValues(alpha: 0.6),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.onSurface
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                      size: 20,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            if (isSelected)
-                              Icon(
-                                Icons.radio_button_checked,
-                                color: AppColors.primary,
-                                size: 20,
-                              )
-                            else
-                              Icon(
-                                Icons.radio_button_off,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.2),
-                                size: 20,
+                            if (index < options.length - 1)
+                              Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                               ),
                           ],
-                        ),
-                      ),
+                        );
+                      }),
                     ),
-                  );
-                }),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1131,94 +1074,84 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.08),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((opt) {
-                  final value = opt['value'] as String;
-                  final label = opt['label'] as String;
-                  final icon = opt['icon'] as IconData;
-                  final isSelected = currentStyle == value;
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.02)
+                        : Colors.black.withValues(alpha: 0.01),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      children: List.generate(options.length, (index) {
+                        final opt = options[index];
+                        final value = opt['value'] as String;
+                        final label = opt['label'] as String;
+                        final icon = opt['icon'] as IconData;
+                        final isSelected = currentStyle == value;
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () {
-                        settings.setNumberFormatStyle(value);
-                        Navigator.pop(context);
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary.withValues(
-                                  alpha: isDark ? 0.12 : 0.08,
-                                )
-                              : (isDark
-                                    ? Colors.white.withValues(alpha: 0.02)
-                                    : Colors.black.withValues(alpha: 0.01)),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.08),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Row(
+                        return Column(
                           children: [
-                            Icon(
-                              icon,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Theme.of(context).colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                              size: 22,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
+                            InkWell(
+                              onTap: () {
+                                settings.setNumberFormatStyle(value);
+                                Navigator.pop(context);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                    : Colors.transparent,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      icon,
+                                      color: Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: isSelected ? 0.9 : 0.6),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.onSurface
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                      size: 20,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            if (isSelected)
-                              Icon(
-                                Icons.radio_button_checked,
-                                color: AppColors.primary,
-                                size: 20,
-                              )
-                            else
-                              Icon(
-                                Icons.radio_button_off,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.2),
-                                size: 20,
+                            if (index < options.length - 1)
+                              Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                               ),
                           ],
-                        ),
-                      ),
+                        );
+                      }),
                     ),
-                  );
-                }),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1336,162 +1269,153 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.08),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((opt) {
-                  final value = opt['value'] as String;
-                  final label = opt['label'] as String;
-                  final desc = opt['description'] as String;
-                  final icon = opt['icon'] as IconData;
-                  final isSelected = currentReminder == value;
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.02)
+                        : Colors.black.withValues(alpha: 0.01),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Column(
+                      children: List.generate(options.length, (index) {
+                        final opt = options[index];
+                        final value = opt['value'] as String;
+                        final label = opt['label'] as String;
+                        final desc = opt['description'] as String;
+                        final icon = opt['icon'] as IconData;
+                        final color = opt['color'] as Color;
+                        final isSelected = currentReminder == value;
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () async {
-                        settings.setBackupReminder(value);
-                        Navigator.pop(context);
+                        return Column(
+                          children: [
+                            InkWell(
+                              onTap: () async {
+                                settings.setBackupReminder(value);
+                                Navigator.pop(context);
 
-                        if (value != 'none') {
-                          final bool isDebug = kDebugMode;
-                          final String message = isDebug
-                              ? '$label reminder set. A test notification has been sent!'
-                              : '$label reminder set.';
+                                if (value != 'none') {
+                                  final bool isDebug = kDebugMode;
+                                  final String message = isDebug
+                                      ? '$label reminder set. A test notification has been sent!'
+                                      : '$label reminder set.';
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.notifications_active,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      message,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.notifications_active,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              message,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      backgroundColor: AppColors.primary,
+                                      duration: const Duration(seconds: 4),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: AppColors.primary,
-                              duration: const Duration(seconds: 4),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                          // Trigger a test notification that fires in 4 seconds only in debug mode
-                          if (isDebug) {
-                            await NotificationService()
-                                .sendInstantTestNotification();
-                          }
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary.withValues(
-                                  alpha: isDark ? 0.12 : 0.08,
-                                )
-                              : (isDark
-                                    ? Colors.white.withValues(alpha: 0.02)
-                                    : Colors.black.withValues(alpha: 0.01)),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.08),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
+                                  );
+                                  // Trigger a test notification that fires in 4 seconds only in debug mode
+                                  if (isDebug) {
+                                    await NotificationService()
+                                        .sendInstantTestNotification();
+                                  }
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                                 color: isSelected
-                                    ? AppColors.primary.withValues(alpha: 0.1)
-                                    : Theme.of(context).colorScheme.onSurface
-                                          .withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                icon,
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : Theme.of(context).colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                size: 20,
+                                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                    : Colors.transparent,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        icon,
+                                        color: isSelected
+                                            ? Theme.of(context).colorScheme.onSurface
+                                            : color.withValues(alpha: 0.6),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            label,
+                                            style: TextStyle(
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.w600,
+                                              fontSize: 15,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            desc,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.5),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.onSurface
+                                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    label,
-                                    style: TextStyle(
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w600,
-                                      fontSize: 15,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    desc,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (isSelected)
-                              Icon(
-                                Icons.check_circle_rounded,
-                                color: AppColors.primary,
-                                size: 20,
-                              )
-                            else
-                              Icon(
-                                Icons.circle_outlined,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.25),
-                                size: 20,
+                            if (index < options.length - 1)
+                              Divider(
+                                height: 1,
+                                thickness: 0.5,
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
                               ),
                           ],
-                        ),
-                      ),
+                        );
+                      }),
                     ),
-                  );
-                }),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1506,12 +1430,30 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: Consumer<ThemeProvider>(
               builder: (context, themeProvider, child) {
                 final ThemeMode currentMode = themeProvider.themeMode;
@@ -1535,114 +1477,181 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                   },
                 ];
 
-                final Map<String, Color> colorOptions =
-                    ThemeProvider.accentColors;
+                final Map<String, Color> colorOptions = ThemeProvider.accentColors;
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 16,
-                      ),
-                      child: Text(
-                        context.translate('appearance'),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.palette_outlined,
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            size: 24,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                context.translate('appearance'),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Customize theme mode and accent color',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const Divider(),
+                    const SizedBox(height: 16),
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                    ),
+                    const SizedBox(height: 16),
 
+                    // Theme Header
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
                       child: Text(
                         context.translate('theme').toUpperCase(),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           letterSpacing: 1,
                         ),
                       ),
                     ),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: themeOptions.length,
-                      itemBuilder: (context, index) {
-                        final item = themeOptions[index];
-                        final ThemeMode mode = item['mode'];
-                        final String label = item['label'];
-                        final IconData icon = item['icon'];
-                        final isSelected = currentMode == mode;
-
-                        return ListTile(
-                          dense: true,
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.08),
-                            child: Icon(
-                              icon,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              size: 18,
-                            ),
-                          ),
-                          title: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                          trailing: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  color: themeProvider.accentColor,
-                                )
-                              : null,
-                          onTap: () {
-                            themeProvider.setThemeMode(mode);
-                          },
-                        );
-                      },
-                    ),
-
-                    const Divider(),
-                    const SizedBox(height: 4),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
+                    
+                    // Theme Card Container
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.02)
+                            : Colors.black.withValues(alpha: 0.01),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          width: 1.0,
+                        ),
                       ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          children: List.generate(themeOptions.length, (index) {
+                            final item = themeOptions[index];
+                            final mode = item['mode'] as ThemeMode;
+                            final label = item['label'] as String;
+                            final icon = item['icon'] as IconData;
+                            final isSelected = currentMode == mode;
+
+                            return Column(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    themeProvider.setThemeMode(mode);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                    color: isSelected
+                                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                        : Colors.transparent,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          icon,
+                                          color: Theme.of(context).colorScheme.onSurface
+                                              .withValues(alpha: isSelected ? 0.9 : 0.6),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Text(
+                                            label,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.w600,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                          color: isSelected
+                                              ? Theme.of(context).colorScheme.onSurface
+                                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (index < themeOptions.length - 1)
+                                  Divider(
+                                    height: 1,
+                                    thickness: 0.5,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                                  ),
+                              ],
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Accent Color Header
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4, bottom: 8),
                       child: Text(
                         context.translate('accent_color').toUpperCase(),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           letterSpacing: 1,
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+
+                    // Accent Colors Grid/Row
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.02)
+                            : Colors.black.withValues(alpha: 0.01),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          width: 1.0,
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1656,24 +1665,22 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                               themeProvider.setAccentColor(name);
                             },
                             child: Container(
-                              width: 44,
-                              height: 44,
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
                                 color: color,
                                 shape: BoxShape.circle,
                                 border: isSelected
                                     ? Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
-                                        width: 3,
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        width: 2.5,
                                       )
                                     : null,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: color.withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
+                                    color: color.withValues(alpha: 0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
@@ -1681,7 +1688,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                   ? const Icon(
                                       Icons.check,
                                       color: Colors.white,
-                                      size: 20,
+                                      size: 18,
                                     )
                                   : null,
                             ),
@@ -1689,7 +1696,6 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                         }).toList(),
                       ),
                     ),
-                    const SizedBox(height: 8),
                   ],
                 );
               },
@@ -1718,7 +1724,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       {'code': 'NZD', 'name': 'New Zealand Dollar', 'symbol': 'NZ\$'},
       {'code': 'KRW', 'name': 'South Korean Won', 'symbol': '₩'},
       {'code': 'AED', 'name': 'UAE Dirham', 'symbol': 'د.إ'},
-      {'code': 'SAR', 'name': 'Saudi Riyal', 'symbol': 'ر.स'},
+      {'code': 'SAR', 'name': 'Saudi Riyal', 'symbol': 'ر.س'},
       {'code': 'RUB', 'name': 'Russian Ruble', 'symbol': '₽'},
       {'code': 'THB', 'name': 'Thai Baht', 'symbol': '฿'},
       {'code': 'MYR', 'name': 'Malaysian Ringgit', 'symbol': 'RM'},
@@ -1729,92 +1735,189 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
-                  child: Text(
-                    context.translate('select_currency'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.currency_exchange_outlined,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        size: 24,
+                      ),
                     ),
-                  ),
-                ),
-                const Divider(),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: currenciesList.length,
-                    itemBuilder: (context, index) {
-                      final item = currenciesList[index];
-                      final code = item['code']!;
-                      final name = item['name']!;
-                      final symbol = item['symbol']!;
-                      final isSelected = currentCurrency == code;
-
-                      final translatedName = context.translate(
-                        'curr_${code.toLowerCase()}',
-                      );
-                      final displayName =
-                          translatedName == 'curr_${code.toLowerCase()}'
-                          ? name
-                          : translatedName;
-
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.08),
-                          child: Text(
-                            symbol,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.translate('select_currency'),
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              letterSpacing: -0.3,
                             ),
                           ),
-                        ),
-                        title: Text(
-                          '$code - $displayName',
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () {
-                          context.read<SettingsProvider>().setCurrency(code);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                context.translate('settings_saved'),
-                              ),
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Choose default account currency',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
-                          );
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                ),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.45,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.02)
+                            : Colors.black.withValues(alpha: 0.01),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(currenciesList.length, (index) {
+                            final item = currenciesList[index];
+                            final code = item['code']!;
+                            final name = item['name']!;
+                            final symbol = item['symbol']!;
+                            final isSelected = currentCurrency == code;
+
+                            final translatedName = context.translate(
+                              'curr_${code.toLowerCase()}',
+                            );
+                            final displayName =
+                                translatedName == 'curr_${code.toLowerCase()}'
+                                ? name
+                                : translatedName;
+
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    context.read<SettingsProvider>().setCurrency(code);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          context.translate('settings_saved'),
+                                        ),
+                                        backgroundColor: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    );
+                                    Navigator.pop(context);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                    color: isSelected
+                                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                        : Colors.transparent,
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                                          child: Text(
+                                            symbol,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Text(
+                                            '$code - $displayName',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.w600,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                          color: isSelected
+                                              ? Theme.of(context).colorScheme.onSurface
+                                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (index < currenciesList.length - 1)
+                                  Divider(
+                                    height: 1,
+                                    thickness: 0.5,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                                  ),
+                              ],
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1834,88 +1937,182 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     showDialog(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Dialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 16,
-                  ),
-                  child: Text(
-                    context.translate('select_language'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.translate_outlined,
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        size: 24,
+                      ),
                     ),
-                  ),
-                ),
-                const Divider(),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.4,
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: languages.length,
-                    itemBuilder: (context, index) {
-                      final entry = languages.entries.elementAt(index);
-                      final code = entry.key;
-                      final name = entry.value;
-                      final isSelected = currentLanguageCode == code;
-
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.08),
-                          child: Text(
-                            code.toUpperCase(),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.translate('select_language'),
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              letterSpacing: -0.3,
                             ),
                           ),
-                        ),
-                        title: Text(
-                          name,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
+                          const SizedBox(height: 2),
+                          Text(
+                            'Choose application language',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                ),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.4,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.02)
+                            : Colors.black.withValues(alpha: 0.01),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                          width: 1.0,
                         ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () async {
-                          await context.read<LanguageProvider>().setLanguage(
-                            code,
-                          );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context.translate('settings_saved'),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(languages.length, (index) {
+                            final entry = languages.entries.elementAt(index);
+                            final code = entry.key;
+                            final name = entry.value;
+                            final isSelected = currentLanguageCode == code;
+
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: () async {
+                                    await context.read<LanguageProvider>().setLanguage(code);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            context.translate('settings_saved'),
+                                          ),
+                                          backgroundColor: Theme.of(context).colorScheme.primary,
+                                        ),
+                                      );
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                    color: isSelected
+                                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)
+                                        : Colors.transparent,
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                                          child: Text(
+                                            code.toUpperCase(),
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Text(
+                                            name,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.bold
+                                                  : FontWeight.w600,
+                                              color: Theme.of(context).colorScheme.onSurface,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Icon(
+                                          isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                          color: isSelected
+                                              ? Theme.of(context).colorScheme.onSurface
+                                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                              ),
+                                if (index < languages.length - 1)
+                                  Divider(
+                                    height: 1,
+                                    thickness: 0.5,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                                  ),
+                              ],
                             );
-                            Navigator.pop(context);
-                          }
-                        },
-                      );
-                    },
+                          }),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

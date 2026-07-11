@@ -128,7 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ]),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               _buildSectionHeader(context, 'security_and_data'),
               _buildSectionCard(context, [
@@ -153,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   status: 'Excel',
                 ),
               ]),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               _buildSectionHeader(context, 'support_and_feedback'),
               _buildSectionCard(context, [
@@ -189,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
               ]),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               _buildSectionHeader(context, 'about'),
               _buildSectionCard(context, [
@@ -240,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10, top: 24), // Spacious gap between cards
+      padding: const EdgeInsets.only(left: 4, bottom: 6, top: 12),
       child: Text(
         title,
         style: TextStyle(

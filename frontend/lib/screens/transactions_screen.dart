@@ -1485,6 +1485,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setBottomSheetState) {
+            final double bottomPadding = MediaQuery.of(context).padding.bottom;
             return Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
@@ -1492,7 +1493,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   top: Radius.circular(28),
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.fromLTRB(24, 20, 24, 20 + bottomPadding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1752,6 +1753,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                           style: ElevatedButton.styleFrom(
                             minimumSize: const Size(double.infinity, 50),
                             backgroundColor: AppColors.primary,
+                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -1760,7 +1762,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             context.translate('btn_apply'),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
                           ),
                         ),

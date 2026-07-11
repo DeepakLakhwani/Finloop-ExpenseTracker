@@ -32,7 +32,36 @@ class PrivacyPolicyScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
+            // Header Title
+            Text(
+              context.translate('privacy_policy_header_title'),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: onSurfaceColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Effective Date
+            Text(
+              context.translate('privacy_policy_effective_date'),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: onSurfaceColor.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Welcome Description
+            Text(
+              context.translate('privacy_policy_welcome_desc'),
+              style: TextStyle(
+                fontSize: 15,
+                height: 1.5,
+                color: onSurfaceColor.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 32),
 
             // Policy Sections
             _buildSection(
@@ -121,19 +150,85 @@ class PrivacyPolicyScreen extends StatelessWidget {
     String content,
   ) {
     final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+    final lines = content.split('\n');
+    List<Widget> textWidgets = [];
+
+    for (var line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        textWidgets.add(const SizedBox(height: 8));
+        continue;
+      }
+
+      if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+        // Bullet list item
+        final text = trimmed.substring(1).trim();
+        textWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: onSurfaceColor.withValues(alpha: 0.8),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        // If it's a subheader (e.g. short, or not ending with a period and followed by list items)
+        final isSubheader = trimmed.length < 50 && !trimmed.endsWith('.');
+        textWidgets.add(
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: isSubheader ? 6 : 8,
+              top: isSubheader ? 10 : 0,
+            ),
+            child: Text(
+              trimmed,
+              style: TextStyle(
+                fontSize: isSubheader ? 15 : 14,
+                fontWeight: isSubheader ? FontWeight.bold : FontWeight.normal,
+                color: isSubheader
+                    ? onSurfaceColor
+                    : onSurfaceColor.withValues(alpha: 0.7),
+                height: 1.45,
+              ),
+            ),
+          ),
+        );
+      }
+    }
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section title row
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -143,7 +238,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     index,
                     style: TextStyle(
                       color: AppColors.primary,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -152,11 +247,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 3),
+                  padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: onSurfaceColor,
                     ),
@@ -166,14 +261,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 13,
-              color: onSurfaceColor.withValues(alpha: 0.65),
-              height: 1.5,
-            ),
-          ),
+          // Section parsed content
+          ...textWidgets,
         ],
       ),
     );

@@ -238,6 +238,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -330,29 +331,51 @@ class _BackupScreenState extends State<BackupScreen> {
                 letterSpacing: 1,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // Back Up Now card
-            CardActionItem(
-              title: context.translate('btn_backup_now'),
-              subtitle: context.translate('desc_backup_now'),
-              icon: Icons.backup_outlined,
-              isLoading: _isBackingUp,
-              progress: _backupProgress,
-              onTap: _triggerBackup,
-            ),
-            const SizedBox(height: 16),
-
-            // Restore card
-            CardActionItem(
-              title: context.translate('title_restore_data'),
-              subtitle: context.translate('desc_restore_data'),
-              icon: Icons.settings_backup_restore_outlined,
-              isLoading: _isRestoring,
-              // Fix #14: Pass progress: null explicitly for restore (indeterminate spinner)
-              progress: null,
-              onTap: _triggerRestore,
-              iconColor: Colors.orange,
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? Theme.of(context).colorScheme.surface : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 16,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Column(
+                  children: [
+                    CardActionItem(
+                      title: context.translate('btn_backup_now'),
+                      subtitle: context.translate('desc_backup_now'),
+                      icon: Icons.backup_outlined,
+                      isLoading: _isBackingUp,
+                      progress: _backupProgress,
+                      onTap: _triggerBackup,
+                    ),
+                    Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                      indent: 80,
+                    ),
+                    CardActionItem(
+                      title: context.translate('title_restore_data'),
+                      subtitle: context.translate('desc_restore_data'),
+                      icon: Icons.settings_backup_restore_outlined,
+                      isLoading: _isRestoring,
+                      progress: null,
+                      onTap: _triggerRestore,
+                      iconColor: Colors.orange,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -384,18 +407,11 @@ class CardActionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        // Fix #15: Replace withOpacity with withValues
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
-      ),
+      color: Colors.transparent,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: isLoading ? null : onTap,
-          borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
