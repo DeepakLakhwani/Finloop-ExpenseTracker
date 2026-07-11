@@ -9,7 +9,8 @@ class BudgetsManagementScreen extends StatefulWidget {
   const BudgetsManagementScreen({super.key});
 
   @override
-  State<BudgetsManagementScreen> createState() => _BudgetsManagementScreenState();
+  State<BudgetsManagementScreen> createState() =>
+      _BudgetsManagementScreenState();
 }
 
 class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
@@ -80,7 +81,9 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text(context.translate('err_load_budgets')));
+                  return Center(
+                    child: Text(context.translate('err_load_budgets')),
+                  );
                 }
                 final budgets = snapshot.data ?? [];
                 if (budgets.isEmpty) {
@@ -91,7 +94,9 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         Icon(
                           Icons.track_changes_outlined,
                           size: 64,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -99,7 +104,9 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -107,7 +114,9 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                           context.translate('msg_create_budgets_hint'),
                           style: TextStyle(
                             fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                       ],
@@ -117,22 +126,31 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
 
                 final budgetWidgets = budgets.map<Widget>((budget) {
                   return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     leading: CircleAvatar(
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      child: Icon(Icons.track_changes, color: AppColors.primary),
+                      child: Icon(
+                        Icons.track_changes,
+                        color: AppColors.primary,
+                      ),
                     ),
                     title: Text(
                       context.getLocalizedCategory(
                         budget['categoryKey']?.toString(),
-                        budget['categoryName'] ?? context.translate('label_category'),
+                        budget['categoryName'] ??
+                            context.translate('label_category'),
                       ),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
                       '${context.translate('label_limit')}: $currency ${budget['limitAmount']}',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                     trailing: Row(
@@ -143,7 +161,11 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                           onPressed: () => _showBudgetForm(budget: budget),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
                           onPressed: () => _deleteConfirm(budget['id']),
                         ),
                       ],
@@ -194,9 +216,7 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: dividedChildren,
-        ),
+        child: Column(children: dividedChildren),
       ),
     );
   }
@@ -210,13 +230,19 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(context.translate('cancel'), style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              context.translate('cancel'),
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               context.translate('delete'),
-              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -247,7 +273,10 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
           builder: (context, setModalState) {
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 20,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom +
+                    MediaQuery.of(context).padding.bottom +
+                    20,
                 left: 20,
                 right: 20,
                 top: 20,
@@ -257,7 +286,9 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isEditing ? context.translate('title_edit_budget') : context.translate('title_add_budget'),
+                    isEditing
+                        ? context.translate('title_edit_budget')
+                        : context.translate('title_add_budget'),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -268,7 +299,8 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                   // Category Dropdown
                   DropdownButtonFormField<String?>(
                     initialValue: selectedCategoryId,
-                    dropdownColor: Theme.of(context).brightness == Brightness.dark
+                    dropdownColor:
+                        Theme.of(context).brightness == Brightness.dark
                         ? const Color(0xFF2C2C2C)
                         : Colors.white,
                     style: TextStyle(
@@ -283,10 +315,17 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         value: null,
                         child: Text(context.translate('all_expenses')),
                       ),
-                      ..._categories.where((c) => c['type'] == 'Expense').map((c) {
+                      ..._categories.where((c) => c['type'] == 'Expense').map((
+                        c,
+                      ) {
                         return DropdownMenuItem<String?>(
                           value: c['id'],
-                          child: Text(context.getLocalizedCategory(c['key']?.toString(), c['name'] ?? '')),
+                          child: Text(
+                            context.getLocalizedCategory(
+                              c['key']?.toString(),
+                              c['name'] ?? '',
+                            ),
+                          ),
                         );
                       }),
                     ],
@@ -300,13 +339,16 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                   // Limit Amount
                   TextField(
                     controller: amountController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       labelText: context.translate('label_monthly_limit'),
-                      prefixText: '${context.read<SettingsProvider>().currency} ',
+                      prefixText:
+                          '${context.read<SettingsProvider>().currency} ',
                       border: const UnderlineInputBorder(),
                     ),
                   ),
@@ -318,7 +360,11 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         final amount = double.tryParse(amountController.text);
                         if (amount == null || amount <= 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(context.translate('err_invalid_amount'))),
+                            SnackBar(
+                              content: Text(
+                                context.translate('err_invalid_amount'),
+                              ),
+                            ),
                           );
                           return;
                         }
@@ -327,7 +373,9 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         String categoryName = 'All Expenses';
                         String? categoryKey;
                         if (selectedCategoryId != null) {
-                          final cat = _categories.firstWhere((c) => c['id'] == selectedCategoryId);
+                          final cat = _categories.firstWhere(
+                            (c) => c['id'] == selectedCategoryId,
+                          );
                           categoryName = cat['name'] ?? 'Category';
                           categoryKey = cat['key']?.toString();
                         } else {
@@ -342,7 +390,10 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                         };
 
                         if (isEditing) {
-                          await firestore.updateBudget(budget['id'], budgetData);
+                          await firestore.updateBudget(
+                            budget['id'],
+                            budgetData,
+                          );
                         } else {
                           await firestore.createBudget(budgetData);
                         }
@@ -353,13 +404,17 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(isEditing ? context.translate('save_changes') : context.translate('btn_create_budget')),
+                      child: Text(
+                        isEditing
+                            ? context.translate('save_changes')
+                            : context.translate('btn_create_budget'),
+                      ),
                     ),
                   ),
                 ],

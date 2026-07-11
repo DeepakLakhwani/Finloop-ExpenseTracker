@@ -366,7 +366,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void _showAmountKeypad() {
     FocusScope.of(context).unfocus();
     final currency = context.read<SettingsProvider>().currency;
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -376,12 +376,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           builder: (context, setSheetState) {
             final theme = Theme.of(context);
             final isDark = theme.brightness == Brightness.dark;
-            
+
             String input = _amountController.text;
             if (input == '0.00' || input == '0' || input == '0.0') {
               input = '';
             }
-            
+
             void updateInput(String value) {
               setSheetState(() {
                 if (value == '.') {
@@ -411,14 +411,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               });
             }
 
-            Widget buildKey(String label, {IconData? icon, String? customValue}) {
+            Widget buildKey(
+              String label, {
+              IconData? icon,
+              String? customValue,
+            }) {
               final value = customValue ?? label;
               return Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4.0,
+                    vertical: 4.0,
+                  ),
                   child: Material(
-                    color: isDark 
-                        ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3) 
+                    color: isDark
+                        ? theme.colorScheme.surfaceContainerHighest.withValues(
+                            alpha: 0.3,
+                          )
                         : theme.colorScheme.onSurface.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     clipBehavior: Clip.antiAlias,
@@ -428,7 +437,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         height: 54,
                         alignment: Alignment.center,
                         child: icon != null
-                            ? Icon(icon, color: theme.colorScheme.onSurface, size: 22)
+                            ? Icon(
+                                icon,
+                                color: theme.colorScheme.onSurface,
+                                size: 22,
+                              )
                             : Text(
                                 label,
                                 style: TextStyle(
@@ -447,7 +460,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             return Container(
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
@@ -456,7 +471,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                 ],
               ),
-              padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                MediaQuery.of(context).padding.bottom + 12,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -465,21 +485,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.12,
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: isDark 
-                          ? theme.colorScheme.surfaceContainerLow 
+                      color: isDark
+                          ? theme.colorScheme.surfaceContainerLow
                           : theme.colorScheme.onSurface.withValues(alpha: 0.02),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.05,
+                        ),
                       ),
                     ),
                     child: Row(
@@ -501,7 +528,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: input.isEmpty
-                                  ? theme.colorScheme.onSurface.withValues(alpha: 0.3)
+                                  ? theme.colorScheme.onSurface.withValues(
+                                      alpha: 0.3,
+                                    )
                                   : _getActiveColor(),
                             ),
                             maxLines: 1,
@@ -511,32 +540,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ],
                     ),
                   ),
-                  Row(
-                    children: [
-                      buildKey('1'),
-                      buildKey('2'),
-                      buildKey('3'),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      buildKey('4'),
-                      buildKey('5'),
-                      buildKey('6'),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      buildKey('7'),
-                      buildKey('8'),
-                      buildKey('9'),
-                    ],
-                  ),
+                  Row(children: [buildKey('1'), buildKey('2'), buildKey('3')]),
+                  Row(children: [buildKey('4'), buildKey('5'), buildKey('6')]),
+                  Row(children: [buildKey('7'), buildKey('8'), buildKey('9')]),
                   Row(
                     children: [
                       buildKey('.', customValue: '.'),
                       buildKey('0'),
-                      buildKey('', icon: Icons.backspace_outlined, customValue: 'backspace'),
+                      buildKey(
+                        '',
+                        icon: Icons.backspace_outlined,
+                        customValue: 'backspace',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -549,7 +564,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             onPressed: () => updateInput('clear'),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.12,
+                                ),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -558,7 +575,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             child: Text(
                               context.translate('clear'),
                               style: TextStyle(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.8,
+                                ),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
@@ -576,7 +595,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               if (parsed != null && parsed > 0) {
                                 _amountController.text = input;
                                 Navigator.pop(context);
-                                
+
                                 if (_type != 'Transfer') {
                                   _showCategorySelectionDialog(autoNext: true);
                                 } else {
@@ -588,7 +607,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(context.translate('err_invalid_amount')),
+                                    content: Text(
+                                      context.translate('err_invalid_amount'),
+                                    ),
                                     duration: const Duration(seconds: 1),
                                   ),
                                 );
@@ -1369,11 +1390,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         child: _isSubmitting
-                            ? SizedBox(
+                            ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                  color: _getButtonTextColor(),
+                                  color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               )

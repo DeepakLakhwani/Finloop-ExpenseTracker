@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Theme state reference to dynamically serve correct primary color
-  static ThemeMode themeMode = ThemeMode.light;
-
-  // Primary color: white on dark theme, black on light theme
-  static Color get primary {
-    final bool isDark;
-    if (themeMode == ThemeMode.system) {
-      isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
-    } else {
-      isDark = themeMode == ThemeMode.dark;
-    }
-    return isDark ? Colors.white : Colors.black;
-  }
+  // Primary colors
+  static Color primary = const Color(0xFF42A5F5);
+  static const Color primaryLight = Color(0xFF4F46E5); // Adjusted for gradients
 
   // Secondary colors
   static const Color secondary = Color(0xFF0F172A);

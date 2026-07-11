@@ -18,10 +18,10 @@ import '../theme/app_colors.dart';
 abstract final class _K {
   static const double chartHeight = 200;
 
-  static List<Color> get palette => [
+  static final List<Color> palette = [
     Colors.green,
     AppColors.primary,
-    const Color(0xFFE57373),
+    Color(0xFFE57373),
     Colors.purple,
     Colors.amber,
     Colors.teal,
@@ -145,19 +145,18 @@ class _ChartsScreenState extends State<ChartsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Header(
-              month: DateTime.now(),
-              isIncome: _selectedTab == 0,
-            ),
+            _Header(month: DateTime.now(), isIncome: _selectedTab == 0),
             const SizedBox(height: 16),
-            
+
             // Simple Tab Selector (Income Left, Expense Right, no background color)
             Container(
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
                     width: 1.0,
                   ),
                 ),
@@ -184,8 +183,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
                               style: TextStyle(
                                 color: _selectedTab == 0
                                     ? AppColors.primary
-                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.w600,
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                fontWeight: _selectedTab == 0
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
@@ -195,8 +197,12 @@ class _ChartsScreenState extends State<ChartsScreen> {
                             height: 2.5,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: _selectedTab == 0 ? AppColors.primary : Colors.transparent,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                              color: _selectedTab == 0
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(2),
+                              ),
                             ),
                           ),
                         ],
@@ -223,8 +229,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
                               style: TextStyle(
                                 color: _selectedTab == 1
                                     ? AppColors.primary
-                                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.w600,
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                fontWeight: _selectedTab == 1
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
@@ -234,8 +243,12 @@ class _ChartsScreenState extends State<ChartsScreen> {
                             height: 2.5,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: _selectedTab == 1 ? AppColors.primary : Colors.transparent,
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                              color: _selectedTab == 1
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(2),
+                              ),
                             ),
                           ),
                         ],
@@ -245,7 +258,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 ],
               ),
             ),
-            
+
             if (_selectedTab == 0) ...[
               // Income Analytics
               _DistributionCard(
@@ -441,7 +454,8 @@ class _DistributionCardState extends State<_DistributionCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.totalExpenses <= 0) return _EmptyDistributionCard(isIncome: widget.isIncome);
+    if (widget.totalExpenses <= 0)
+      return _EmptyDistributionCard(isIncome: widget.isIncome);
 
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final parts = widget.pieData.first.key.split('::');
@@ -450,13 +464,13 @@ class _DistributionCardState extends State<_DistributionCard> {
     final topCategory = widget.pieData.first.key == 'Others'
         ? context.translate('others')
         : context.getLocalizedCategory(topKey, topFallback);
-    final topPct = (widget.pieData.first.value / widget.totalExpenses * 100).toStringAsFixed(
-      0,
-    );
+    final topPct = (widget.pieData.first.value / widget.totalExpenses * 100)
+        .toStringAsFixed(0);
 
     // Build the dynamic center widget based on the active touch selection
     Widget centerWidget;
-    if (widget.touchedIndex >= 0 && widget.touchedIndex < widget.pieData.length) {
+    if (widget.touchedIndex >= 0 &&
+        widget.touchedIndex < widget.pieData.length) {
       final entry = widget.pieData[widget.touchedIndex];
       final parts = entry.key.split('::');
       final key = parts[0];
@@ -465,7 +479,9 @@ class _DistributionCardState extends State<_DistributionCard> {
           ? context.translate('others')
           : context.getLocalizedCategory(key, fallback);
       final value = entry.value;
-      final percent = widget.totalExpenses > 0 ? (value / widget.totalExpenses * 100) : 0.0;
+      final percent = widget.totalExpenses > 0
+          ? (value / widget.totalExpenses * 100)
+          : 0.0;
 
       final matchedCat = widget.categories.firstWhere(
         (c) => (key.isNotEmpty && c['key'] == key) || c['name'] == fallback,
@@ -550,14 +566,18 @@ class _DistributionCardState extends State<_DistributionCard> {
 
     const limit = 3;
     final hasMore = widget.pieData.length > limit;
-    final displayedCount = (_isExpanded || !hasMore) ? widget.pieData.length : limit;
+    final displayedCount = (_isExpanded || !hasMore)
+        ? widget.pieData.length
+        : limit;
 
     return _SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _CardHeader(
-            title: context.translate(widget.isIncome ? 'income_distribution' : 'expense_distribution'),
+            title: context.translate(
+              widget.isIncome ? 'income_distribution' : 'expense_distribution',
+            ),
             subtitle: context
                 .translate('top_category_pct')
                 .replaceAll('{category}', topCategory)
@@ -565,7 +585,7 @@ class _DistributionCardState extends State<_DistributionCard> {
             icon: Icons.pie_chart_outline,
           ),
           const SizedBox(height: 24),
-          
+
           // Donut Chart Box
           Center(
             child: SizedBox(
@@ -578,7 +598,8 @@ class _DistributionCardState extends State<_DistributionCard> {
                     PieChartData(
                       pieTouchData: PieTouchData(
                         touchCallback: (event, response) {
-                          final idx = (!event.isInterestedForInteractions ||
+                          final idx =
+                              (!event.isInterestedForInteractions ||
                                   response?.touchedSection == null)
                               ? -1
                               : response!.touchedSection!.touchedSectionIndex;
@@ -596,7 +617,9 @@ class _DistributionCardState extends State<_DistributionCard> {
                         final fallback = parts.length > 1 ? parts[1] : '';
 
                         final matchedCat = widget.categories.firstWhere(
-                          (c) => (key.isNotEmpty && c['key'] == key) || c['name'] == fallback,
+                          (c) =>
+                              (key.isNotEmpty && c['key'] == key) ||
+                              c['name'] == fallback,
                           orElse: () => <String, dynamic>{},
                         );
                         final catColor = _parseHexColor(
@@ -639,10 +662,14 @@ class _DistributionCardState extends State<_DistributionCard> {
                     ? context.translate('others')
                     : context.getLocalizedCategory(key, fallback);
                 final value = entry.value;
-                final percent = widget.totalExpenses > 0 ? (value / widget.totalExpenses) : 0.0;
+                final percent = widget.totalExpenses > 0
+                    ? (value / widget.totalExpenses)
+                    : 0.0;
 
                 final matchedCat = widget.categories.firstWhere(
-                  (c) => (key.isNotEmpty && c['key'] == key) || c['name'] == fallback,
+                  (c) =>
+                      (key.isNotEmpty && c['key'] == key) ||
+                      c['name'] == fallback,
                   orElse: () => <String, dynamic>{},
                 );
                 final catColor = _parseHexColor(
@@ -663,16 +690,23 @@ class _DistributionCardState extends State<_DistributionCard> {
                   borderRadius: BorderRadius.circular(12),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? catColor.withValues(alpha: 0.08)
-                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
+                          : Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.02),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? catColor.withValues(alpha: 0.4)
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.04),
                         width: 1.2,
                       ),
                     ),
@@ -685,14 +719,10 @@ class _DistributionCardState extends State<_DistributionCard> {
                             color: catColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
-                            catIcon,
-                            color: catColor,
-                            size: 18,
-                          ),
+                          child: Icon(catIcon, color: catColor, size: 18),
                         ),
                         const SizedBox(width: 12),
-                        
+
                         // Name and Progress Indicator
                         Expanded(
                           child: Column(
@@ -700,14 +730,17 @@ class _DistributionCardState extends State<_DistributionCard> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     child: Text(
                                       label,
                                       style: TextStyle(
                                         fontSize: 13,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
                                         color: onSurface,
                                       ),
                                       maxLines: 1,
@@ -719,7 +752,9 @@ class _DistributionCardState extends State<_DistributionCard> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: isSelected ? catColor : onSurface.withValues(alpha: 0.6),
+                                      color: isSelected
+                                          ? catColor
+                                          : onSurface.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
@@ -730,17 +765,21 @@ class _DistributionCardState extends State<_DistributionCard> {
                                 child: LinearProgressIndicator(
                                   value: percent,
                                   minHeight: 5,
-                                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
                                       ? Colors.white.withValues(alpha: 0.05)
                                       : Colors.black.withValues(alpha: 0.03),
-                                  valueColor: AlwaysStoppedAnimation<Color>(catColor),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    catColor,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
+
                         // Value/Amount
                         Text(
                           '${widget.currency}${context.formatAmount(value)}',
@@ -784,7 +823,9 @@ class _DistributionCardState extends State<_DistributionCard> {
                     ),
                     const SizedBox(width: 4),
                     Icon(
-                      _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      _isExpanded
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
                       size: 18,
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -810,7 +851,9 @@ class _EmptyDistributionCard extends StatelessWidget {
       child: Column(
         children: [
           _CardHeader(
-            title: context.translate(isIncome ? 'income_distribution' : 'expense_distribution'),
+            title: context.translate(
+              isIncome ? 'income_distribution' : 'expense_distribution',
+            ),
             icon: Icons.pie_chart_outline,
           ),
           const SizedBox(height: 40),
@@ -821,7 +864,9 @@ class _EmptyDistributionCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            context.translate(isIncome ? 'no_income_this_month' : 'no_expense_this_month'),
+            context.translate(
+              isIncome ? 'no_income_this_month' : 'no_expense_this_month',
+            ),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -909,7 +954,11 @@ class _MonthlyTrendsCardState extends State<_MonthlyTrendsCard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _CardHeader(
-            title: context.translate(widget.isIncome ? 'monthly_income_trends' : 'monthly_spending_trends'),
+            title: context.translate(
+              widget.isIncome
+                  ? 'monthly_income_trends'
+                  : 'monthly_spending_trends',
+            ),
             subtitle: changeText,
             icon: Icons.show_chart_rounded,
           ),
@@ -1288,10 +1337,7 @@ class _SurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 32),
-      child: child,
-    );
+    return Padding(padding: const EdgeInsets.only(bottom: 32), child: child);
   }
 }
 
@@ -1424,7 +1470,10 @@ class _BudgetsCard extends StatelessWidget {
                 orElse: () => <String, dynamic>{},
               );
               if (matchedCat.isNotEmpty) {
-                catColor = _parseHexColor(matchedCat['color'], AppColors.primary);
+                catColor = _parseHexColor(
+                  matchedCat['color'],
+                  AppColors.primary,
+                );
                 catIcon = _getCategoryIcon(matchedCat['icon']);
               }
             } else {
@@ -1435,10 +1484,14 @@ class _BudgetsCard extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.02),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.02),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.04),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.04),
                   width: 1.2,
                 ),
               ),
@@ -1473,7 +1526,9 @@ class _BudgetsCard extends StatelessWidget {
                             const SizedBox(height: 2),
                             if (isExceeded)
                               Text(
-                                context.translate('exceeded_by').replaceAll(
+                                context
+                                    .translate('exceeded_by')
+                                    .replaceAll(
                                       '{amount}',
                                       '$currency${(spent - limitAmount).toStringAsFixed(0)}',
                                     ),
@@ -1485,12 +1540,15 @@ class _BudgetsCard extends StatelessWidget {
                               )
                             else
                               Text(
-                                context.translate('remaining_amount').replaceAll(
+                                context
+                                    .translate('remaining_amount')
+                                    .replaceAll(
                                       '{amount}',
                                       '$currency${(limitAmount - spent).toStringAsFixed(0)}',
                                     ),
                                 style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.45),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1509,7 +1567,9 @@ class _BudgetsCard extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: isExceeded ? Colors.redAccent : Theme.of(context).colorScheme.onSurface,
+                              color: isExceeded
+                                  ? Colors.redAccent
+                                  : Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -1517,7 +1577,9 @@ class _BudgetsCard extends StatelessWidget {
                             'of $currency${limitAmount.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.4),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1532,7 +1594,8 @@ class _BudgetsCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percent,
-                      backgroundColor: Theme.of(context).brightness == Brightness.dark
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.dark
                           ? Colors.white.withValues(alpha: 0.08)
                           : Colors.black.withValues(alpha: 0.05),
                       valueColor: AlwaysStoppedAnimation<Color>(progressColor),

@@ -16,21 +16,16 @@ class ThemeProvider extends ChangeNotifier {
   };
 
   ThemeMode get themeMode => _themeMode;
-  bool get isDarkMode {
-    if (_themeMode == ThemeMode.system) {
-      return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
-    }
-    return _themeMode == ThemeMode.dark;
-  }
+  bool get isDarkMode => _themeMode == ThemeMode.dark;
 
-  Color get accentColor => isDarkMode ? Colors.white : Colors.black;
-  String get accentColorName => isDarkMode ? 'white' : 'black';
+  Color get accentColor =>
+      accentColors[_accentColorName] ?? const Color(0xFF42A5F5);
+  String get accentColorName => _accentColorName;
 
   void setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
-    AppColors.themeMode = _themeMode;
     notifyListeners();
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       String modeStr = 'system';
@@ -47,10 +42,11 @@ class ThemeProvider extends ChangeNotifier {
         String modeStr = 'system';
         if (mode == ThemeMode.dark) modeStr = 'dark';
         if (mode == ThemeMode.light) modeStr = 'light';
-        
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-          'themeMode': modeStr,
-        });
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'themeMode': modeStr});
       } catch (e) {
         debugPrint('Error saving theme to Firestore: $e');
       }
@@ -58,8 +54,29 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   void setAccentColor(String colorName) async {
-    // Disabled accent color picker setting, it will always be dynamic opposite of the theme.
+    if (!accentColors.containsKey(colorName)) return;
+    _accentColorName = colorName;
+    AppColors.primary = accentColor;
     notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('accent_color', colorName);
+    } catch (e) {
+      debugPrint('Error saving accent color to SharedPreferences: $e');
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'accentColor': colorName});
+      } catch (e) {
+        debugPrint('Error saving accent color to Firestore: $e');
+      }
+    }
   }
 
   void toggleTheme() {
@@ -74,22 +91,36 @@ class ThemeProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final localMode = prefs.getString('theme_mode');
-      
+      final localAccent = prefs.getString('accent_color');
+
       if (localMode != null) {
-        if (localMode == 'dark') _themeMode = ThemeMode.dark;
-        else if (localMode == 'light') _themeMode = ThemeMode.light;
-        else if (localMode == 'system') _themeMode = ThemeMode.system;
+        if (localMode == 'dark')
+          _themeMode = ThemeMode.dark;
+        else if (localMode == 'light')
+          _themeMode = ThemeMode.light;
+        else if (localMode == 'system')
+          _themeMode = ThemeMode.system;
+      }
+      if (localAccent != null && accentColors.containsKey(localAccent)) {
+        _accentColorName = localAccent;
+        AppColors.primary = accentColor;
       }
     } catch (e) {
       debugPrint('Error loading theme settings from SharedPreferences: $e');
     }
 
     if (mode != null) {
-      if (mode == 'dark') _themeMode = ThemeMode.dark;
-      else if (mode == 'light') _themeMode = ThemeMode.light;
-      else if (mode == 'system') _themeMode = ThemeMode.system;
+      if (mode == 'dark')
+        _themeMode = ThemeMode.dark;
+      else if (mode == 'light')
+        _themeMode = ThemeMode.light;
+      else if (mode == 'system')
+        _themeMode = ThemeMode.system;
     }
-    AppColors.themeMode = _themeMode;
+    if (accent != null && accentColors.containsKey(accent)) {
+      _accentColorName = accent;
+      AppColors.primary = accentColor;
+    }
     notifyListeners();
   }
 }

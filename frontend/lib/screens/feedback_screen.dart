@@ -94,10 +94,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 
   void _removeImage() => setState(() {
-        _selectedFile = null;
-        _selectedFileLength = null;
-        _selectedFileBytes = null;
-      });
+    _selectedFile = null;
+    _selectedFileLength = null;
+    _selectedFileBytes = null;
+  });
 
   // FIX #3: Safely unwrap result.data — it may be null or not a Map if the
   // Cloud Function throws or returns an unexpected shape.
@@ -718,16 +718,16 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     // ── Submit Button ───────────────────────────────────────
                     ElevatedButton.icon(
                       onPressed: _isSubmitting ? null : _submitFeedback,
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.send_rounded,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: Colors.white,
                         size: 18,
                       ),
                       label: Text(
                         context.translate('feedback'),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onPrimary,
+                          color: Colors.white,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(

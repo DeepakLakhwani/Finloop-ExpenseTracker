@@ -575,7 +575,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                         onPressed: _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),

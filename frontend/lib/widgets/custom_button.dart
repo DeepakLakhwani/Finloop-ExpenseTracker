@@ -30,10 +30,12 @@ class CustomButton extends StatelessWidget {
     switch (type) {
       case CustomButtonType.primary:
         backgroundColor = AppColors.primary;
-        foregroundColor = Theme.of(context).colorScheme.onPrimary;
+        foregroundColor = Colors.white;
         break;
       case CustomButtonType.secondary:
-        backgroundColor = isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.neutralLight;
+        backgroundColor = isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : AppColors.neutralLight;
         foregroundColor = isDark ? Colors.white : AppColors.secondary;
         break;
       case CustomButtonType.inverted:
@@ -43,7 +45,10 @@ class CustomButton extends StatelessWidget {
       case CustomButtonType.outlined:
         backgroundColor = Colors.transparent;
         foregroundColor = isDark ? Colors.white : AppColors.secondary;
-        borderSide = BorderSide(color: isDark ? Colors.white30 : AppColors.neutral, width: 1);
+        borderSide = BorderSide(
+          color: isDark ? Colors.white30 : AppColors.neutral,
+          width: 1,
+        );
         break;
     }
 
@@ -72,16 +77,16 @@ class CustomButton extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
                 ),
               )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 20),
-                  const SizedBox(width: 8),
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 20),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(text),
                 ],
-                Text(text),
-              ],
-            ),
+              ),
       ),
     );
   }

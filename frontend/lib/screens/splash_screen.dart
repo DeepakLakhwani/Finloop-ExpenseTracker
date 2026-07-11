@@ -113,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Center(
                     child: ClipOval(
                       child: SvgPicture.asset(
-                        'assets/icon/newicon.svg',
+                        'assets/icon/app_icon_dark_512x512.svg',
                         width: 120,
                         height: 120,
                         fit: BoxFit.cover,
@@ -187,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     onPressed: _initializeApp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,

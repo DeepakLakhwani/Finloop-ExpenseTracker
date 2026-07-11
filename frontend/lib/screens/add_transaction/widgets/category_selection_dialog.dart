@@ -83,6 +83,7 @@ class CategorySelectionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    final double screenWidth = MediaQuery.of(context).size.width;
 
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: context.read<FirestoreService>().getCategories(),
@@ -94,6 +95,11 @@ class CategorySelectionDialog extends StatelessWidget {
             final typeCategories = currentCategories
                 .where((c) => c['type'] == activeType)
                 .toList();
+
+            final int crossAxisCount = screenWidth > 600 ? 3 : 2;
+            final double childAspectRatio = screenWidth < 360
+                ? 2.1
+                : (screenWidth < 400 ? 2.4 : 2.8);
 
             return Container(
               decoration: BoxDecoration(
@@ -179,11 +185,11 @@ class CategorySelectionDialog extends StatelessWidget {
                             child: GridView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
                                 crossAxisSpacing: 10,
                                 mainAxisSpacing: 10,
-                                childAspectRatio: 2.8,
+                                childAspectRatio: childAspectRatio,
                               ),
                               itemCount: typeCategories.length,
                               itemBuilder: (context, index) {
@@ -210,7 +216,7 @@ class CategorySelectionDialog extends StatelessWidget {
                                   },
                                   borderRadius: BorderRadius.circular(12),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: isSelected
                                           ? catColor.withValues(alpha: 0.1)
@@ -226,25 +232,26 @@ class CategorySelectionDialog extends StatelessWidget {
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(8),
+                                          padding: const EdgeInsets.all(6),
                                           decoration: BoxDecoration(
                                             color: catColor.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Icon(
                                             catIcon,
                                             color: catColor,
-                                            size: 20,
+                                            size: 18,
                                           ),
                                         ),
-                                        const SizedBox(width: 12),
+                                        const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             displayName,
-                                            maxLines: 1,
+                                            maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              fontSize: 13,
+                                              fontSize: screenWidth < 360 ? 11 : 12,
+                                              height: 1.1,
                                               fontWeight: isSelected
                                                   ? FontWeight.bold
                                                   : FontWeight.w500,
@@ -252,12 +259,14 @@ class CategorySelectionDialog extends StatelessWidget {
                                             ),
                                           ),
                                         ),
-                                        if (isSelected)
+                                        if (isSelected) ...[
+                                          const SizedBox(width: 4),
                                           Icon(
                                             Icons.check_circle_rounded,
                                             color: catColor,
-                                            size: 16,
+                                            size: 14,
                                           ),
+                                        ],
                                       ],
                                     ),
                                   ),

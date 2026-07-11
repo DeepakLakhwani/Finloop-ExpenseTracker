@@ -192,7 +192,6 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -201,6 +200,7 @@ class _ImportExportScreenState extends State<ImportExportScreen> {
                   child: Text(
                     context.translate('btn_watch_export'),
                     style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
@@ -717,31 +717,32 @@ class _ExportCard extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: isExporting ? null : onExport,
               icon: isExporting
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: Colors.white,
                         strokeWidth: 2,
                       ),
                     )
-                  : Icon(Icons.download_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                  : const Icon(Icons.download_rounded, color: Colors.white),
               label: Text(
                 isExporting
                     ? context.translate('btn_exporting')
                     : (isBackupMode
                           ? context.translate('btn_export_backup')
                           : context.translate('btn_export_excel')),
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimary,
+                  color: Colors.white,
                 ),
               ),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 backgroundColor: AppColors.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
+                disabledBackgroundColor: AppColors.primary.withValues(
+                  alpha: 0.6,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -931,7 +932,9 @@ class _ImportCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 backgroundColor: AppColors.success,
-                disabledBackgroundColor: AppColors.success.withValues(alpha: 0.6),
+                disabledBackgroundColor: AppColors.success.withValues(
+                  alpha: 0.6,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),

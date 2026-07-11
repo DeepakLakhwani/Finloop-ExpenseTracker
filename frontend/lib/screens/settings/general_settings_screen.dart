@@ -63,7 +63,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
         'English';
 
     // Number format status
-    final numberFormatStatus = settingsProvider.numberFormatStyle == 'comma_dot' ? '1,234.56' : '1.234,56';
+    final numberFormatStatus = settingsProvider.numberFormatStyle == 'comma_dot'
+        ? '1,234.56'
+        : '1.234,56';
 
     // Start day of week status
     final startDayOfWeekStatus = settingsProvider.startDayOfWeek == 'Monday'
@@ -123,7 +125,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         children: [
           // Section 1: Localization & Display
-          _buildSectionHeader(context.translate('settings_general_localization')),
+          _buildSectionHeader(
+            context.translate('settings_general_localization'),
+          ),
           _buildSectionCard(context, [
             SettingsTile(
               title: context.translate('appearance'),
@@ -168,7 +172,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
           const SizedBox(height: 16),
 
           // Section 2: Calendar & Finance
-          _buildSectionHeader(context.translate('settings_general_calendar_finance')),
+          _buildSectionHeader(
+            context.translate('settings_general_calendar_finance'),
+          ),
           _buildSectionCard(context, [
             SettingsTile(
               title: context.translate('settings_start_day_of_week'),
@@ -215,13 +221,19 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10, top: 24), // Spacious gap between cards
+      padding: const EdgeInsets.only(
+        left: 4,
+        bottom: 10,
+        top: 24,
+      ), // Spacious gap between cards
       child: Text(
         _toTitleCase(title),
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500, // Medium weight for header text
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45), // Sleek, modern grey
+          color: Theme.of(
+            context,
+          ).colorScheme.onSurface.withValues(alpha: 0.45), // Sleek, modern grey
         ),
       ),
     );
@@ -229,10 +241,13 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
 
   String _toTitleCase(String text) {
     if (text.isEmpty) return text;
-    return text.split(' ').map((word) {
-      if (word.isEmpty) return word;
-      return word[0].toUpperCase() + word.substring(1).toLowerCase();
-    }).join(' ');
+    return text
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return word;
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ');
   }
 
   Widget _buildSectionCard(BuildContext context, List<Widget> children) {
@@ -268,9 +283,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: dividedChildren,
-        ),
+        child: Column(children: dividedChildren),
       ),
     );
   }
@@ -310,7 +323,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
                 width: 1.0,
               ),
               boxShadow: [
@@ -330,12 +345,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.calendar_view_week_outlined,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                         size: 24,
                       ),
                     ),
@@ -358,10 +377,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             'Choose start day of the week',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -373,10 +391,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                 Divider(
                   height: 1,
                   thickness: 0.5,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
                 const SizedBox(height: 16),
                 ...options.map((opt) {
@@ -402,16 +419,14 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                   alpha: isDark ? 0.12 : 0.08,
                                 )
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.02)
-                                  : Colors.black.withValues(alpha: 0.01)),
+                                    ? Colors.white.withValues(alpha: 0.02)
+                                    : Colors.black.withValues(alpha: 0.01)),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.08),
+                                : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.08),
                             width: 1.0,
                           ),
                         ),
@@ -419,7 +434,10 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                           children: [
                             Icon(
                               icon,
-                              color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
                               size: 22,
                             ),
                             const SizedBox(width: 14),
@@ -428,8 +446,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                 label,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -443,10 +465,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             else
                               Icon(
                                 Icons.radio_button_off,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.2),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.2),
                                 size: 20,
                               ),
                           ],
@@ -491,10 +512,14 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.12),
                       ),
                     ),
                     alignment: Alignment.center,
@@ -502,7 +527,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                       '$day',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -535,7 +562,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
                 width: 1.0,
               ),
               boxShadow: [
@@ -555,12 +584,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.account_balance_wallet_outlined,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                         size: 24,
                       ),
                     ),
@@ -583,10 +616,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             'Choose default transaction account',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -598,10 +630,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                 Divider(
                   height: 1,
                   thickness: 0.5,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
                 const SizedBox(height: 16),
                 ConstrainedBox(
@@ -630,16 +661,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                         alpha: isDark ? 0.12 : 0.08,
                                       )
                                     : (isDark
-                                        ? Colors.white.withValues(alpha: 0.02)
-                                        : Colors.black.withValues(alpha: 0.01)),
+                                          ? Colors.white.withValues(alpha: 0.02)
+                                          : Colors.black.withValues(
+                                              alpha: 0.01,
+                                            )),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: currentId == 'Last Used'
                                       ? AppColors.primary.withValues(alpha: 0.5)
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.08),
+                                      : Theme.of(context).colorScheme.onSurface
+                                            .withValues(alpha: 0.08),
                                   width: 1.0,
                                 ),
                               ),
@@ -647,7 +678,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                 children: [
                                   Icon(
                                     Icons.history,
-                                    color: currentId == 'Last Used' ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                    color: currentId == 'Last Used'
+                                        ? AppColors.primary
+                                        : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.6),
                                     size: 22,
                                   ),
                                   const SizedBox(width: 14),
@@ -656,8 +692,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                       context.translate('settings_last_used'),
                                       style: TextStyle(
                                         fontSize: 14,
-                                        fontWeight: currentId == 'Last Used' ? FontWeight.bold : FontWeight.w600,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontWeight: currentId == 'Last Used'
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
                                       ),
                                     ),
                                   ),
@@ -705,16 +745,22 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                           alpha: isDark ? 0.12 : 0.08,
                                         )
                                       : (isDark
-                                          ? Colors.white.withValues(alpha: 0.02)
-                                          : Colors.black.withValues(alpha: 0.01)),
+                                            ? Colors.white.withValues(
+                                                alpha: 0.02,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.01,
+                                              )),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: isSelected
-                                        ? AppColors.primary.withValues(alpha: 0.5)
+                                        ? AppColors.primary.withValues(
+                                            alpha: 0.5,
+                                          )
                                         : Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.08),
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.08),
                                     width: 1.0,
                                   ),
                                 ),
@@ -722,7 +768,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                   children: [
                                     Icon(
                                       Icons.account_balance,
-                                      color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.6),
                                       size: 22,
                                     ),
                                     const SizedBox(width: 14),
@@ -731,8 +782,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                         context.getLocalizedAccountName(name),
                                         style: TextStyle(
                                           fontSize: 14,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                         ),
                                       ),
                                     ),
@@ -805,7 +860,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
                 width: 1.0,
               ),
               boxShadow: [
@@ -825,12 +882,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.replay_outlined,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                         size: 24,
                       ),
                     ),
@@ -853,10 +914,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             'About Budget Rollover',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -878,10 +938,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     style: TextStyle(
                       fontSize: 12.5,
                       height: 1.4,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -889,10 +948,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                 Divider(
                   height: 1,
                   thickness: 0.5,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
                 const SizedBox(height: 16),
                 ...options.map((opt) {
@@ -919,16 +977,14 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                   alpha: isDark ? 0.12 : 0.08,
                                 )
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.02)
-                                  : Colors.black.withValues(alpha: 0.01)),
+                                    ? Colors.white.withValues(alpha: 0.02)
+                                    : Colors.black.withValues(alpha: 0.01)),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.08),
+                                : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.08),
                             width: 1.0,
                           ),
                         ),
@@ -936,7 +992,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                           children: [
                             Icon(
                               icon,
-                              color: isSelected ? AppColors.primary : color.withValues(alpha: 0.6),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : color.withValues(alpha: 0.6),
                               size: 22,
                             ),
                             const SizedBox(width: 14),
@@ -945,8 +1003,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                 label,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -960,10 +1022,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             else
                               Icon(
                                 Icons.radio_button_off,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.2),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.2),
                                 size: 20,
                               ),
                           ],
@@ -985,16 +1046,8 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
     final currentStyle = settings.numberFormatStyle;
 
     final List<Map<String, dynamic>> options = [
-      {
-        'value': 'comma_dot',
-        'label': '1,234.56',
-        'icon': Icons.onetwothree,
-      },
-      {
-        'value': 'dot_comma',
-        'label': '1.234,56',
-        'icon': Icons.onetwothree,
-      },
+      {'value': 'comma_dot', 'label': '1,234.56', 'icon': Icons.onetwothree},
+      {'value': 'dot_comma', 'label': '1.234,56', 'icon': Icons.onetwothree},
     ];
 
     showDialog(
@@ -1013,7 +1066,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
                 width: 1.0,
               ),
               boxShadow: [
@@ -1033,12 +1088,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.onetwothree_outlined,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                         size: 24,
                       ),
                     ),
@@ -1061,10 +1120,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             'Choose number separator format',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -1076,10 +1134,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                 Divider(
                   height: 1,
                   thickness: 0.5,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
                 const SizedBox(height: 16),
                 ...options.map((opt) {
@@ -1105,16 +1162,14 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                   alpha: isDark ? 0.12 : 0.08,
                                 )
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.02)
-                                  : Colors.black.withValues(alpha: 0.01)),
+                                    ? Colors.white.withValues(alpha: 0.02)
+                                    : Colors.black.withValues(alpha: 0.01)),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.08),
+                                : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.08),
                             width: 1.0,
                           ),
                         ),
@@ -1122,7 +1177,10 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                           children: [
                             Icon(
                               icon,
-                              color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Theme.of(context).colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
                               size: 22,
                             ),
                             const SizedBox(width: 14),
@@ -1131,8 +1189,12 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                 label,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -1146,10 +1208,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             else
                               Icon(
                                 Icons.radio_button_off,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.2),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.2),
                                 size: 20,
                               ),
                           ],
@@ -1210,7 +1271,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.08),
                 width: 1.0,
               ),
               boxShadow: [
@@ -1230,12 +1293,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.05),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.backup_outlined,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                         size: 24,
                       ),
                     ),
@@ -1258,10 +1325,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             'Choose how often to back up your data',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.5),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -1273,10 +1339,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                 Divider(
                   height: 1,
                   thickness: 0.5,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
                 const SizedBox(height: 16),
                 ...options.map((opt) {
@@ -1303,12 +1368,18 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             SnackBar(
                               content: Row(
                                 children: [
-                                  const Icon(Icons.notifications_active, color: Colors.white, size: 20),
+                                  const Icon(
+                                    Icons.notifications_active,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       message,
-                                      style: const TextStyle(fontWeight: FontWeight.w500),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1323,7 +1394,8 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                           );
                           // Trigger a test notification that fires in 4 seconds only in debug mode
                           if (isDebug) {
-                            await NotificationService().sendInstantTestNotification();
+                            await NotificationService()
+                                .sendInstantTestNotification();
                           }
                         }
                       },
@@ -1337,16 +1409,14 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                   alpha: isDark ? 0.12 : 0.08,
                                 )
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.02)
-                                  : Colors.black.withValues(alpha: 0.01)),
+                                    ? Colors.white.withValues(alpha: 0.02)
+                                    : Colors.black.withValues(alpha: 0.01)),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary.withValues(alpha: 0.5)
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.08),
+                                : Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.08),
                             width: 1.0,
                           ),
                         ),
@@ -1357,15 +1427,16 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.primary.withValues(alpha: 0.1)
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.05),
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 icon,
-                                color: isSelected ? AppColors.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Theme.of(context).colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
                                 size: 20,
                               ),
                             ),
@@ -1381,9 +1452,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                                           ? FontWeight.bold
                                           : FontWeight.w600,
                                       fontSize: 15,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -1410,10 +1481,9 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                             else
                               Icon(
                                 Icons.circle_outlined,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.25),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.25),
                                 size: 20,
                               ),
                           ],
@@ -1549,6 +1619,76 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                       },
                     ),
 
+                    const Divider(),
+                    const SizedBox(height: 4),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      child: Text(
+                        context.translate('accent_color').toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: colorOptions.entries.map((entry) {
+                          final name = entry.key;
+                          final color = entry.value;
+                          final isSelected = currentAccent == name;
+
+                          return GestureDetector(
+                            onTap: () {
+                              themeProvider.setAccentColor(name);
+                            },
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: isSelected
+                                    ? Border.all(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface,
+                                        width: 3,
+                                      )
+                                    : null,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: color.withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: isSelected
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 20,
+                                    )
+                                  : null,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                   ],
                 );
