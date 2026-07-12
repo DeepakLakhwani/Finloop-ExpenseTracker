@@ -236,7 +236,7 @@ const Map<String, String> deTranslations = {
   'label_settled_up': "Ausgeglichen",
   'msg_no_groups': "Noch keine geteilten Gruppen",
   'msg_no_groups_desc': "Erstellen Sie eine Gruppe mit Freunden, um Rechnungen einfach aufzuteilen!",
-  'type_bank': "Konto",
+  'type_bank': "Bankkonto",
   'type_cash': "Bargeld",
   'type_cards': "Kreditkarte",
   'type_wallet': "Geldbörse",

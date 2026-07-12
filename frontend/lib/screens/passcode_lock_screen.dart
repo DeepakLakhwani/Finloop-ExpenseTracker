@@ -44,14 +44,19 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
 
   void _onAuthSuccess() async {
     await _securityService.clearAppClosedTime();
+    _securityService.setSessionUnlocked(true);
     if (!mounted) return;
     if (widget.verificationOnly) {
       Navigator.pop(context, true);
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      }
     }
   }
 

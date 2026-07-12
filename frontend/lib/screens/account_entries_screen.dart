@@ -164,16 +164,6 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
     return DateTime.now();
   }
 
-  // ✅ Fix #6: safe hex color parsing with fallback
-  Color _parseCardColor(String? hex, {Color? fallback}) {
-    final resolvedFallback = fallback ?? AppColors.primary;
-    try {
-      if (hex == null || hex.isEmpty) return resolvedFallback;
-      return Color(int.parse(hex.replaceAll('#', '0xFF')));
-    } catch (_) {
-      return resolvedFallback;
-    }
-  }
 
   Widget _buildTransactionItem(
     Map<String, dynamic> tx,
@@ -354,6 +344,44 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
     );
   }
 
+  Widget _buildInfoPill(BuildContext context, {required IconData icon, required String label}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? Colors.white.withValues(alpha: 0.05) 
+            : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark 
+              ? Colors.white.withValues(alpha: 0.08) 
+              : Colors.black.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 13,
+            color: AppColors.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = context.watch<SettingsProvider>().currency;
@@ -402,11 +430,6 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
     final isCreditCard =
         _account['type'] == 'Credit Card' || _account['type'] == 'Card';
 
-    // ✅ Fix #6: safe color parsing
-    final cardColor = isCreditCard
-        ? _parseCardColor(_account['color'], fallback: const Color(0xFF1E3A8A))
-        : AppColors.primary;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -452,129 +475,61 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 10),
-                      // Account summary card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [cardColor, cardColor.withValues(alpha: 0.8)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: cardColor.withValues(alpha: 0.24),
-                              blurRadius: 15,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isCreditCard
-                                  ? '${_account['cardIssuer'] ?? context.translate('type_cards')} (${context.getLocalizedAccountType(_account['type'])})'
-                                  : context.getLocalizedAccountType(_account['type']),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            if (isCreditCard) ...[
-                              Text(
-                                '$currency ${context.formatAmount(available)}',
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                context.translate('available_credit'),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white.withValues(alpha: 0.65),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${context.translate('label_used')}: $currency${context.formatAmount(used)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white.withValues(alpha: 0.95),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${context.translate('label_limit')}: $currency${context.formatAmount(limit)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white.withValues(alpha: 0.95),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ] else ...[
-                              Text(
-                                '$currency ${context.formatAmount(balance)}',
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.receipt_long_outlined,
-                                  color: Colors.white70,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  context.translate('transactions_count').replaceAll('{count}', _entries.length.toString()),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      Text(
+                        isCreditCard
+                            ? context.translate('available_credit').toUpperCase()
+                            : context.translate('balance').toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 8),
                       Text(
-                        context.translate('history'),
+                        isCreditCard
+                            ? '$currency${context.formatAmount(available)}'
+                            : '$currency${context.formatAmount(balance)}',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 34,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: -0.5,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        alignment: WrapAlignment.start,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (isCreditCard) ...[
+                            _buildInfoPill(
+                              context,
+                              icon: Icons.credit_card,
+                              label: '${context.translate('label_limit')}: $currency${context.formatAmount(limit)}',
+                            ),
+                            _buildInfoPill(
+                              context,
+                              icon: Icons.pie_chart_outline,
+                              label: '${context.translate('label_used')}: $currency${context.formatAmount(used)}',
+                            ),
+                          ],
+                          _buildInfoPill(
+                            context,
+                            icon: Icons.receipt_long_outlined,
+                            label: context.translate('transactions_count').replaceAll('{count}', _entries.length.toString()),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
                 Expanded(
                   child: _entries.isEmpty
                       ? Padding(
@@ -605,6 +560,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
                           ),
                         )
                       : ListView.separated(
+                          padding: const EdgeInsets.only(top: 8, bottom: 80),
                           itemCount: _entries.length,
                           physics: const BouncingScrollPhysics(),
                           separatorBuilder: (context, index) => Divider(
@@ -629,7 +585,9 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue,
+        heroTag: 'accountEntriesFab',
+        shape: const CircleBorder(),
+        backgroundColor: AppColors.primary,
         onPressed: () async {
           final result = await Navigator.push(
             context,

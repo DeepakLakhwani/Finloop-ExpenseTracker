@@ -236,7 +236,7 @@ const Map<String, String> esTranslations = {
   'label_settled_up': "Saldado",
   'msg_no_groups': "Sin grupos compartidos aún",
   'msg_no_groups_desc': "¡Cree un grupo con amigos para dividir facturas fácilmente!",
-  'type_bank': "Cuenta",
+  'type_bank': "Cuenta bancaria",
   'type_cash': "Efectivo",
   'type_cards': "Tarjeta de crédito",
   'type_wallet': "Billetera",

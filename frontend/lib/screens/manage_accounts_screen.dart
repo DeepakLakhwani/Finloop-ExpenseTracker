@@ -669,7 +669,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
     });
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(0, 10, 0, bottomPad),
+      padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad),
       children: [
         _DuesBanner(accounts: _accounts, currency: currency),
         for (final cat in allCategories)
@@ -760,7 +760,7 @@ class _DuesBanner extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
+          padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
           child: Text(
             context.translate('header_card_dues'),
             style: TextStyle(
@@ -793,10 +793,10 @@ class _DueCard extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
-      margin: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: Colors.orangeAccent.withOpacity(isDark ? 0.15 : 0.25),
           width: 1.5,
@@ -928,98 +928,121 @@ class _AccountCategorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = _sectionTotal;
-    final dividerColor = Theme.of(context).dividerColor.withValues(alpha: 0.2);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Card(
-      margin: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ---- Header row ----
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    category.icon,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    () {
-                      final key =
-                          'type_${category.name.toLowerCase().replaceAll(' ', '_')}';
-                      final val = context.translate(key);
-                      return val == key ? category.name : val;
-                    }(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ---- Header row ----
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      category.icon,
+                      color: theme.colorScheme.onSurface,
+                      size: 18,
                     ),
                   ),
-                ),
-                Text(
-                  // For credit cards, total > 0 means money owed → show as negative.
-                  _formatBalance(
-                    context: context,
-                    balance: total,
-                    isCreditCard: _isCreditCard,
-                    currency: currency,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      () {
+                        final key =
+                            'type_${category.name.toLowerCase().replaceAll(' ', '_')}';
+                        final val = context.translate(key);
+                        return val == key ? category.name : val;
+                      }(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
                   ),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: _isCreditCard
-                        ? (total > 0.01
-                            ? const Color(0xFFE74C3C)
-                            : const Color(0xFF2ECC71))
-                        : (total >= 0.0
-                            ? const Color(0xFF2ECC71)
-                            : const Color(0xFFE74C3C)),
+                  Text(
+                    // For credit cards, total > 0 means money owed → show as negative.
+                    _formatBalance(
+                      context: context,
+                      balance: total,
+                      isCreditCard: _isCreditCard,
+                      currency: currency,
+                    ),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: _isCreditCard
+                          ? (total > 0.01
+                              ? const Color(0xFFE74C3C)
+                              : const Color(0xFF2ECC71))
+                          : (total >= 0.0
+                              ? const Color(0xFF2ECC71)
+                              : const Color(0xFFE74C3C)),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // ---- Sub-account list OR empty-state notice ----
-          if (accounts.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Text(
-                context.translate('msg_no_accounts_in_category'),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(100),
+            // ---- Sub-account list OR empty-state notice ----
+            if (accounts.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Text(
+                  context.translate('msg_no_accounts_in_category'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                  ),
                 ),
+              )
+            else ...[
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
               ),
-            )
-          else ...[
-            Divider(height: 1, thickness: 1, color: dividerColor),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: accounts.length,
-              itemBuilder: (context, index) => _SubAccountTile(
-                acc: accounts[index],
-                currency: currency,
-                isCreditCard: _isCreditCard,
-                onTap: () => onAccountTap(accounts[index]),
-              ),
-            ),
+              for (int i = 0; i < accounts.length; i++) ...[
+                _SubAccountTile(
+                  acc: accounts[i],
+                  currency: currency,
+                  isCreditCard: _isCreditCard,
+                  onTap: () => onAccountTap(accounts[i]),
+                ),
+                if (i < accounts.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.05),
+                    indent: 46,
+                  ),
+              ],
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

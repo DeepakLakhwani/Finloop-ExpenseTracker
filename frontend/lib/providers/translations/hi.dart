@@ -253,7 +253,7 @@ const Map<String, String> hiTranslations = {
   'msg_no_groups': "अभी तक कोई साझा समूह नहीं है",
   'msg_no_groups_desc':
       "मित्रों के साथ आसानी से बिल विभाजित करने के लिए एक समूह बनाएं!",
-  'type_bank': "खाता",
+  'type_bank': "बैंक खाता",
   'type_cash': "नकद",
   'type_cards': "क्रेडिट कार्ड",
   'type_wallet': "बटुआ",

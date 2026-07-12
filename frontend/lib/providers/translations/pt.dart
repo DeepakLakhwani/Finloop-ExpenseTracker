@@ -236,7 +236,7 @@ const Map<String, String> ptTranslations = {
   'label_settled_up': "Tudo pago",
   'msg_no_groups': "Nenhum grupo compartilhado ainda",
   'msg_no_groups_desc': "Crie um grupo com amigos para dividir contas facilmente!",
-  'type_bank': "Conta",
+  'type_bank': "Conta bancária",
   'type_cash': "Dinheiro",
   'type_cards': "Cartão de crédito",
   'type_wallet': "Carteira",

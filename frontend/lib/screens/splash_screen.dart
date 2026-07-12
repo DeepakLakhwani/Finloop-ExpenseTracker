@@ -78,6 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
       );
     } else {
+      SecurityService().setSessionUnlocked(true);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const DashboardScreen()),

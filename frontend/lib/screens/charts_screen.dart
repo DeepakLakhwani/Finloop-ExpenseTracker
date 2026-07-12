@@ -457,7 +457,9 @@ class _DistributionCardState extends State<_DistributionCard> {
     if (widget.totalExpenses <= 0)
       return _EmptyDistributionCard(isIncome: widget.isIncome);
 
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
     final parts = widget.pieData.first.key.split('::');
     final topKey = parts[0];
     final topFallback = parts.length > 1 ? parts[1] : '';
@@ -687,7 +689,7 @@ class _DistributionCardState extends State<_DistributionCard> {
                       widget.onTouch(i);
                     }
                   },
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(
@@ -697,18 +699,22 @@ class _DistributionCardState extends State<_DistributionCard> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? catColor.withValues(alpha: 0.08)
-                          : Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.02),
-                      borderRadius: BorderRadius.circular(12),
+                          : (isDark ? theme.colorScheme.surface : Colors.white),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
                             ? catColor.withValues(alpha: 0.4)
-                            : Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.04),
+                            : theme.colorScheme.onSurface.withValues(alpha: 0.04),
                         width: 1.2,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                          blurRadius: 16,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -1015,7 +1021,7 @@ class _MonthlyTrendsCardState extends State<_MonthlyTrendsCard>
                               children: [
                                 TextSpan(
                                   text:
-                                      '${widget.currency}${context.formatAmount(widget.dataValues[idx])}',
+                                      '${widget.currency}${context.formatAmount(widget.dataValues[idx], listen: false)}',
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 14,
@@ -1398,6 +1404,9 @@ class _BudgetsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (budgets.isEmpty) return const SizedBox.shrink();
 
     final now = DateTime.now();
@@ -1484,16 +1493,20 @@ class _BudgetsCard extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.02),
+                color: isDark ? theme.colorScheme.surface : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.04),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
                   width: 1.2,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 16,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

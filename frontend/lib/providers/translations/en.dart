@@ -250,7 +250,7 @@ const Map<String, String> enTranslations = {
   'msg_no_groups': "No Shared Groups Yet",
   'msg_no_groups_desc':
       "Create a group for trips, rent, flatmates, or office meals and split bills effortlessly with friends!",
-  'type_bank': "Account",
+  'type_bank': "Bank Account",
   'type_cash': "Cash",
   'type_cards': "Credit Card",
   'type_wallet': "Wallet",

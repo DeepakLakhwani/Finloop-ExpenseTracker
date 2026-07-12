@@ -49,6 +49,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
     final verified = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/lock_screen'),
         builder: (context) => const PasscodeLockScreen(verificationOnly: true),
       ),
     );
@@ -88,6 +89,7 @@ class _PasscodeOptionsScreenState extends State<PasscodeOptionsScreen> {
     final verified = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/lock_screen'),
         builder: (context) => const PasscodeLockScreen(verificationOnly: true),
       ),
     );

@@ -15,6 +15,7 @@ import 'services/ad_service.dart';
 import 'services/app_review_service.dart';
 import 'theme/app_theme.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 final GlobalKey<ScaffoldMessengerState> snackbarKey =
     GlobalKey<ScaffoldMessengerState>();
@@ -23,6 +24,13 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
+
+  // Asynchronously precache the splash screen SVG asset during startup
+  final loader = const SvgAssetLoader('assets/icon/app_icon_dark_512x512.svg');
+  svg.cache.putIfAbsent(
+    loader.cacheKey(null),
+    () => loader.loadBytes(null),
+  );
   try {
     await Firebase.initializeApp();
   } catch (e) {
@@ -75,6 +83,9 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
       // Record closing timestamp when app goes to background
       await security.recordAppClosedTime();
     } else if (state == AppLifecycleState.resumed) {
+      // If the app hasn't been unlocked initially, bypass background-lock logic.
+      if (!security.isSessionUnlocked()) return;
+
       // App returned to foreground
       final shouldLock = await security.shouldShowLockScreen();
       if (shouldLock) {

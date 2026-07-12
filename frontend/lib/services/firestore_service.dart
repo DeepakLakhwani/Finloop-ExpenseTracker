@@ -91,16 +91,18 @@ class FirestoreService {
         await doc.reference.update({'type': 'Account'});
       }
 
-      // Migration: if they have a sub-account named 'Accounts', rename it to 'Account'
-      final pluralAccounts = await _db
+      // Migration: if they have a sub-account named 'Account' or 'Accounts', rename it to 'Bank Account'
+      final legacySubAccounts = await _db
           .collection('users')
           .doc(uid)
           .collection('accounts')
-          .where('name', isEqualTo: 'Accounts')
           .where('type', isEqualTo: 'Account')
           .get();
-      for (var doc in pluralAccounts.docs) {
-        await doc.reference.update({'name': 'Account'});
+      for (var doc in legacySubAccounts.docs) {
+        final name = doc.data()['name']?.toString();
+        if (name == 'Account' || name == 'Accounts') {
+          await doc.reference.update({'name': 'Bank Account'});
+        }
       }
     } catch (e) {
       debugPrint("Firestore initialization error: $e");
@@ -368,7 +370,7 @@ class FirestoreService {
           .collection('accounts')
           .doc();
       batch.set(bankRef, {
-        'name': 'Account',
+        'name': 'Bank Account',
         'type': 'Account',
         'currency': 'USD',
         'balance': 0.0,

@@ -236,7 +236,7 @@ const Map<String, String> guTranslations = {
   'label_settled_up': "હિસાબ પતી ગયો",
   'msg_no_groups': "હજી સુધી કોઈ જૂથ નથી",
   'msg_no_groups_desc': "મિત્રો સાથે બિલ વિભાજિત કરવા માટે જૂથ બનાવો!",
-  'type_bank': "ખાતું",
+  'type_bank': "બેંક ખાતું",
   'type_cash': "રોકડ",
   'type_cards': "ક્રેડિટ કાર્ડ",
   'type_wallet': "વોલેટ",

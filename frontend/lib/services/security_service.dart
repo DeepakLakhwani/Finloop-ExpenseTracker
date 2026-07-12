@@ -11,6 +11,14 @@ class SecurityService {
   static const String _lastBiometricAuthKey = 'last_biometric_auth_ms';
   static const String _lastAppClosedKey = 'last_app_closed_ms';
 
+  static bool _sessionUnlocked = false;
+
+  bool isSessionUnlocked() => _sessionUnlocked;
+
+  void setSessionUnlocked(bool unlocked) {
+    _sessionUnlocked = unlocked;
+  }
+
   String _hashPasscode(String passcode) {
     final bytes = utf8.encode(passcode);
     return sha256.convert(bytes).toString();
@@ -26,6 +34,7 @@ class SecurityService {
   Future<void> setPasscode(String passcode) async {
     final hashed = _hashPasscode(passcode);
     await _storage.write(key: _passcodeKey, value: hashed);
+    _sessionUnlocked = true;
   }
 
   // Verify passcode
@@ -53,6 +62,7 @@ class SecurityService {
     await _storage.delete(key: _biometricTimeoutKey);
     await _storage.delete(key: _lastBiometricAuthKey);
     await _storage.delete(key: _lastAppClosedKey);
+    _sessionUnlocked = true;
   }
 
   // Check if biometrics enabled
@@ -131,7 +141,11 @@ class SecurityService {
     if (!hasCode) return false;
 
     final lastClosedStr = await _storage.read(key: _lastAppClosedKey);
-    if (lastClosedStr == null) return true; // Cold start / first launch
+    if (lastClosedStr == null) {
+      // If the session is already unlocked, we do not lock it again
+      // when there is no recorded app close time.
+      return !_sessionUnlocked;
+    }
 
     final lastClosedMs = int.tryParse(lastClosedStr) ?? 0;
     final timeoutSeconds = await getBiometricTimeout();
