@@ -114,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Center(
                     child: ClipOval(
                       child: SvgPicture.asset(
-                        'assets/icon/app_icon_dark_512x512.svg',
+                        'assets/icon/Final_App_Icon_512x512.svg',
                         width: 120,
                         height: 120,
                         fit: BoxFit.cover,

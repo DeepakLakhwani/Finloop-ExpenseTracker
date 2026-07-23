@@ -34,26 +34,63 @@ DateTime _toDateTime(dynamic value) {
 /// Returns a human-readable countdown to the credit-card due day.
 ///
 /// Uses proper [DateTime] arithmetic so December → January wrap-around is safe.
-String _dueCountdownText(BuildContext context, int dueDay) {
+/// Helper to get the number of days in a month.
+int _daysInMonth(int year, int month) {
+  return DateTime(year, month + 1, 0).day;
+}
+
+/// Calculates the next due date based on statement day, due day, and offset.
+DateTime _calculateNextDueDate({
+  required DateTime today,
+  required int statementDay,
+  required int dueDay,
+  required int dueMonthOffset,
+}) {
+  final daysThisMonth = _daysInMonth(today.year, today.month);
+  final clampedSThisMonth = statementDay.clamp(1, daysThisMonth);
+  final statementThisMonth = DateTime(today.year, today.month, clampedSThisMonth);
+
+  DateTime latestStatement;
+  DateTime upcomingStatement;
+
+  if (today.isBefore(statementThisMonth)) {
+    final prevMonth = DateTime(today.year, today.month - 1);
+    final daysPrevMonth = _daysInMonth(prevMonth.year, prevMonth.month);
+    final clampedSPrev = statementDay.clamp(1, daysPrevMonth);
+    latestStatement = DateTime(prevMonth.year, prevMonth.month, clampedSPrev);
+    upcomingStatement = statementThisMonth;
+  } else {
+    latestStatement = statementThisMonth;
+    final nextMonth = DateTime(today.year, today.month + 1);
+    final daysNextMonth = _daysInMonth(nextMonth.year, nextMonth.month);
+    final clampedSNext = statementDay.clamp(1, daysNextMonth);
+    upcomingStatement = DateTime(nextMonth.year, nextMonth.month, clampedSNext);
+  }
+
+  final dueMonthForLatest = DateTime(latestStatement.year, latestStatement.month + dueMonthOffset);
+  final clampedDForLatest = dueDay.clamp(1, _daysInMonth(dueMonthForLatest.year, dueMonthForLatest.month));
+  final latestDueDate = DateTime(dueMonthForLatest.year, dueMonthForLatest.month, clampedDForLatest);
+
+  if (!today.isAfter(latestDueDate)) {
+    return latestDueDate;
+  }
+
+  final dueMonthForUpcoming = DateTime(upcomingStatement.year, upcomingStatement.month + dueMonthOffset);
+  final clampedDForUpcoming = dueDay.clamp(1, _daysInMonth(dueMonthForUpcoming.year, dueMonthForUpcoming.month));
+  return DateTime(dueMonthForUpcoming.year, dueMonthForUpcoming.month, clampedDForUpcoming);
+}
+
+/// Returns a human-readable countdown to the credit-card due day.
+String _dueCountdownText(BuildContext context, int statementDay, int dueDay, int dueMonthOffset) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
 
-  // Build the next occurrence of [dueDay].
-  final daysInCurrentMonth = DateTime(now.year, now.month + 1, 0).day;
-  final clampedThisMonth = dueDay.clamp(1, daysInCurrentMonth);
-  var dueDate = DateTime(now.year, now.month, clampedThisMonth);
-
-  // If the due date has already passed this month, move to next month.
-  if (!dueDate.isAfter(today)) {
-    final nextMonth = DateTime(now.year, now.month + 1); // safe across Dec→Jan
-    final daysInNextMonth = DateTime(
-      nextMonth.year,
-      nextMonth.month + 1,
-      0,
-    ).day;
-    final clampedNextMonth = dueDay.clamp(1, daysInNextMonth);
-    dueDate = DateTime(nextMonth.year, nextMonth.month, clampedNextMonth);
-  }
+  final dueDate = _calculateNextDueDate(
+    today: today,
+    statementDay: statementDay,
+    dueDay: dueDay,
+    dueMonthOffset: dueMonthOffset,
+  );
 
   final diff = dueDate.difference(today).inDays;
   if (diff == 0) return context.translate('due_today');
@@ -788,8 +825,11 @@ class _DueCard extends StatelessWidget {
     final limit = _parseDouble(acc['limit']);
     final available = _parseDouble(acc['balance']);
     final outstanding = limit - available;
+    final statementDay = (acc['statementDate'] as int?) ?? 15;
     final dueDay = (acc['dueDate'] as int?) ?? 30;
-    final countdownText = _dueCountdownText(context, dueDay);
+    final dueMonthOffset = (acc['dueMonthOffset'] as int?) ??
+        ((dueDay <= statementDay) ? 1 : 0);
+    final countdownText = _dueCountdownText(context, statementDay, dueDay, dueMonthOffset);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(

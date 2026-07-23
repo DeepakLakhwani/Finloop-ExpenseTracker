@@ -654,11 +654,7 @@ class _DistributionCardState extends State<_DistributionCard> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: displayedCount,
-              separatorBuilder: (context, index) => Divider(
-                height: 1,
-                thickness: 0.5,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
-              ),
+              separatorBuilder: (context, index) => const SizedBox(height: 8),
               itemBuilder: (context, i) {
                 final entry = widget.pieData[i];
                 final parts = entry.key.split('::');
@@ -693,7 +689,7 @@ class _DistributionCardState extends State<_DistributionCard> {
                       widget.onTouch(i);
                     }
                   },
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(
@@ -703,14 +699,26 @@ class _DistributionCardState extends State<_DistributionCard> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? catColor.withValues(alpha: 0.08)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
+                          : (isDark ? theme.colorScheme.surface : Colors.white),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isSelected
-                            ? catColor.withValues(alpha: 0.3)
-                            : Colors.transparent,
+                            ? catColor.withValues(alpha: 0.4)
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.04,
+                              ),
                         width: 1.2,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.2 : 0.05,
+                          ),
+                          blurRadius: 16,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -1433,72 +1441,78 @@ class _BudgetsCard extends StatelessWidget {
             icon: Icons.track_changes_outlined,
           ),
           const SizedBox(height: 24),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: budgets.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 24,
-              thickness: 0.5,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
-            ),
-            itemBuilder: (context, index) {
-              final budget = budgets[index];
-              final isGlobal = budget['categoryId'] == null;
-              final categoryId = budget['categoryId'];
-              final limitAmount =
-                  (budget['limitAmount'] as num?)?.toDouble() ?? 0.0;
-              final displayTitle = isGlobal
-                  ? context.translate('all_expenses')
-                  : context.getLocalizedCategory(
-                      budget['categoryKey']?.toString(),
-                      budget['categoryName'] ?? 'Budget',
-                    );
-
-              // Sum current month transactions matching category
-              double spent = 0.0;
-              for (var tx in currentMonthExpenses) {
-                if (isGlobal || tx['category_id'] == categoryId) {
-                  spent += (tx['amount'] as num?)?.toDouble() ?? 0.0;
-                }
-              }
-
-              final percent = limitAmount > 0
-                  ? (spent / limitAmount).clamp(0.0, 1.0)
-                  : 0.0;
-              final isExceeded = spent > limitAmount;
-
-              // Determine status color
-              Color progressColor = Colors.green;
-              if (spent >= limitAmount) {
-                progressColor = Colors.redAccent;
-              } else if (spent >= limitAmount * 0.75) {
-                progressColor = Colors.amber;
-              }
-
-              // Category configuration lookup
-              Color catColor = AppColors.primary;
-              IconData catIcon = Icons.track_changes_outlined;
-              if (!isGlobal) {
-                final matchedCat = categories.firstWhere(
-                  (c) => c['id'] == categoryId,
-                  orElse: () => <String, dynamic>{},
-                );
-                if (matchedCat.isNotEmpty) {
-                  catColor = _parseHexColor(
-                    matchedCat['color'],
-                    AppColors.primary,
+          ...budgets.map((budget) {
+            final isGlobal = budget['categoryId'] == null;
+            final categoryId = budget['categoryId'];
+            final limitAmount =
+                (budget['limitAmount'] as num?)?.toDouble() ?? 0.0;
+            final displayTitle = isGlobal
+                ? context.translate('all_expenses')
+                : context.getLocalizedCategory(
+                    budget['categoryKey']?.toString(),
+                    budget['categoryName'] ?? 'Budget',
                   );
-                  catIcon = _getCategoryIcon(matchedCat['icon']);
-                }
-              } else {
-                catIcon = Icons.all_inclusive_rounded;
-              }
 
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                decoration: const BoxDecoration(),
-                child: Column(
+            // Sum current month transactions matching category
+            double spent = 0.0;
+            for (var tx in currentMonthExpenses) {
+              if (isGlobal || tx['category_id'] == categoryId) {
+                spent += (tx['amount'] as num?)?.toDouble() ?? 0.0;
+              }
+            }
+
+            final percent = limitAmount > 0
+                ? (spent / limitAmount).clamp(0.0, 1.0)
+                : 0.0;
+            final isExceeded = spent > limitAmount;
+
+            // Determine status color
+            Color progressColor = Colors.green;
+            if (spent >= limitAmount) {
+              progressColor = Colors.redAccent;
+            } else if (spent >= limitAmount * 0.75) {
+              progressColor = Colors.amber;
+            }
+
+            // Category configuration lookup
+            Color catColor = AppColors.primary;
+            IconData catIcon = Icons.track_changes_outlined;
+            if (!isGlobal) {
+              final matchedCat = categories.firstWhere(
+                (c) => c['id'] == categoryId,
+                orElse: () => <String, dynamic>{},
+              );
+              if (matchedCat.isNotEmpty) {
+                catColor = _parseHexColor(
+                  matchedCat['color'],
+                  AppColors.primary,
+                );
+                catIcon = _getCategoryIcon(matchedCat['icon']);
+              }
+            } else {
+              catIcon = Icons.all_inclusive_rounded;
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? theme.colorScheme.surface : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 16,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -1607,9 +1621,8 @@ class _BudgetsCard extends StatelessWidget {
                   ),
                 ],
               ),
-              );
-            },
-          ),
+            );
+          }),
         ],
       ),
     );

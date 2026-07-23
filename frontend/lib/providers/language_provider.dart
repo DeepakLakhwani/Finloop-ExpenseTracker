@@ -22,8 +22,21 @@ import 'translations/tr.dart';
 
 class LanguageProvider extends ChangeNotifier {
   String _languageCode = 'en';
+  bool _isChangingLanguage = false;
+  String? _previousLanguageName;
+  String? _targetLanguageName;
 
   String get languageCode => _languageCode;
+  bool get isChangingLanguage => _isChangingLanguage;
+  String? get previousLanguageName => _previousLanguageName;
+  String? get targetLanguageName => _targetLanguageName;
+
+  void completeLanguageChange() {
+    if (_isChangingLanguage) {
+      _isChangingLanguage = false;
+      notifyListeners();
+    }
+  }
 
   static const Map<String, String> supportedLanguages = {
     'en': 'English',
@@ -67,9 +80,19 @@ class LanguageProvider extends ChangeNotifier {
 
   Future<void> setLanguage(String code) async {
     if (!supportedLanguages.containsKey(code)) return;
+    if (_languageCode == code) return;
+
+    _previousLanguageName = supportedLanguages[_languageCode];
+    _targetLanguageName = supportedLanguages[code];
     _languageCode = code;
     Intl.defaultLocale = code;
+    _isChangingLanguage = true;
     notifyListeners();
+
+    // Reset changing flag after animation finishes (3s)
+    Future.delayed(const Duration(milliseconds: 3000), () {
+      completeLanguageChange();
+    });
 
     // Save to SharedPreferences for offline access
     try {

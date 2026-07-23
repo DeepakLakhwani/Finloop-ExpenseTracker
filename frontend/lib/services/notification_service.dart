@@ -267,4 +267,30 @@ class NotificationService {
       notificationDetails,
     );
   }
+
+  Future<void> showAutoBackupCompletedNotification(String timeStr) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'auto_backup_channel',
+      'Auto Backup Notifications',
+      channelDescription: 'Notifications when automated cloud backups complete',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    await _localNotifications.show(
+      100,
+      'Finloop Auto-Backup Complete',
+      'Your data was encrypted & backed up to Google Drive at $timeStr',
+      notificationDetails,
+    );
+  }
 }

@@ -16,6 +16,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   bool _isLoaded = false;
   bool _isError = false;
   AdSize? _adaptiveSize;
+  bool _isAdLoading = false;
 
   void _notifyParent(bool isLoaded) {
     if (widget.onAdLoaded != null) {
@@ -31,9 +32,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Only load the ad if ads are enabled and we haven't loaded one already
+    // Only load the ad if ads are enabled, we haven't loaded one already, and we aren't currently loading
     if (AdService.adsEnabled) {
-      if (_bannerAd == null) {
+      if (_bannerAd == null && !_isAdLoading) {
         _loadAdaptiveBanner();
       } else {
         _notifyParent(_isLoaded && !_isError);
@@ -44,27 +45,38 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   Future<void> _loadAdaptiveBanner() async {
+    if (_isAdLoading) return;
+
     // 1. Get the screen width dynamically to calculate adaptive size
     final double screenWidth = MediaQuery.of(context).size.width;
+    final Orientation orientation = MediaQuery.of(context).orientation;
 
     // Subtract some horizontal padding to match app layout
     final int targetWidth = (screenWidth - 32).toInt().clamp(0, 1000);
 
-    // 2. Fetch standard banner size of height 50
-    final AdSize size = AdSize(width: targetWidth, height: 50);
+    setState(() {
+      _isAdLoading = true;
+    });
 
+    // 2. Fetch standard adaptive size from the SDK dynamically (ensuring standard height, e.g. 50px)
+    // ignore: deprecated_member_use
+    final AdSize? size = await AdSize.getAnchoredAdaptiveBannerAdSize(orientation, targetWidth);
 
+    if (!mounted) {
+      _isAdLoading = false;
+      return;
+    }
 
-    if (!mounted) return;
+    final resolvedSize = size ?? AdSize.banner;
 
     setState(() {
-      _adaptiveSize = size;
+      _adaptiveSize = resolvedSize;
     });
 
     // 3. Load the Banner Ad
     _bannerAd = BannerAd(
       adUnitId: AdService.bannerAdUnitId,
-      size: size,
+      size: resolvedSize,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
@@ -78,6 +90,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           setState(() {
             _isLoaded = true;
             _isError = false;
+            _isAdLoading = false;
           });
           _notifyParent(true);
         },
@@ -88,6 +101,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             setState(() {
               _isError = true;
               _isLoaded = false;
+              _isAdLoading = false;
             });
             _notifyParent(false);
           }

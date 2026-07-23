@@ -98,133 +98,136 @@ class _PasscodeLockScreenState extends State<PasscodeLockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: widget.verificationOnly
-            ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                onPressed: () => Navigator.pop(context, false),
-              )
-            : null,
-        title: Text(
-          widget.verificationOnly ? context.translate('title_verify_identity') : context.translate('title_enter_passcode'),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+    return PopScope(
+      canPop: widget.verificationOnly,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          leading: widget.verificationOnly
+              ? IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  onPressed: () => Navigator.pop(context, false),
+                )
+              : null,
+          title: Text(
+            widget.verificationOnly ? context.translate('title_verify_identity') : context.translate('title_enter_passcode'),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(flex: 2),
-
-            // Instruction / Icon
-            Icon(Icons.lock_outline, size: 36, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              widget.verificationOnly
-                  ? context.translate('msg_verify_identity_instruction')
-                  : context.translate('msg_enter_passcode_instruction'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Passcode dots indicator
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) {
-                final isFilled = index < _enteredCode.length;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: isFilled ? AppColors.primary : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isFilled
-                          ? AppColors.primary
-                          : Colors.grey.shade400,
-                      width: 2,
-                    ),
-                  ),
-                );
-              }),
-            ),
-
-            // Error Message
-            const SizedBox(height: 20),
-            if (_errorMessage.isNotEmpty)
+        body: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+  
+              // Instruction / Icon
+              Icon(Icons.lock_outline, size: 36, color: AppColors.primary),
+              const SizedBox(height: 16),
               Text(
-                _errorMessage,
-                style: const TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 13,
+                widget.verificationOnly
+                    ? context.translate('msg_verify_identity_instruction')
+                    : context.translate('msg_enter_passcode_instruction'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-
-            const Spacer(flex: 3),
-
-            // Number Keypad
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildKeypadButton(1),
-                      _buildKeypadButton(2),
-                      _buildKeypadButton(3),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildKeypadButton(4),
-                      _buildKeypadButton(5),
-                      _buildKeypadButton(6),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildKeypadButton(7),
-                      _buildKeypadButton(8),
-                      _buildKeypadButton(9),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildBiometricButton(),
-                      _buildKeypadButton(0),
-                      _buildBackspaceButton(),
-                    ],
-                  ),
-                ],
+              const SizedBox(height: 24),
+  
+              // Passcode dots indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(4, (index) {
+                  final isFilled = index < _enteredCode.length;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: isFilled ? AppColors.primary : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isFilled
+                            ? AppColors.primary
+                            : Colors.grey.shade400,
+                        width: 2,
+                      ),
+                    ),
+                  );
+                }),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+  
+              // Error Message
+              const SizedBox(height: 20),
+              if (_errorMessage.isNotEmpty)
+                Text(
+                  _errorMessage,
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+  
+              const Spacer(flex: 3),
+  
+              // Number Keypad
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildKeypadButton(1),
+                        _buildKeypadButton(2),
+                        _buildKeypadButton(3),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildKeypadButton(4),
+                        _buildKeypadButton(5),
+                        _buildKeypadButton(6),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildKeypadButton(7),
+                        _buildKeypadButton(8),
+                        _buildKeypadButton(9),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildBiometricButton(),
+                        _buildKeypadButton(0),
+                        _buildBackspaceButton(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

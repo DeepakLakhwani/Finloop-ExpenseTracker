@@ -199,14 +199,15 @@ class CategorySelectionDialog extends StatelessWidget {
                                 final catColor = _parseColor(cat['color']);
                                 final catIcon = _getCategoryIcon(cat['icon']);
                                 
-                                // Strip emojis from display name if they are in the database string
+                                // Display localized category name preserving emojis
                                 String displayName = context.getLocalizedCategory(
                                   cat['key']?.toString(),
                                   cat['name'] ?? '',
                                 );
-                                // Clean up any lingering emojis at the start of fallback name if it falls back
-                                if (displayName.startsWith(RegExp(r'[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]', unicode: true))) {
-                                  displayName = displayName.replaceFirst(RegExp(r'^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*', unicode: true), '');
+                                // Ensure single space after leading emoji if missing space
+                                final emojiMatch = RegExp(r'^([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1FAFF}])(?!\s)', unicode: true).firstMatch(displayName);
+                                if (emojiMatch != null && emojiMatch.group(1) != null) {
+                                  displayName = displayName.replaceFirst(emojiMatch.group(1)!, '${emojiMatch.group(1)} ');
                                 }
 
                                 return InkWell(

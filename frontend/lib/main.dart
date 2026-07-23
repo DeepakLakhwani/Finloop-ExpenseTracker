@@ -13,7 +13,9 @@ import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
 import 'services/ad_service.dart';
 import 'services/app_review_service.dart';
+import 'services/google_drive_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/language_change_overlay.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -26,13 +28,14 @@ void main() async {
   await initializeDateFormatting();
 
   // Asynchronously precache the splash screen SVG asset during startup
-  final loader = const SvgAssetLoader('assets/icon/app_icon_dark_512x512.svg');
-  svg.cache.putIfAbsent(
-    loader.cacheKey(null),
-    () => loader.loadBytes(null),
-  );
+  final loader = const SvgAssetLoader('assets/icon/Final_App_Icon_512x512.svg');
+  svg.cache.putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
   try {
     await Firebase.initializeApp();
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
   }
@@ -68,6 +71,15 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
     AppReviewService.logAppOpen();
     _loadInitialSettings();
     _initNotifications();
+    _checkAutoBackup();
+  }
+
+  Future<void> _checkAutoBackup() async {
+    try {
+      await GoogleDriveService.checkAndRunAutoBackup();
+    } catch (e) {
+      debugPrint('Auto backup check error: $e');
+    }
   }
 
   @override
@@ -79,10 +91,16 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     final security = SecurityService();
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused) {
+      // If an ad is currently showing, bypass background lock trigger
+      if (AdService.isAdShowing) return;
+
       // Record closing timestamp when app goes to background
       await security.recordAppClosedTime();
     } else if (state == AppLifecycleState.resumed) {
+      // If an ad was showing, bypass lock checks on resume
+      if (AdService.isAdShowing) return;
+
       // If the app hasn't been unlocked initially, bypass background-lock logic.
       if (!security.isSessionUnlocked()) return;
 
@@ -122,6 +140,14 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
   }
 
   Future<void> _loadInitialSettings() async {
+    // 1. Instantly load local settings from SharedPreferences for immediate offline readiness
+    if (mounted) {
+      context.read<ThemeProvider>().loadSettings(null);
+      context.read<LanguageProvider>().loadSettings(null);
+      context.read<SettingsProvider>().loadSettings(null);
+    }
+
+    // 2. Sync user doc settings if available
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -141,16 +167,9 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
           );
           context.read<LanguageProvider>().loadSettings(data['language']);
         }
-      } else {
-        // Even if user is not logged in, load language, theme and settings from SharedPreferences
-        if (mounted) {
-          context.read<ThemeProvider>().loadSettings(null);
-          context.read<LanguageProvider>().loadSettings(null);
-          context.read<SettingsProvider>().loadSettings(null);
-        }
       }
     } catch (e) {
-      debugPrint('Error loading initial settings: $e');
+      debugPrint('Error loading cloud initial settings: $e');
     }
   }
 
@@ -168,6 +187,7 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
       themeMode: themeProvider.themeMode,
       theme: AppTheme.getLightTheme(themeProvider.accentColor),
       darkTheme: AppTheme.getDarkTheme(themeProvider.accentColor),
+      builder: (context, child) => LanguageChangeOverlay(child: child ?? const SizedBox()),
       home: const SplashScreen(),
     );
   }

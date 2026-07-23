@@ -35,6 +35,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   final _issuerController = TextEditingController();
   int _statementDate = 15;
   int _dueDate = 30;
+  int _dueMonthOffset = 0;
   String _selectedColorHex = '#1E3A8A';
 
   final List<String> _premiumColors = [
@@ -74,6 +75,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       _issuerController.text = widget.initialAccount?['cardIssuer'] ?? '';
       _statementDate = widget.initialAccount?['statementDate'] ?? 15;
       _dueDate = widget.initialAccount?['dueDate'] ?? 30;
+      _dueMonthOffset = widget.initialAccount?['dueMonthOffset'] ??
+          ((_dueDate <= _statementDate) ? 1 : 0);
       _selectedColorHex = widget.initialAccount?['color'] ?? '#1E3A8A';
     }
 
@@ -132,6 +135,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           'usedAmount': _usedAmount,
           'statementDate': _statementDate,
           'dueDate': _dueDate,
+          'dueMonthOffset': _dueMonthOffset,
           'cardIssuer': _issuerController.text.trim(),
           'color': _selectedColorHex,
         };
@@ -147,8 +151,85 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       final initialId = widget.initialAccount?['id']?.toString();
 
       if (initialId != null) {
-        // Editing an existing account — just update, never create opening transactions
-        await firestore.updateAccount(initialId, accountData);
+        if (_type == 'Credit Card' || _type == 'Card') {
+          await firestore.updateAccount(initialId, accountData);
+        } else {
+          final oldBalance = double.tryParse(widget.initialAccount?['balance']?.toString() ?? '0.0') ?? 0.0;
+          final diff = _balance - oldBalance;
+          if (diff != 0) {
+            // Update account details keeping the old balance to avoid double-update
+            final accountDataKeepOldBalance = {
+              ...accountData,
+              'balance': oldBalance,
+            };
+            await firestore.updateAccount(initialId, accountDataKeepOldBalance);
+
+            // Find existing opening balance transaction
+            final txs = await firestore.getAccountTransactions(initialId);
+            Map<String, dynamic>? openingTx;
+            for (var tx in txs) {
+              final catId = tx['category_id']?.toString();
+              final catName = tx['category_name']?.toString().toLowerCase() ?? '';
+              final desc = tx['description']?.toString().toLowerCase() ?? '';
+              if (catId == 'opening_balance' || catName == 'opening balance' || desc == 'opening balance') {
+                openingTx = tx;
+                break;
+              }
+            }
+
+            if (openingTx != null) {
+              final oldAmount = double.tryParse(openingTx['amount']?.toString() ?? '0.0') ?? 0.0;
+              final newAmount = oldAmount + diff;
+              final newTxData = Map<String, dynamic>.from(openingTx);
+              newTxData['amount'] = newAmount;
+
+              await firestore.updateTransaction(
+                openingTx['id']?.toString() ?? '',
+                newTxData,
+                openingTx,
+              );
+            } else {
+              // Create a new opening balance transaction
+              String categoryId = 'opening_balance';
+              String categoryName = 'Opening Balance';
+
+              final currentUser = FirebaseAuth.instance.currentUser;
+              if (currentUser != null) {
+                final openingCategory = await firestore.getOpeningBalanceCategory();
+                if (openingCategory != null) {
+                  categoryId = openingCategory['id'].toString();
+                  categoryName = openingCategory['name'] ?? 'Opening Balance';
+                } else {
+                  categoryId = await firestore.createCategoryWithId({
+                    'name': 'Opening Balance',
+                    'type': 'Income',
+                    'icon': 'account_balance_wallet',
+                    'color': '#9E9E9E',
+                  });
+                  categoryName = 'Opening Balance';
+                }
+              }
+
+              final txData = {
+                'account_id': initialId,
+                'to_account_id': null,
+                'category_id': categoryId,
+                'category_name': categoryName,
+                'account_name': _name,
+                'amount': diff.abs(),
+                'type': diff > 0 ? 'Income' : 'Expense',
+                'date': DateTime.now(),
+                'notes': 'Account opening balance adjustment',
+                'description': 'Opening Balance',
+                'fees': 0.0,
+              };
+              await firestore.createTransaction(txData);
+            }
+          } else {
+            // No balance change, just update normally
+            await firestore.updateAccount(initialId, accountData);
+          }
+        }
       } else {
         if (_type == 'Credit Card' || _type == 'Card') {
           // No opening transaction for credit cards to prevent reporting skew
@@ -301,9 +382,11 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Form(
+          : SafeArea(
+              bottom: true,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +592,10 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                               ),
                               onChanged: (val) {
                                 if (val != null) {
-                                  setState(() => _statementDate = val);
+                                  setState(() {
+                                    _statementDate = val;
+                                    _dueMonthOffset = (_dueDate <= _statementDate) ? 1 : 0;
+                                  });
                                 }
                               },
                             ),
@@ -538,12 +624,46 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                               ),
                               onChanged: (val) {
                                 if (val != null) {
-                                  setState(() => _dueDate = val);
+                                  setState(() {
+                                    _dueDate = val;
+                                    _dueMonthOffset = (_dueDate <= _statementDate) ? 1 : 0;
+                                  });
                                 }
                               },
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildRow(
+                        icon: Icons.calendar_today_outlined,
+                        child: DropdownButtonFormField<int>(
+                          value: _dueMonthOffset,
+                          dropdownColor: _dropdownColor(context),
+                          style: _fieldTextStyle(context),
+                          decoration: _underlineDecoration(
+                            label: context.translate('label_due_month_offset'),
+                          ),
+                          items: [
+                            DropdownMenuItem<int>(
+                              value: 0,
+                              child: Text(context.translate('option_same_month')),
+                            ),
+                            DropdownMenuItem<int>(
+                              value: 1,
+                              child: Text(context.translate('option_next_month')),
+                            ),
+                            DropdownMenuItem<int>(
+                              value: 2,
+                              child: Text(context.translate('option_second_month')),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _dueMonthOffset = val);
+                            }
+                          },
+                        ),
                       ),
 
                       // Card Theme
@@ -596,6 +716,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 ),
               ),
             ),
+          ),
     );
   }
 

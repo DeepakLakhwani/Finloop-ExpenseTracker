@@ -9,6 +9,7 @@ class AdService {
 
   // Set this to 'false' if you want to turn off ALL ads globally (e.g., for premium users)
   static bool adsEnabled = true;
+  static bool isAdShowing = false;
 
   // Set this to 'true' to show verbose console debug logs
   static const bool _debugLogEnabled = true;
@@ -44,12 +45,13 @@ class AdService {
       'ca-app-pub-9816661566128786/3753953881';
   static const String _prodAndroidRewardedId =
       'ca-app-pub-9816661566128786/3791128275';
+  // Note: iOS production is not live yet. Using official iOS test IDs to prevent errors.
   static const String _prodIosBannerId =
-      'ca-app-pub-9816661566128786/1079689083';
+      'ca-app-pub-3940256099942544/2934735716';
   static const String _prodIosInterstitialId =
-      'ca-app-pub-9816661566128786/3753953881';
+      'ca-app-pub-3940256099942544/4411468910';
   static const String _prodIosRewardedId =
-      'ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY';
+      'ca-app-pub-3940256099942544/1712485313';
 
   // Getter to automatically resolve target banner ID based on Platform & Mode
   static String get bannerAdUnitId {
@@ -209,11 +211,13 @@ class AdService {
     // Update timestamps and show
     _lastInterstitialShowTime = now;
     _log("Showing Interstitial Ad...");
+    isAdShowing = true;
 
     // Intercept callback to trigger onAdClosed
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _log("Interstitial dismissed. Running navigation callbacks.");
+        isAdShowing = false;
         ad.dispose();
         _preloadedInterstitialAd = null;
         preloadInterstitial(); // Auto preload next
@@ -221,6 +225,7 @@ class AdService {
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         _log("Interstitial failed to show. Running navigation callbacks.");
+        isAdShowing = false;
         ad.dispose();
         _preloadedInterstitialAd = null;
         preloadInterstitial(); // Auto preload next
@@ -296,11 +301,13 @@ class AdService {
       return;
     }
 
+    isAdShowing = true;
     bool earnedReward = false;
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _log("Rewarded dismissed.");
+        isAdShowing = false;
         ad.dispose();
         _preloadedRewardedAd = null;
         preloadRewarded(); // Auto preload next
@@ -313,6 +320,7 @@ class AdService {
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         _log("Rewarded failed to show: $error");
+        isAdShowing = false;
         ad.dispose();
         _preloadedRewardedAd = null;
         preloadRewarded(); // Auto preload next

@@ -10,7 +10,7 @@ import '../services/notification_service.dart';
 import 'passcode_setup_screen.dart';
 import 'passcode_options_screen.dart';
 import 'passcode_lock_screen.dart';
-import 'import_export_screen.dart';
+import 'backup_screen.dart';
 import 'feedback_screen.dart';
 import 'settings/widgets/settings_tile.dart';
 import 'settings/privacy_policy_screen.dart';
@@ -145,12 +145,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const ImportExportScreen(isBackupMode: true),
+                        builder: (context) => const BackupScreen(),
                       ),
                     );
                   },
-                  status: 'Excel',
+                  status: 'Google Drive',
                 ),
               ]),
               const SizedBox(height: 8),
