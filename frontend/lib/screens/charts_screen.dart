@@ -10,6 +10,7 @@ import '../domain/financial_analytics.dart';
 import '../providers/settings_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/firestore_service.dart';
+import '../services/ad_service.dart';
 import '../theme/app_colors.dart';
 
 // ─────────────────────────────────────────────
@@ -46,6 +47,9 @@ class _ChartsScreenState extends State<ChartsScreen> {
   StreamSubscription<List<Map<String, dynamic>>>? _budgetSub;
   StreamSubscription<List<Map<String, dynamic>>>? _catSub;
 
+  Timer? _dwellTimer;
+  bool _adShownInCurrentSession = false;
+
   int _touchedIndex = -1;
   int _selectedTab = 1; // 0 = Income, 1 = Expense
   bool _isLoading = true;
@@ -60,10 +64,22 @@ class _ChartsScreenState extends State<ChartsScreen> {
   void initState() {
     super.initState();
     _subscribeToData();
+    _startDwellTimer();
+  }
+
+  void _startDwellTimer() {
+    _dwellTimer?.cancel();
+    _dwellTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted && !_adShownInCurrentSession) {
+        _adShownInCurrentSession = true;
+        AdService.showInterstitial(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
+    _dwellTimer?.cancel();
     _txSub?.cancel();
     _accSub?.cancel();
     _budgetSub?.cancel();

@@ -234,7 +234,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             Column(
               children: [
                 // Period Selector Banner
-                if (_selectedTab != 'Notes') _buildPeriodSelector(),
+                _buildPeriodSelector(),
 
                 // Top Custom Tab Bar
                 _buildCustomTabBar(),
@@ -1277,6 +1277,33 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   }
 
   Widget _buildPeriodSelector() {
+    if (_selectedTab == 'Notes') {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: const Border(
+            bottom: BorderSide(color: Colors.white24, width: 1.0),
+          ),
+        ),
+        child: SizedBox(
+          height: 40,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              context.translate('notes'),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (_isSearching) {
       return Container(
         width: double.infinity,

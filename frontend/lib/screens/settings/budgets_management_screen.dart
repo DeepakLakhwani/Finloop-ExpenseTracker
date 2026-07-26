@@ -4,6 +4,8 @@ import '../../services/firestore_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../services/ad_service.dart';
+import '../../widgets/banner_ad_widget.dart';
 
 class BudgetsManagementScreen extends StatefulWidget {
   const BudgetsManagementScreen({super.key});
@@ -72,113 +74,123 @@ class _BudgetsManagementScreenState extends State<BudgetsManagementScreen> {
           ),
         ],
       ),
-      body: _loadingCategories
-          ? const Center(child: CircularProgressIndicator())
-          : StreamBuilder<List<Map<String, dynamic>>>(
-              stream: firestore.getBudgets(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(context.translate('err_load_budgets')),
-                  );
-                }
-                final budgets = snapshot.data ?? [];
-                if (budgets.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.track_changes_outlined,
-                          size: 64,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          context.translate('msg_no_budgets'),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.6),
+      body: Column(
+        children: [
+          Expanded(
+            child: _loadingCategories
+                ? const Center(child: CircularProgressIndicator())
+                : StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: firestore.getBudgets(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(context.translate('err_load_budgets')),
+                        );
+                      }
+                      final budgets = snapshot.data ?? [];
+                      if (budgets.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.track_changes_outlined,
+                                size: 64,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                context.translate('msg_no_budgets'),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                context.translate('msg_create_budgets_hint'),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          context.translate('msg_create_budgets_hint'),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                        );
+                      }
 
-                final budgetWidgets = budgets.map<Widget>((budget) {
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      child: Icon(
-                        Icons.track_changes,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    title: Text(
-                      context.getLocalizedCategory(
-                        budget['categoryKey']?.toString(),
-                        budget['categoryName'] ??
-                            context.translate('label_category'),
-                      ),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      '${context.translate('label_limit')}: $currency ${budget['limitAmount']}',
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, size: 20),
-                          onPressed: () => _showBudgetForm(budget: budget),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.redAccent,
-                            size: 20,
+                      final budgetWidgets = budgets.map<Widget>((budget) {
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                          onPressed: () => _deleteConfirm(budget['id']),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList();
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                            child: Icon(
+                              Icons.track_changes,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          title: Text(
+                            context.getLocalizedCategory(
+                              budget['categoryKey']?.toString(),
+                              budget['categoryName'] ??
+                                  context.translate('label_category'),
+                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            '${context.translate('label_limit')}: $currency ${budget['limitAmount']}',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined, size: 20),
+                                onPressed: () => _showBudgetForm(budget: budget),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.redAccent,
+                                  size: 20,
+                                ),
+                                onPressed: () => _deleteConfirm(budget['id']),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList();
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: _buildSectionCard(budgetWidgets),
-                );
-              },
-            ),
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: _buildSectionCard(budgetWidgets),
+                      );
+                    },
+                  ),
+          ),
+          BannerAdWidget(
+            key: const ValueKey('budgets_banner_ad'),
+            customAdUnitId: AdService.budgetBannerAdUnitId,
+          ),
+        ],
+      ),
     );
   }
 

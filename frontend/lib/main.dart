@@ -28,7 +28,7 @@ void main() async {
   await initializeDateFormatting();
 
   // Asynchronously precache the splash screen SVG asset during startup
-  final loader = const SvgAssetLoader('assets/icon/Final_App_Icon_512x512.svg');
+  const loader = SvgAssetLoader('assets/icon/Final_App_Icon_512x512.svg');
   svg.cache.putIfAbsent(loader.cacheKey(null), () => loader.loadBytes(null));
   try {
     await Firebase.initializeApp();
@@ -92,6 +92,9 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     final security = SecurityService();
     if (state == AppLifecycleState.paused) {
+      // Execute background auto-backup if due
+      _checkAutoBackup();
+
       // If an ad is currently showing, bypass background lock trigger
       if (AdService.isAdShowing) return;
 
@@ -203,8 +206,8 @@ void showTopNotification(String message, {bool isError = false}) {
   final overlay = navigatorState.overlay;
   if (overlay == null) return;
 
-  final Color successGreen = const Color(0xFF2ECC71);
-  final Color errorRed = const Color(0xFFE74C3C);
+  const Color successGreen = Color(0xFF2ECC71);
+  const Color errorRed = Color(0xFFE74C3C);
 
   // Remove existing overlay if any
   _currentOverlay?.remove();

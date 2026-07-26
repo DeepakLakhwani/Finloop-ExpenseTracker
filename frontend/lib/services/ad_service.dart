@@ -40,9 +40,11 @@ class AdService {
 
   // REPLACE THESE STRING CONSTANTS WITH YOUR REAL PRODUCTION AD UNIT IDS LATER
   static const String _prodAndroidBannerId =
-      'ca-app-pub-9816661566128786/1079689083';
+      'ca-app-pub-9816661566128786/9422080478';
+  static const String _prodAndroidBudgetBannerId =
+      'ca-app-pub-9816661566128786/7423703170';
   static const String _prodAndroidInterstitialId =
-      'ca-app-pub-9816661566128786/3753953881';
+      'ca-app-pub-9816661566128786/2494810128';
   static const String _prodAndroidRewardedId =
       'ca-app-pub-9816661566128786/3791128275';
   // Note: iOS production is not live yet. Using official iOS test IDs to prevent errors.
@@ -58,6 +60,15 @@ class AdService {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return '';
     if (kReleaseMode) {
       return Platform.isAndroid ? _prodAndroidBannerId : _prodIosBannerId;
+    }
+    return Platform.isAndroid ? _testAndroidBannerId : _testIosBannerId;
+  }
+
+  // Getter for Manage Budget screen banner ad unit ID
+  static String get budgetBannerAdUnitId {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) return '';
+    if (kReleaseMode) {
+      return Platform.isAndroid ? _prodAndroidBudgetBannerId : _prodIosBannerId;
     }
     return Platform.isAndroid ? _testAndroidBannerId : _testIosBannerId;
   }

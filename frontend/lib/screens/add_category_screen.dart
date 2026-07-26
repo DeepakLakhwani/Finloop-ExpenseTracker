@@ -5,8 +5,9 @@ import '../providers/language_provider.dart';
 
 class AddCategoryScreen extends StatefulWidget {
   final String type; // 'Income' or 'Expense'
+  final Map<String, dynamic>? categoryToEdit;
 
-  const AddCategoryScreen({super.key, required this.type});
+  const AddCategoryScreen({super.key, required this.type, this.categoryToEdit});
 
   @override
   State<AddCategoryScreen> createState() => _AddCategoryScreenState();
@@ -65,7 +66,13 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedColorHex = widget.type == 'Expense' ? '#E57373' : '#4CAF50';
+    if (widget.categoryToEdit != null) {
+      _nameController.text = widget.categoryToEdit!['name'] ?? '';
+      _selectedColorHex = widget.categoryToEdit!['color'] ?? (widget.type == 'Expense' ? '#E57373' : '#4CAF50');
+      _selectedIconCode = widget.categoryToEdit!['icon'] ?? 'account_balance_wallet';
+    } else {
+      _selectedColorHex = widget.type == 'Expense' ? '#E57373' : '#4CAF50';
+    }
   }
 
   @override
@@ -89,12 +96,20 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
 
     setState(() => _isSaving = true);
     try {
-      await firestore.createCategory({
-        'name': _nameController.text.trim(),
-        'type': widget.type,
-        'icon': _selectedIconCode,
-        'color': _selectedColorHex,
-      });
+      if (widget.categoryToEdit != null) {
+        await firestore.updateCategory(widget.categoryToEdit!['id'], {
+          'name': _nameController.text.trim(),
+          'icon': _selectedIconCode,
+          'color': _selectedColorHex,
+        });
+      } else {
+        await firestore.createCategory({
+          'name': _nameController.text.trim(),
+          'type': widget.type,
+          'icon': _selectedIconCode,
+          'color': _selectedColorHex,
+        });
+      }
 
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -115,7 +130,9 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          context.translate('title_add_category'),
+          widget.categoryToEdit != null
+              ? context.translate('title_edit_category')
+              : context.translate('title_add_category'),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),

@@ -5,7 +5,8 @@ import '../theme/app_colors.dart';
 
 class BannerAdWidget extends StatefulWidget {
   final ValueChanged<bool>? onAdLoaded;
-  const BannerAdWidget({super.key, this.onAdLoaded});
+  final String? customAdUnitId;
+  const BannerAdWidget({super.key, this.onAdLoaded, this.customAdUnitId});
 
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -44,8 +45,29 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant BannerAdWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.customAdUnitId != widget.customAdUnitId) {
+      _bannerAd?.dispose();
+      _bannerAd = null;
+      _isLoaded = false;
+      _isError = false;
+      _isAdLoading = false;
+      if (AdService.adsEnabled) {
+        _loadAdaptiveBanner();
+      }
+    }
+  }
+
   Future<void> _loadAdaptiveBanner() async {
     if (_isAdLoading) return;
+
+    // Dispose any previous instance before creating a new one
+    if (_bannerAd != null) {
+      await _bannerAd!.dispose();
+      _bannerAd = null;
+    }
 
     // 1. Get the screen width dynamically to calculate adaptive size
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -75,7 +97,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
     // 3. Load the Banner Ad
     _bannerAd = BannerAd(
-      adUnitId: AdService.bannerAdUnitId,
+      adUnitId: widget.customAdUnitId ?? AdService.bannerAdUnitId,
       size: resolvedSize,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -133,58 +155,68 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         _adaptiveSize?.width.toDouble() ??
         MediaQuery.of(context).size.width - 32;
 
-    return Center(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        width: containerWidth,
-        height: bannerHeight,
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.04),
-          ),
-        ),
-        child: Stack(
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      bottom: true,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          width: containerWidth,
+          height: bannerHeight,
+          margin: const EdgeInsets.symmetric(vertical: 8),
           alignment: Alignment.center,
-          children: [
-            // 1. Loading State Placeholder
-            if (!_isLoaded)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primary,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.04),
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. Loading State Placeholder
+              if (!_isLoaded)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Loading sponsored content...',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.4),
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(width: 8),
+                    Text(
+                      'Loading sponsored content...',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.4),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
 
-            // 2. Banner Ad View
-            if (_isLoaded && _bannerAd != null) AdWidget(ad: _bannerAd!),
-          ],
+              // 2. Banner Ad View with explicit ValueKey bound to the BannerAd instance
+              if (_isLoaded && _bannerAd != null)
+                AdWidget(
+                  key: ValueKey(_bannerAd.hashCode),
+                  ad: _bannerAd!,
+                ),
+            ],
+          ),
         ),
       ),
     );

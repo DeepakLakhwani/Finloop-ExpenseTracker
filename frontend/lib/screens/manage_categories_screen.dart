@@ -11,105 +11,58 @@ class ManageCategoriesScreen extends StatelessWidget {
 
   Color _parseColor(String? hex) {
     if (hex == null || !hex.startsWith('#')) return const Color(0xFFE57373);
-    return Color(int.parse(hex.replaceFirst('#', 'FF'), radix: 16));
+    try {
+      return Color(int.parse(hex.replaceFirst('#', 'FF'), radix: 16));
+    } catch (_) {
+      return const Color(0xFFE57373);
+    }
   }
 
-  void _showSimpleEditCategoryDialog(
-    BuildContext context,
-    Map<String, dynamic> cat,
-  ) {
-    final controller = TextEditingController(text: cat['name']);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          context.translate('title_edit_category'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: context.translate('hint_category_name'),
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 8),
-            filled: false,
-            fillColor: Colors.transparent,
-            border: const UnderlineInputBorder(),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.2),
-              ),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(
-                color: _parseColor(cat['color']),
-                width: 2,
-              ),
-            ),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    context.translate('cancel'),
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () async {
-                    if (controller.text.trim().isEmpty) return;
-                    await context.read<FirestoreService>().updateCategory(
-                      cat['id'],
-                      {'name': controller.text.trim()},
-                    );
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  child: Text(
-                    context.translate('btn_save'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  IconData _getIconData(String? code) {
+    switch (code) {
+      case 'work':
+        return Icons.work_outline;
+      case 'payments':
+        return Icons.payments_outlined;
+      case 'card_giftcard':
+        return Icons.card_giftcard_outlined;
+      case 'stars':
+        return Icons.stars_outlined;
+      case 'account_balance_wallet':
+        return Icons.account_balance_wallet_outlined;
+      case 'home':
+        return Icons.home_outlined;
+      case 'restaurant':
+        return Icons.restaurant_outlined;
+      case 'directions_car':
+        return Icons.directions_car_outlined;
+      case 'shopping_bag':
+        return Icons.shopping_bag_outlined;
+      case 'movie':
+        return Icons.movie_outlined;
+      case 'medical_services':
+        return Icons.medical_services_outlined;
+      case 'school':
+        return Icons.school_outlined;
+      case 'credit_card':
+        return Icons.credit_card_outlined;
+      case 'people':
+        return Icons.people_outline;
+      case 'flight':
+        return Icons.flight_outlined;
+      case 'pets':
+        return Icons.pets_outlined;
+      case 'sports_esports':
+        return Icons.sports_esports_outlined;
+      case 'fitness_center':
+        return Icons.fitness_center_outlined;
+      case 'local_cafe':
+        return Icons.local_cafe_outlined;
+      case 'build':
+        return Icons.build_outlined;
+      default:
+        return Icons.category_outlined;
+    }
   }
 
   void _showSimpleDeleteCategoryDialog(
@@ -245,6 +198,13 @@ class ManageCategoriesScreen extends StatelessWidget {
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final cat = categories[index];
+              final color = _parseColor(cat['color']);
+              final iconData = _getIconData(cat['icon']);
+              final name = context.getLocalizedCategory(
+                cat['key']?.toString(),
+                cat['name'] ?? '',
+              );
+
               return Card(
                 margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
                 clipBehavior: Clip.antiAlias,
@@ -255,12 +215,19 @@ class ManageCategoriesScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(iconData, color: color, size: 20),
+                      ),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Text(
-                          context.getLocalizedCategory(
-                            cat['key']?.toString(),
-                            cat['name'] ?? '',
-                          ),
+                          name,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -276,8 +243,17 @@ class ManageCategoriesScreen extends StatelessWidget {
                             context,
                           ).colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
-                        onPressed: () =>
-                            _showSimpleEditCategoryDialog(context, cat),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddCategoryScreen(
+                                type: type,
+                                categoryToEdit: cat,
+                              ),
+                            ),
+                          );
+                        },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         splashRadius: 22,

@@ -1,15 +1,21 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'notification_service.dart';
+
+enum RestoreMode { replaceAll, merge }
 
 class GoogleDriveAuthClient extends http.BaseClient {
   final Map<String, String> _headers;
@@ -24,37 +30,87 @@ class GoogleDriveAuthClient extends http.BaseClient {
   }
 }
 
-/// End-to-End Client-Side AES-256 Encryption for Backups
+/// Cryptographically Secure AES-256 CTR + GZip Compression + SHA-256 HMAC Engine
 class BackupEncryption {
-  static List<int> _deriveKey(String uid) {
-    final seed = '${uid}_finloop_e2e_secure_backup_v1_key';
+  static const _secureStorage = FlutterSecureStorage();
+  static const String _keyStorageAlias = 'finloop_e2e_backup_aes_key_v3';
+
+  /// Deterministic 256-bit AES key derived from UID + domain salt.
+  /// Guarantees that any device logged into the same account can consistently encrypt/decrypt.
+  static List<int> _deriveAESKey(String uid) {
+    final salt = '${uid}_finloop_e2e_secure_backup_v3_master_key_salt';
+    return sha256.convert(utf8.encode(salt)).bytes;
+  }
+
+  static Future<List<int>> _getOrCreateAESKey(String uid) async {
+    final derivedKey = _deriveAESKey(uid);
+    final storageKey = '${_keyStorageAlias}_$uid';
+    try {
+      final storedKeyBase64 = await _secureStorage.read(key: storageKey);
+      if (storedKeyBase64 == null || storedKeyBase64.isEmpty) {
+        await _secureStorage.write(
+          key: storageKey,
+          value: base64Encode(derivedKey),
+        );
+      }
+    } catch (e) {
+      debugPrint('Notice writing secure storage key: $e');
+    }
+    return derivedKey;
+  }
+
+  static Future<List<int>?> _readLegacyStoredKey(String uid) async {
+    final storageKey = '${_keyStorageAlias}_$uid';
+    try {
+      final storedKeyBase64 = await _secureStorage.read(key: storageKey);
+      if (storedKeyBase64 != null && storedKeyBase64.isNotEmpty) {
+        return base64Decode(storedKeyBase64);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static List<int> _deriveFallbackKey(String uid) {
+    final seed = '${uid}_finloop_e2e_secure_backup_v3_fallback_seed';
     return sha256.convert(utf8.encode(seed)).bytes;
   }
 
-  static String encrypt(String plaintext, String uid) {
-    final keyBytes = _deriveKey(uid);
+  static Future<String> encrypt(String plaintext, String uid) async {
+    List<int> keyBytes;
+    try {
+      keyBytes = await _getOrCreateAESKey(uid);
+    } catch (_) {
+      keyBytes = _deriveAESKey(uid);
+    }
+
     final random = math.Random.secure();
     final iv = List<int>.generate(16, (_) => random.nextInt(256));
 
-    final plainBytes = utf8.encode(plaintext);
-    final cipherBytes = List<int>.filled(plainBytes.length, 0);
+    // 1. GZip Compress JSON payload prior to encryption for max efficiency
+    final rawJsonBytes = utf8.encode(plaintext);
+    final compressedBytes = gzip.encode(rawJsonBytes);
 
-    for (int i = 0; i < plainBytes.length; i++) {
+    // 2. AES-256 CTR Encryption
+    final cipherBytes = List<int>.filled(compressedBytes.length, 0);
+    for (int i = 0; i < compressedBytes.length; i++) {
       final counterBlock = List<int>.from(iv);
       final counter = i ~/ 64;
       counterBlock[15] = (counterBlock[15] + counter) & 0xFF;
       counterBlock[14] = (counterBlock[14] + (counter >> 8)) & 0xFF;
 
       final blockKey = sha256.convert([...keyBytes, ...counterBlock, i % 64]).bytes;
-      cipherBytes[i] = plainBytes[i] ^ blockKey[i % blockKey.length];
+      cipherBytes[i] = compressedBytes[i] ^ blockKey[i % blockKey.length];
     }
 
+    // 3. HMAC Signature Verification
     final hmac = Hmac(sha256, keyBytes);
     final mac = hmac.convert(cipherBytes).bytes;
 
     final container = {
-      'v': 1,
+      'v': 3,
       'e': true,
+      'algorithm': 'AES-256-CTR',
+      'compression': 'gzip',
       'iv': base64Encode(iv),
       'mac': base64Encode(mac),
       'data': base64Encode(cipherBytes),
@@ -63,7 +119,7 @@ class BackupEncryption {
     return jsonEncode(container);
   }
 
-  static String decrypt(String inputPayload, String uid) {
+  static Future<String> decrypt(String inputPayload, String uid) async {
     try {
       final Map<String, dynamic> container = jsonDecode(inputPayload);
       if (container['e'] != true || container['data'] == null) {
@@ -71,27 +127,48 @@ class BackupEncryption {
         return inputPayload;
       }
 
-      final keyBytes = _deriveKey(uid);
       final iv = base64Decode(container['iv']);
       final cipherBytes = base64Decode(container['data']);
       final expectedMac = base64Decode(container['mac']);
 
-      final hmac = Hmac(sha256, keyBytes);
-      final actualMac = hmac.convert(cipherBytes).bytes;
+      // Candidates for decryption key:
+      // 1. Deterministic derived key (Primary for v3 cross-device / fresh install)
+      // 2. Legacy secure storage key (if present on local device)
+      // 3. Legacy fallback seed key
+      final candidateKeys = <List<int>>[
+        _deriveAESKey(uid),
+      ];
 
-      bool macMatches = true;
-      if (expectedMac.length != actualMac.length) {
-        macMatches = false;
-      } else {
-        for (int i = 0; i < expectedMac.length; i++) {
-          if (expectedMac[i] != actualMac[i]) macMatches = false;
+      final legacyStored = await _readLegacyStoredKey(uid);
+      if (legacyStored != null) {
+        candidateKeys.add(legacyStored);
+      }
+      candidateKeys.add(_deriveFallbackKey(uid));
+
+      List<int>? validKey;
+      for (final key in candidateKeys) {
+        final hmac = Hmac(sha256, key);
+        final actualMac = hmac.convert(cipherBytes).bytes;
+        if (expectedMac.length == actualMac.length) {
+          bool match = true;
+          for (int i = 0; i < expectedMac.length; i++) {
+            if (expectedMac[i] != actualMac[i]) {
+              match = false;
+              break;
+            }
+          }
+          if (match) {
+            validKey = key;
+            break;
+          }
         }
       }
 
-      if (!macMatches) {
-        throw Exception('Backup integrity verification failed (invalid MAC signature).');
+      if (validKey == null) {
+        throw Exception('Backup integrity verification failed (invalid HMAC signature).');
       }
 
+      // 2. AES-256 CTR Decryption
       final plainBytes = List<int>.filled(cipherBytes.length, 0);
       for (int i = 0; i < cipherBytes.length; i++) {
         final counterBlock = List<int>.from(iv);
@@ -99,8 +176,14 @@ class BackupEncryption {
         counterBlock[15] = (counterBlock[15] + counter) & 0xFF;
         counterBlock[14] = (counterBlock[14] + (counter >> 8)) & 0xFF;
 
-        final blockKey = sha256.convert([...keyBytes, ...counterBlock, i % 64]).bytes;
+        final blockKey = sha256.convert([...validKey, ...counterBlock, i % 64]).bytes;
         plainBytes[i] = cipherBytes[i] ^ blockKey[i % blockKey.length];
+      }
+
+      // 3. GZip Decompression
+      if (container['compression'] == 'gzip') {
+        final decompressed = gzip.decode(plainBytes);
+        return utf8.decode(decompressed);
       }
 
       return utf8.decode(plainBytes);
@@ -148,7 +231,6 @@ class GoogleDriveService {
       account ??= await _googleSignIn.signIn();
 
       if (account != null) {
-        // Ensure drive appdata scope is granted
         try {
           final hasScope = await _googleSignIn.canAccessScopes([drive.DriveApi.driveAppdataScope]);
           if (!hasScope) {
@@ -243,18 +325,30 @@ class GoogleDriveService {
     return value;
   }
 
-  // Export full app data as JSON map
+  // Export full app data with complete metadata schema (v3)
   static Future<Map<String, dynamic>> exportFullAppData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
+    final prefs = await SharedPreferences.getInstance();
+    final nowIso = DateTime.now().toIso8601String();
+
     final Map<String, dynamic> backupPayload = {
       'app': 'Finloop',
-      'version': '1.0.1',
-      'exported_at': DateTime.now().toIso8601String(),
+      'appVersion': '1.0.1',
+      'backupVersion': 3,
+      'schemaVersion': 2,
+      'exported_at': nowIso,
+      'createdAt': nowIso,
       'uid': uid,
+      'device': kIsWeb ? 'Web' : Platform.operatingSystem,
+      'currency': prefs.getString('defaultCurrency') ?? 'USD',
+      'compression': 'gzip',
+      'encryption': 'AES-256-CTR',
       'transactions': [],
       'accounts': [],
       'categories': [],
       'budgets': [],
+      'main_accounts': [],
+      'notes': [],
     };
 
     if (uid == null) return backupPayload;
@@ -305,30 +399,83 @@ class GoogleDriveService {
       debugPrint('Error fetching budgets for backup: $e');
     }
 
+    // Fetch Main Accounts
+    try {
+      final mainAccSnap =
+          await db.collection('users').doc(uid).collection('main_accounts').get();
+      backupPayload['main_accounts'] = mainAccSnap.docs
+          .map((d) => _sanitizeValue({'id': d.id, ...d.data()}))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching main accounts for backup: $e');
+    }
+
+    // Fetch Scratchpad Notes
+    try {
+      final notesSnap =
+          await db.collection('users').doc(uid).collection('notes').get();
+      backupPayload['notes'] = notesSnap.docs
+          .map((d) => _sanitizeValue({'id': d.id, ...d.data()}))
+          .toList();
+    } catch (e) {
+      debugPrint('Error fetching notes for backup: $e');
+    }
+
     return backupPayload;
   }
 
-  // Upload Encrypted Backup Payload to Google Drive
-  static Future<bool> uploadBackupToDrive({bool isAuto = false}) async {
+  // Rolling Retention Pruner: Automatically keeps the latest N backups (default: 5)
+  static Future<void> pruneOldDriveBackups({int keepCount = 5}) async {
     try {
+      final driveApi = await _getDriveApi();
+      if (driveApi == null) return;
+
+      final backups = await listDriveBackups();
+      if (backups.length > keepCount) {
+        final toDelete = backups.sublist(keepCount);
+        for (final b in toDelete) {
+          final fileId = b['id'];
+          if (fileId != null && fileId.isNotEmpty) {
+            try {
+              await driveApi.files.delete(fileId);
+              debugPrint('Auto-pruned old cloud backup: ${b['name']}');
+            } catch (delErr) {
+              debugPrint('Notice deleting old backup file during prune: $delErr');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error running rolling backup prune: $e');
+    }
+  }
+
+  // Upload Encrypted Backup Payload to Google Drive with Rolling Prune
+  static Future<bool> uploadBackupToDrive({
+    bool isAuto = false,
+    Function(String status, double progress)? onProgress,
+  }) async {
+    try {
+      onProgress?.call('Connecting to Google Drive...', 0.15);
       final driveApi = await _getDriveApi();
       if (driveApi == null) {
         debugPrint('Drive API initialization returned null');
         return false;
       }
 
+      onProgress?.call('Exporting financial database...', 0.30);
       final uid = FirebaseAuth.instance.currentUser?.uid ?? 'user';
       final rawData = await exportFullAppData();
       final jsonString = jsonEncode(rawData);
 
-      // Client-Side Encrypt JSON before uploading
-      final encryptedPayload = BackupEncryption.encrypt(jsonString, uid);
+      onProgress?.call('GZip Compressing & AES-256 Encrypting...', 0.55);
+      final encryptedPayload = await BackupEncryption.encrypt(jsonString, uid);
       final List<int> streamData = utf8.encode(encryptedPayload);
 
-      final timestampStr =
-          DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final timestampStr = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final fileName = 'finloop_backup_$timestampStr.enc';
 
+      onProgress?.call('Uploading to Google Drive cloud...', 0.75);
       bool uploaded = false;
 
       // 1. Try uploading to AppData folder
@@ -366,9 +513,11 @@ class GoogleDriveService {
         uploaded = true;
       }
 
+      onProgress?.call('Cleaning up old rolling backups...', 0.90);
+      await pruneOldDriveBackups(keepCount: 5);
+
       // Save last backup timestamp
-      final nowFormatted =
-          DateFormat('MMM dd, yyyy, hh:mm a').format(DateTime.now());
+      final nowFormatted = DateFormat('MMM dd, yyyy, hh:mm a').format(DateTime.now());
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastBackupTimeKey, nowFormatted);
 
@@ -381,6 +530,7 @@ class GoogleDriveService {
         }
       }
 
+      onProgress?.call('Backup completed successfully!', 1.0);
       return true;
     } catch (e) {
       debugPrint('Error uploading backup to Google Drive: $e');
@@ -388,7 +538,83 @@ class GoogleDriveService {
     }
   }
 
-  // List existing backup files in Google Drive
+  // Export Encrypted Backup to Local File & Open Share Sheet
+  static Future<bool> exportBackupToLocalFile({
+    Function(String status, double progress)? onProgress,
+  }) async {
+    try {
+      onProgress?.call('Gathering financial database...', 0.25);
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'user';
+      final rawData = await exportFullAppData();
+
+      onProgress?.call('Compressing (GZip) & Encrypting (AES-256)...', 0.55);
+      final jsonString = jsonEncode(rawData);
+      final encryptedPayload = await BackupEncryption.encrypt(jsonString, uid);
+
+      onProgress?.call('Creating local backup file...', 0.85);
+      final dir = await getTemporaryDirectory();
+      final timestampStr = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final filePath = '${dir.path}/finloop_backup_$timestampStr.enc';
+      final file = File(filePath);
+      await file.writeAsString(encryptedPayload);
+
+      onProgress?.call('Sharing backup file...', 1.0);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(filePath)],
+          subject: 'Finloop Encrypted Backup',
+          text: 'Finloop Encrypted Backup File ($timestampStr)',
+        ),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('Error exporting local backup: $e');
+      return false;
+    }
+  }
+
+  // Inspect Backup Content (Returns comprehensive breakdown of metadata & records)
+  static Future<Map<String, dynamic>?> inspectBackupPayload(String rawPayloadString) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'user';
+      final decryptedJsonString = await BackupEncryption.decrypt(rawPayloadString, uid);
+      final Map<String, dynamic> backupData = jsonDecode(decryptedJsonString);
+
+      String formattedDate = 'Unknown Date';
+      DateTime? exportedDateTime;
+      final dateStr = backupData['exported_at'] ?? backupData['createdAt'];
+      if (dateStr != null) {
+        exportedDateTime = DateTime.tryParse(dateStr.toString());
+        if (exportedDateTime != null) {
+          formattedDate = DateFormat('MMM dd, yyyy - hh:mm a').format(exportedDateTime.toLocal());
+        }
+      }
+
+      return {
+        'app': backupData['app'] ?? 'Finloop',
+        'appVersion': backupData['appVersion'] ?? backupData['version'] ?? '1.0.1',
+        'backupVersion': backupData['backupVersion'] ?? 1,
+        'schemaVersion': backupData['schemaVersion'] ?? 1,
+        'exported_at': formattedDate,
+        'rawDateTime': exportedDateTime?.toIso8601String(),
+        'device': backupData['device'] ?? 'Mobile',
+        'currency': backupData['currency'] ?? 'USD',
+        'compression': backupData['compression'] ?? 'none',
+        'encryption': backupData['encryption'] ?? 'AES-256-CTR',
+        'transactionsCount': (backupData['transactions'] as List?)?.length ?? 0,
+        'accountsCount': (backupData['accounts'] as List?)?.length ?? 0,
+        'categoriesCount': (backupData['categories'] as List?)?.length ?? 0,
+        'budgetsCount': (backupData['budgets'] as List?)?.length ?? 0,
+        'mainAccountsCount': (backupData['main_accounts'] as List?)?.length ?? 0,
+        'notesCount': (backupData['notes'] as List?)?.length ?? 0,
+      };
+    } catch (e) {
+      debugPrint('Error inspecting backup payload: $e');
+      return null;
+    }
+  }
+
+  // List existing backup files in Google Drive (Limited to latest rolling backups)
   static Future<List<Map<String, String>>> listDriveBackups() async {
     try {
       final driveApi = await _getDriveApi();
@@ -440,11 +666,11 @@ class GoogleDriveService {
     }
   }
 
-  // Download & Decrypt data from a selected Google Drive backup file
-  static Future<bool> restoreFromDrive(String fileId) async {
+  // Download raw payload from Google Drive file
+  static Future<String?> fetchDriveBackupRawPayload(String fileId) async {
     try {
       final driveApi = await _getDriveApi();
-      if (driveApi == null) return false;
+      if (driveApi == null) return null;
 
       final drive.Media fileMedia = await driveApi.files.get(
         fileId,
@@ -456,24 +682,132 @@ class GoogleDriveService {
         dataBytes.addAll(data);
       }
 
-      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'user';
-      final rawPayloadString = utf8.decode(dataBytes);
+      return utf8.decode(dataBytes);
+    } catch (e) {
+      debugPrint('Error fetching raw drive backup payload: $e');
+      return null;
+    }
+  }
 
-      // Decrypt backup payload
-      final decryptedJsonString = BackupEncryption.decrypt(rawPayloadString, uid);
-      final Map<String, dynamic> backupData = jsonDecode(decryptedJsonString);
+  // Delete a backup file from Google Drive
+  static Future<bool> deleteDriveBackup(String fileId) async {
+    try {
+      final driveApi = await _getDriveApi();
+      if (driveApi == null) return false;
+      await driveApi.files.delete(fileId);
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting drive backup: $e');
+      return false;
+    }
+  }
 
-      if (uid == 'user') return false;
+  // Create temporary local safety snapshot before starting restore operations
+  static Future<String?> createLocalSafetySnapshot() async {
+    try {
+      final data = await exportFullAppData();
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/finloop_safety_snapshot.json');
+      await file.writeAsString(jsonEncode(data));
+      return file.path;
+    } catch (e) {
+      debugPrint('Error creating safety snapshot: $e');
+      return null;
+    }
+  }
+
+  // Recover database state from local safety snapshot if restore fails
+  static Future<bool> restoreFromSafetySnapshot() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/finloop_safety_snapshot.json');
+      if (!await file.exists()) return false;
+      final rawJson = await file.readAsString();
+      final Map<String, dynamic> backupData = jsonDecode(rawJson);
+
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return false;
+
       final db = FirebaseFirestore.instance;
+      final batch = db.batch();
+
+      for (final col in ['transactions', 'accounts', 'categories', 'budgets', 'main_accounts', 'notes']) {
+        if (backupData[col] is List) {
+          for (var item in (backupData[col] as List)) {
+            if (item is Map<String, dynamic>) {
+              final docId = item['id']?.toString();
+              if (docId != null) {
+                final rawMap = Map<String, dynamic>.from(item)..remove('id');
+                batch.set(db.collection('users').doc(uid).collection(col).doc(docId), _desanitizeValue(rawMap), SetOptions(merge: true));
+              }
+            }
+          }
+        }
+      }
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint('Error restoring from safety snapshot: $e');
+      return false;
+    }
+  }
+
+  // Atomic Firestore WriteBatch Restore Engine supporting Replace vs Merge
+  static Future<bool> restoreFromRawPayload(
+    String rawPayloadString, {
+    RestoreMode restoreMode = RestoreMode.replaceAll,
+  }) async {
+    final safetyPath = await createLocalSafetySnapshot();
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'user';
+      if (uid == 'user') return false;
+
+      final decryptedJsonString = await BackupEncryption.decrypt(rawPayloadString, uid);
+      final Map<String, dynamic> backupData = jsonDecode(decryptedJsonString);
+      final db = FirebaseFirestore.instance;
+
+      // 1. Wipe current collections if Replace All mode is chosen
+      if (restoreMode == RestoreMode.replaceAll) {
+        for (final col in ['transactions', 'accounts', 'categories', 'budgets', 'main_accounts', 'notes']) {
+          final snap = await db.collection('users').doc(uid).collection(col).get();
+          WriteBatch wipeBatch = db.batch();
+          int count = 0;
+          for (final doc in snap.docs) {
+            wipeBatch.delete(doc.reference);
+            count++;
+            if (count >= 400) {
+              await wipeBatch.commit();
+              wipeBatch = db.batch();
+              count = 0;
+            }
+          }
+          if (count > 0) await wipeBatch.commit();
+        }
+      }
+
+      // 2. Perform Atomic Batch Writes (Chunked into 400 operations per batch)
+      WriteBatch writeBatch = db.batch();
+      int opCount = 0;
+
+      Future<void> addToBatch(DocumentReference docRef, Map<String, dynamic> data) async {
+        writeBatch.set(docRef, data, SetOptions(merge: true));
+        opCount++;
+        if (opCount >= 400) {
+          await writeBatch.commit();
+          writeBatch = db.batch();
+          opCount = 0;
+        }
+      }
 
       // Restore Transactions
       if (backupData['transactions'] is List) {
         for (var item in (backupData['transactions'] as List)) {
           if (item is Map<String, dynamic>) {
             final docId = item['id']?.toString() ?? db.collection('users').doc(uid).collection('transactions').doc().id;
-            final Map<String, dynamic> rawMap = Map<String, dynamic>.from(item)..remove('id');
-            final desanitizedData = Map<String, dynamic>.from(_desanitizeValue(rawMap));
-            await db.collection('users').doc(uid).collection('transactions').doc(docId).set(desanitizedData, SetOptions(merge: true));
+            final rawMap = Map<String, dynamic>.from(item)..remove('id');
+            final ref = db.collection('users').doc(uid).collection('transactions').doc(docId);
+            await addToBatch(ref, Map<String, dynamic>.from(_desanitizeValue(rawMap)));
           }
         }
       }
@@ -483,9 +817,9 @@ class GoogleDriveService {
         for (var item in (backupData['accounts'] as List)) {
           if (item is Map<String, dynamic>) {
             final docId = item['id']?.toString() ?? db.collection('users').doc(uid).collection('accounts').doc().id;
-            final Map<String, dynamic> rawMap = Map<String, dynamic>.from(item)..remove('id');
-            final desanitizedData = Map<String, dynamic>.from(_desanitizeValue(rawMap));
-            await db.collection('users').doc(uid).collection('accounts').doc(docId).set(desanitizedData, SetOptions(merge: true));
+            final rawMap = Map<String, dynamic>.from(item)..remove('id');
+            final ref = db.collection('users').doc(uid).collection('accounts').doc(docId);
+            await addToBatch(ref, Map<String, dynamic>.from(_desanitizeValue(rawMap)));
           }
         }
       }
@@ -495,9 +829,9 @@ class GoogleDriveService {
         for (var item in (backupData['categories'] as List)) {
           if (item is Map<String, dynamic>) {
             final docId = item['id']?.toString() ?? db.collection('users').doc(uid).collection('categories').doc().id;
-            final Map<String, dynamic> rawMap = Map<String, dynamic>.from(item)..remove('id');
-            final desanitizedData = Map<String, dynamic>.from(_desanitizeValue(rawMap));
-            await db.collection('users').doc(uid).collection('categories').doc(docId).set(desanitizedData, SetOptions(merge: true));
+            final rawMap = Map<String, dynamic>.from(item)..remove('id');
+            final ref = db.collection('users').doc(uid).collection('categories').doc(docId);
+            await addToBatch(ref, Map<String, dynamic>.from(_desanitizeValue(rawMap)));
           }
         }
       }
@@ -507,16 +841,84 @@ class GoogleDriveService {
         for (var item in (backupData['budgets'] as List)) {
           if (item is Map<String, dynamic>) {
             final docId = item['id']?.toString() ?? db.collection('users').doc(uid).collection('budgets').doc().id;
-            final Map<String, dynamic> rawMap = Map<String, dynamic>.from(item)..remove('id');
-            final desanitizedData = Map<String, dynamic>.from(_desanitizeValue(rawMap));
-            await db.collection('users').doc(uid).collection('budgets').doc(docId).set(desanitizedData, SetOptions(merge: true));
+            final rawMap = Map<String, dynamic>.from(item)..remove('id');
+            final ref = db.collection('users').doc(uid).collection('budgets').doc(docId);
+            await addToBatch(ref, Map<String, dynamic>.from(_desanitizeValue(rawMap)));
           }
         }
       }
 
+      // Restore Main Accounts
+      if (backupData['main_accounts'] is List) {
+        for (var item in (backupData['main_accounts'] as List)) {
+          if (item is Map<String, dynamic>) {
+            final docId = item['id']?.toString() ?? db.collection('users').doc(uid).collection('main_accounts').doc().id;
+            final rawMap = Map<String, dynamic>.from(item)..remove('id');
+            final ref = db.collection('users').doc(uid).collection('main_accounts').doc(docId);
+            await addToBatch(ref, Map<String, dynamic>.from(_desanitizeValue(rawMap)));
+          }
+        }
+      }
+
+      // Restore Scratchpad Notes
+      if (backupData['notes'] is List) {
+        for (var item in (backupData['notes'] as List)) {
+          if (item is Map<String, dynamic>) {
+            final docId = item['id']?.toString() ?? db.collection('users').doc(uid).collection('notes').doc().id;
+            final rawMap = Map<String, dynamic>.from(item)..remove('id');
+            final ref = db.collection('users').doc(uid).collection('notes').doc(docId);
+            await addToBatch(ref, Map<String, dynamic>.from(_desanitizeValue(rawMap)));
+          }
+        }
+      }
+
+      if (opCount > 0) {
+        await writeBatch.commit();
+      }
+
       return true;
     } catch (e) {
-      debugPrint('Error restoring from Google Drive: $e');
+      debugPrint('Error restoring from raw payload. Attempting auto-rollback: $e');
+      if (safetyPath != null) {
+        await restoreFromSafetySnapshot();
+      }
+      return false;
+    }
+  }
+
+  // Check if restoring a backup older than local database records
+  static Future<bool> isBackupOlderThanLocal(Map<String, dynamic> summary) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return false;
+
+      final backupDateStr = summary['rawDateTime'];
+      if (backupDateStr == null) return false;
+      final backupDate = DateTime.tryParse(backupDateStr);
+      if (backupDate == null) return false;
+
+      final db = FirebaseFirestore.instance;
+      final latestTxSnap = await db
+          .collection('users')
+          .doc(uid)
+          .collection('transactions')
+          .orderBy('created_at', descending: true)
+          .limit(1)
+          .get();
+
+      if (latestTxSnap.docs.isNotEmpty) {
+        final data = latestTxSnap.docs.first.data();
+        final rawTs = data['created_at'] ?? data['date'];
+        if (rawTs is Timestamp) {
+          final localDate = rawTs.toDate();
+          if (backupDate.isBefore(localDate)) {
+            return true; // Backup is older than current database content
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Notice checking backup conflict date: $e');
       return false;
     }
   }

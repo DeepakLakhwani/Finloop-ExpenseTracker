@@ -11,6 +11,7 @@ import '../theme/app_colors.dart';
 import 'account_entries_screen.dart';
 import 'add_account_screen.dart';
 import 'add_transaction_screen.dart';
+import '../widgets/banner_ad_widget.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -628,7 +629,16 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 
       floatingActionButton: null,
 
-      body: _buildBody(currency),
+      body: Column(
+        children: [
+          Expanded(
+            child: _buildBody(currency),
+          ),
+          const BannerAdWidget(
+            key: ValueKey('accounts_banner_ad'),
+          ),
+        ],
+      ),
     );
   }
 

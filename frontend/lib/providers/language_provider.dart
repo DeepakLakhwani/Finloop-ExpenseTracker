@@ -89,8 +89,8 @@ class LanguageProvider extends ChangeNotifier {
     _isChangingLanguage = true;
     notifyListeners();
 
-    // Reset changing flag after animation finishes (3s)
-    Future.delayed(const Duration(milliseconds: 3000), () {
+    // Reset changing flag after animation finishes (2s)
+    Future.delayed(const Duration(milliseconds: 2000), () {
       completeLanguageChange();
     });
 
