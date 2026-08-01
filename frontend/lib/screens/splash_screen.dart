@@ -16,7 +16,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _isLoading = true;
   String? _errorMessage;
 
   @override
@@ -28,7 +27,6 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _initializeApp() async {
     if (!mounted) return;
     setState(() {
-      _isLoading = true;
       _errorMessage = null;
     });
 
@@ -55,7 +53,6 @@ class _SplashScreenState extends State<SplashScreen> {
       debugPrint("Error during anonymous initialization: $e");
       if (mounted) {
         setState(() {
-          _isLoading = false;
           _errorMessage =
               "Unable to connect to Finloop.\nPlease check your network connection and try again.";
         });
@@ -158,16 +155,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
-                if (_isLoading)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  ),
 
                 if (_errorMessage != null) ...[
                   Padding(

@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -2235,6 +2238,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       }
     }
 
+    String localExportFormat = 'pdf';
     final bool hasAccount = uniqueAccounts.containsKey(_filterAccountId);
     String? localSelectedAccountId = hasAccount ? _filterAccountId : null;
     DateTime localStartDate = DateTime(
@@ -2287,7 +2291,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Premium Header Row
+                    // Header Row
                     Row(
                       children: [
                         Container(
@@ -2297,8 +2301,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.picture_as_pdf_rounded,
-                            color: cs.onSurface.withValues(alpha: 0.7),
+                            localExportFormat == 'csv'
+                                ? Icons.table_chart_rounded
+                                : Icons.picture_as_pdf_rounded,
+                            color: localExportFormat == 'csv'
+                                ? Colors.green
+                                : cs.onSurface.withValues(alpha: 0.7),
                             size: 22,
                           ),
                         ),
@@ -2318,7 +2326,9 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                context.translate('desc_export_pdf_statement'),
+                                localExportFormat == 'csv'
+                                    ? 'Export your transaction statement to a CSV spreadsheet file.'
+                                    : context.translate('desc_export_pdf_statement'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: cs.onSurface.withValues(alpha: 0.5),
@@ -2337,6 +2347,102 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       color: cs.onSurface.withValues(alpha: 0.08),
                     ),
                     const SizedBox(height: 20),
+
+                    // Export Format Label
+                    Text(
+                      'Export Format',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: cs.onSurface.withValues(alpha: 0.5),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Export Format Dropdown
+                    DropdownButtonFormField<String>(
+                      initialValue: localExportFormat,
+                      isExpanded: true,
+                      dropdownColor: cs.surface,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark
+                            ? const Color(0xFF161817)
+                            : const Color(0xFFF3F4F6),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: cs.onSurface.withValues(
+                              alpha: isDark ? 0.08 : 0.06,
+                            ),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                      items: [
+                        DropdownMenuItem<String>(
+                          value: 'pdf',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.picture_as_pdf_rounded,
+                                color: Colors.redAccent,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'PDF Document (.pdf)',
+                                style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'csv',
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.table_chart_rounded,
+                                color: Colors.green,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'CSV Spreadsheet (.csv)',
+                                style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            localExportFormat = val;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
                     // Select Account label
                     Text(
@@ -2564,75 +2670,78 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     ),
                     const SizedBox(height: 20),
 
-                    // Include period summary row (tappable)
-                    InkWell(
-                      onTap: () {
-                        setDialogState(() {
-                          localIncludeSummary = !localIncludeSummary;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: Checkbox(
-                                value: localIncludeSummary,
-                                activeColor: AppColors.primary,
-                                checkColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                onChanged: (val) {
-                                  setDialogState(() {
-                                    localIncludeSummary = val ?? true;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    context.translate(
-                                      'label_include_period_summary',
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: cs.onSurface,
-                                    ),
+                    // Include period summary row (tappable) - Only for PDF
+                    if (localExportFormat == 'pdf') ...[
+                      InkWell(
+                        onTap: () {
+                          setDialogState(() {
+                            localIncludeSummary = !localIncludeSummary;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Checkbox(
+                                  value: localIncludeSummary,
+                                  activeColor: AppColors.primary,
+                                  checkColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
-                                  if (localIncludeSummary)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        context.translate(
-                                          'desc_include_period_summary',
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          height: 1.4,
-                                          color: cs.onSurface.withValues(
-                                            alpha: 0.5,
+                                  onChanged: (val) {
+                                    setDialogState(() {
+                                      localIncludeSummary = val ?? true;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      context.translate(
+                                        'label_include_period_summary',
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: cs.onSurface,
+                                      ),
+                                    ),
+                                    if (localIncludeSummary)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          context.translate(
+                                            'desc_include_period_summary',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            height: 1.4,
+                                            color: cs.onSurface.withValues(
+                                              alpha: 0.5,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
+                    ] else
+                      const SizedBox(height: 12),
 
                     // Buttons
                     IntrinsicHeight(
@@ -2668,11 +2777,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             child: ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(dialogContext);
-                                _playRewardedAdThenGeneratePdf(
+                                _playRewardedAdThenGenerateStatement(
                                   localSelectedAccountId,
                                   localStartDate,
                                   localEndDate,
                                   localIncludeSummary,
+                                  localExportFormat,
                                 );
                               },
                               style: ElevatedButton.styleFrom(
@@ -2711,11 +2821,12 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  void _playRewardedAdThenGeneratePdf(
+  void _playRewardedAdThenGenerateStatement(
     String? accountId,
     DateTime start,
     DateTime end,
     bool includeSummary,
+    String format,
   ) {
     showTopNotification(context.translate('msg_ad_preparing'));
 
@@ -2725,7 +2836,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       onRewardEarned: () {
         rewardGranted = true;
         showTopNotification(context.translate('msg_export_compiling'));
-        _generatePdf(accountId, start, end, includeSummary);
+        _generateStatement(accountId, start, end, includeSummary, format);
       },
       onAdClosed: () {
         if (!rewardGranted) {
@@ -2737,16 +2848,17 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       },
       onAdFailed: () {
         showTopNotification(context.translate('msg_ad_failed_fallback'));
-        _generatePdf(accountId, start, end, includeSummary);
+        _generateStatement(accountId, start, end, includeSummary, format);
       },
     );
   }
 
-  Future<void> _generatePdf(
+  Future<void> _generateStatement(
     String? accountId,
     DateTime start,
     DateTime end,
     bool includeSummary,
+    String format,
   ) async {
     showDialog(
       context: context,
@@ -2847,17 +2959,95 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       final settingsProvider = context.read<SettingsProvider>();
       final currencySymbol = settingsProvider.currency;
 
-      await PdfService.generateAndPrintStatement(
-        transactions: filtered,
-        accountName: accountName,
-        startDate: start,
-        endDate: end,
-        currencySymbol: currencySymbol,
-        includeSummary: includeSummary,
-      );
+      if (format == 'csv') {
+        await _generateAndShareCsvStatement(
+          transactions: filtered,
+          accountName: accountName,
+          startDate: start,
+          endDate: end,
+          currencySymbol: currencySymbol,
+        );
+      } else {
+        await PdfService.generateAndPrintStatement(
+          transactions: filtered,
+          accountName: accountName,
+          startDate: start,
+          endDate: end,
+          currencySymbol: currencySymbol,
+          includeSummary: includeSummary,
+        );
+      }
     } catch (e) {
       if (context.mounted) Navigator.pop(context);
-      debugPrint('Error generating PDF: $e');
+      debugPrint('Error generating statement: $e');
     }
+  }
+
+  Future<void> _generateAndShareCsvStatement({
+    required List<Map<String, dynamic>> transactions,
+    required String accountName,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String currencySymbol,
+  }) async {
+    final buffer = StringBuffer();
+    // CSV Header row
+    buffer.writeln(
+      'Date,Type,Category,Account,To Account,Amount ($currencySymbol),Fees ($currencySymbol),Notes,Description',
+    );
+
+    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+
+    for (final tx in transactions) {
+      final rawDate = tx['date'];
+      DateTime date = DateTime.now();
+      if (rawDate is Timestamp) {
+        date = rawDate.toDate();
+      } else if (rawDate is DateTime) {
+        date = rawDate;
+      } else if (rawDate is String) {
+        date = DateTime.tryParse(rawDate) ?? DateTime.now();
+      }
+
+      final dateStr = _escapeCsvField(dateFormat.format(date));
+      final typeStr = _escapeCsvField(tx['type']?.toString() ?? '');
+      final categoryStr = _escapeCsvField(
+        tx['category_name']?.toString() ?? tx['category_key']?.toString() ?? '',
+      );
+      final accountStr = _escapeCsvField(tx['account_name']?.toString() ?? '');
+      final toAccountStr = _escapeCsvField(
+        tx['to_account_name']?.toString() ?? '',
+      );
+      final amountVal = (tx['amount'] as num?)?.toDouble() ?? 0.0;
+      final feesVal = (tx['fees'] as num?)?.toDouble() ?? 0.0;
+      final notesStr = _escapeCsvField(
+        tx['notes']?.toString() ?? tx['note']?.toString() ?? '',
+      );
+      final descStr = _escapeCsvField(tx['description']?.toString() ?? '');
+
+      buffer.writeln(
+        '$dateStr,$typeStr,$categoryStr,$accountStr,$toAccountStr,$amountVal,$feesVal,$notesStr,$descStr',
+      );
+    }
+
+    final outputDir = await getTemporaryDirectory();
+    final startStr = DateFormat('yyyyMMdd').format(startDate);
+    final endStr = DateFormat('yyyyMMdd').format(endDate);
+    final cleanAccount = accountName
+        .replaceAll(RegExp(r'[^\w\s\-]'), '')
+        .replaceAll(' ', '_');
+    final filename = 'Statement_${cleanAccount}_${startStr}_to_$endStr.csv';
+    final file = File('${outputDir.path}/$filename');
+    await file.writeAsString(buffer.toString());
+
+    await Share.shareXFiles([XFile(file.path)]);
+  }
+
+  String _escapeCsvField(String field) {
+    if (field.contains(',') || field.contains('"') || field.contains('\n')) {
+      final escaped = field.replaceAll('"', '""');
+      return '"$escaped"';
+    }
+    return field;
   }
 }

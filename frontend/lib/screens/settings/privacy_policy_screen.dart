@@ -7,7 +7,84 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final List<Map<String, dynamic>> sections = [
+      {
+        'index': '1',
+        'icon': Icons.assignment_outlined,
+        'titleKey': 'privacy_policy_sec_1_title',
+        'contentKey': 'privacy_policy_sec_1_content',
+      },
+      {
+        'index': '2',
+        'icon': Icons.auto_graph_outlined,
+        'titleKey': 'privacy_policy_sec_2_title',
+        'contentKey': 'privacy_policy_sec_2_content',
+      },
+      {
+        'index': '3',
+        'icon': Icons.cloud_sync_outlined,
+        'titleKey': 'privacy_policy_sec_3_title',
+        'contentKey': 'privacy_policy_sec_3_content',
+      },
+      {
+        'index': '4',
+        'icon': Icons.share_outlined,
+        'titleKey': 'privacy_policy_sec_4_title',
+        'contentKey': 'privacy_policy_sec_4_content',
+      },
+      {
+        'index': '5',
+        'icon': Icons.verified_user_outlined,
+        'titleKey': 'privacy_policy_sec_5_title',
+        'contentKey': 'privacy_policy_sec_5_content',
+      },
+      {
+        'index': '6',
+        'icon': Icons.import_export_outlined,
+        'titleKey': 'privacy_policy_sec_6_title',
+        'contentKey': 'privacy_policy_sec_6_content',
+      },
+      {
+        'index': '7',
+        'icon': Icons.notifications_none_outlined,
+        'titleKey': 'privacy_policy_sec_7_title',
+        'contentKey': 'privacy_policy_sec_7_content',
+      },
+      {
+        'index': '8',
+        'icon': Icons.fingerprint_outlined,
+        'titleKey': 'privacy_policy_sec_8_title',
+        'contentKey': 'privacy_policy_sec_8_content',
+      },
+      {
+        'index': '9',
+        'icon': Icons.child_care_outlined,
+        'titleKey': 'privacy_policy_sec_9_title',
+        'contentKey': 'privacy_policy_sec_9_content',
+      },
+      {
+        'index': '10',
+        'icon': Icons.admin_panel_settings_outlined,
+        'titleKey': 'privacy_policy_sec_10_title',
+        'contentKey': 'privacy_policy_sec_10_content',
+      },
+      {
+        'index': '11',
+        'icon': Icons.update_outlined,
+        'titleKey': 'privacy_policy_sec_11_title',
+        'contentKey': 'privacy_policy_sec_11_content',
+      },
+      {
+        'index': '12',
+        'icon': Icons.mail_outline,
+        'titleKey': 'privacy_policy_sec_12_title',
+        'contentKey': 'privacy_policy_sec_12_content',
+      },
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -15,127 +92,131 @@ class PrivacyPolicyScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: onSurfaceColor),
+          icon: Icon(Icons.arrow_back, color: cs.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.translate('privacy_policy'),
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: onSurfaceColor,
+            color: cs.onSurface,
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Title
-            Text(
-              context.translate('privacy_policy_header_title'),
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: onSurfaceColor,
+            // Hero Banner Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? theme.colorScheme.surface
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.shield_rounded,
+                          color: AppColors.primary,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.translate('privacy_policy_header_title'),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: cs.onSurface,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                context.translate('privacy_policy_effective_date'),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    color: cs.onSurface.withValues(alpha: 0.08),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    context.translate('privacy_policy_welcome_desc'),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      height: 1.5,
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            // Effective Date
-            Text(
-              context.translate('privacy_policy_effective_date'),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: onSurfaceColor.withValues(alpha: 0.5),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Welcome Description
-            Text(
-              context.translate('privacy_policy_welcome_desc'),
-              style: TextStyle(
-                fontSize: 15,
-                height: 1.5,
-                color: onSurfaceColor.withValues(alpha: 0.7),
-              ),
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
 
-            // Policy Sections
-            _buildSection(
-              context,
-              '1',
-              context.translate('privacy_policy_sec_1_title'),
-              context.translate('privacy_policy_sec_1_content'),
-            ),
-            _buildSection(
-              context,
-              '2',
-              context.translate('privacy_policy_sec_2_title'),
-              context.translate('privacy_policy_sec_2_content'),
-            ),
-            _buildSection(
-              context,
-              '3',
-              context.translate('privacy_policy_sec_3_title'),
-              context.translate('privacy_policy_sec_3_content'),
-            ),
-            _buildSection(
-              context,
-              '4',
-              context.translate('privacy_policy_sec_4_title'),
-              context.translate('privacy_policy_sec_4_content'),
-            ),
-            _buildSection(
-              context,
-              '5',
-              context.translate('privacy_policy_sec_5_title'),
-              context.translate('privacy_policy_sec_5_content'),
-            ),
-            _buildSection(
-              context,
-              '6',
-              context.translate('privacy_policy_sec_6_title'),
-              context.translate('privacy_policy_sec_6_content'),
-            ),
-            _buildSection(
-              context,
-              '7',
-              context.translate('privacy_policy_sec_7_title'),
-              context.translate('privacy_policy_sec_7_content'),
-            ),
-            _buildSection(
-              context,
-              '8',
-              context.translate('privacy_policy_sec_8_title'),
-              context.translate('privacy_policy_sec_8_content'),
-            ),
-            _buildSection(
-              context,
-              '9',
-              context.translate('privacy_policy_sec_9_title'),
-              context.translate('privacy_policy_sec_9_content'),
-            ),
-            _buildSection(
-              context,
-              '10',
-              context.translate('privacy_policy_sec_10_title'),
-              context.translate('privacy_policy_sec_10_content'),
-            ),
-            _buildSection(
-              context,
-              '11',
-              context.translate('privacy_policy_sec_11_title'),
-              context.translate('privacy_policy_sec_11_content'),
-            ),
-            _buildSection(
-              context,
-              '12',
-              context.translate('privacy_policy_sec_12_title'),
-              context.translate('privacy_policy_sec_12_content'),
-            ),
+            // Policy Section Cards
+            ...sections.map((sec) {
+              return _buildSectionCard(
+                context,
+                sec['index'] as String,
+                sec['icon'] as IconData,
+                context.translate(sec['titleKey'] as String),
+                context.translate(sec['contentKey'] as String),
+                isDark,
+              );
+            }),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -143,47 +224,50 @@ class PrivacyPolicyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(
+  Widget _buildSectionCard(
     BuildContext context,
     String index,
+    IconData icon,
     String title,
     String content,
+    bool isDark,
   ) {
-    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final lines = content.split('\n');
-    List<Widget> textWidgets = [];
+    final List<Widget> parsedWidgets = [];
 
     for (var line in lines) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) {
-        textWidgets.add(const SizedBox(height: 8));
+        parsedWidgets.add(const SizedBox(height: 6));
         continue;
       }
 
       if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
-        // Bullet list item
-        final text = trimmed.substring(1).trim();
-        textWidgets.add(
+        final bulletText = trimmed.substring(1).trim();
+        parsedWidgets.add(
           Padding(
-            padding: const EdgeInsets.only(left: 12, bottom: 6),
+            padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '• ',
-                  style: TextStyle(
+                Container(
+                  margin: const EdgeInsets.only(top: 6, right: 10),
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    shape: BoxShape.circle,
                   ),
                 ),
                 Expanded(
                   child: Text(
-                    text,
+                    bulletText,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: onSurfaceColor.withValues(alpha: 0.8),
-                      height: 1.4,
+                      fontSize: 13.5,
+                      height: 1.45,
+                      color: cs.onSurface.withValues(alpha: 0.75),
                     ),
                   ),
                 ),
@@ -192,22 +276,21 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
         );
       } else {
-        // If it's a subheader (e.g. short, or not ending with a period and followed by list items)
-        final isSubheader = trimmed.length < 50 && !trimmed.endsWith('.');
-        textWidgets.add(
+        final isSubheader = trimmed.length < 55 && !trimmed.endsWith('.');
+        parsedWidgets.add(
           Padding(
             padding: EdgeInsets.only(
-              bottom: isSubheader ? 6 : 8,
               top: isSubheader ? 10 : 0,
+              bottom: isSubheader ? 6 : 8,
             ),
             child: Text(
               trimmed,
               style: TextStyle(
-                fontSize: isSubheader ? 15 : 14,
+                fontSize: isSubheader ? 14 : 13.5,
                 fontWeight: isSubheader ? FontWeight.bold : FontWeight.normal,
                 color: isSubheader
-                    ? onSurfaceColor
-                    : onSurfaceColor.withValues(alpha: 0.7),
+                    ? cs.onSurface
+                    : cs.onSurface.withValues(alpha: 0.75),
                 height: 1.45,
               ),
             ),
@@ -218,51 +301,79 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 28),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? theme.colorScheme.surface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: cs.onSurface.withValues(alpha: 0.06),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section title row
+          // Section Title Row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Center(
-                  child: Text(
-                    index,
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                child: Icon(
+                  icon,
+                  color: AppColors.primary,
+                  size: 20,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: onSurfaceColor,
-                    ),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: cs.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '#$index',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: cs.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 14),
+          Divider(
+            height: 1,
+            thickness: 0.5,
+            color: cs.onSurface.withValues(alpha: 0.06),
+          ),
           const SizedBox(height: 12),
-          // Section parsed content
-          ...textWidgets,
+          // Content items
+          ...parsedWidgets,
         ],
       ),
     );

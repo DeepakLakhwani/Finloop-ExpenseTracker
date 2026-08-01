@@ -425,18 +425,18 @@ const Map<String, String> enTranslations = {
   'privacy_policy_sec_2_title': "How We Use Your Information",
   'privacy_policy_sec_2_content':
       "We use your data to:\n• Provide finance tracking features\n• Generate analytics\n• Sync notes and records\n• Improve app performance\n• Secure user accounts\n• Enable export/import functionality",
-  'privacy_policy_sec_3_title': "Data Storage",
+  'privacy_policy_sec_3_title': "Data Storage & Backups",
   'privacy_policy_sec_3_content':
-      "Local Storage\nMost financial information is stored locally on the user's device.\n\nCloud Synchronization\nCertain features such as:\n• Scratchpad notes\n• Optional backups\n• Sync services\n\nmay use secure cloud infrastructure such as Firebase Firestore.",
+      "Local Storage\nMost financial information is stored locally on the user's device.\n\nCloud & Google Drive Synchronization\nFeatures such as:\n• Google Drive Backups (AES-256 encrypted)\n• Scratchpad notes & sync services\n\nuse secure cloud infrastructure (Firebase Firestore & Google Drive App Folder).",
   'privacy_policy_sec_4_title': "Data Sharing",
   'privacy_policy_sec_4_content':
       "FinLoop does NOT sell user data.\n\nWe do NOT share personal financial information with third parties except:\n• When required by law\n• When necessary for app functionality\n• With secure infrastructure providers\n• With Google Mobile Ads (AdMob) to show relevant ads (they may collect device identifiers)",
   'privacy_policy_sec_5_title': "Data Security",
   'privacy_policy_sec_5_content':
-      "We implement:\n• Secure local storage\n• Encrypted authentication methods\n• Device-level biometric protection\n• Secure Firebase communication\n\nHowever, no system can guarantee absolute security.",
-  'privacy_policy_sec_6_title': "Excel Import & Export",
+      "We implement:\n• Secure local storage\n• Client-side AES-256 backup encryption\n• Device-level biometric protection\n• Secure Firebase & Google Drive API communication\n\nHowever, no system can guarantee absolute security.",
+  'privacy_policy_sec_6_title': "Google Drive Backup & Data Export",
   'privacy_policy_sec_6_content':
-      "Users can:\n• Export financial data to Excel files\n• Share exported files externally\n\nUsers are responsible for protecting exported files shared outside the app.",
+      "Google Drive Backup\nWhen enabled, backups are protected with AES-256 encryption before being uploaded to your Google Drive. FinLoop only accesses its own encrypted backup folder and cannot view other Google Drive files.\n\nPDF & CSV Export\nUsers can export transaction statements to PDF or CSV files. Once exported, the security and sharing of these files is managed by the user.",
   'privacy_policy_sec_7_title': "Notifications",
   'privacy_policy_sec_7_content':
       "FinLoop may send:\n• Financial reminders\n• App-related alerts\n• Local notifications\n\nUsers can disable notifications anytime through settings.",
@@ -448,14 +448,14 @@ const Map<String, String> enTranslations = {
       "FinLoop is not intended for children under 13 years of age.\n\nWe do not knowingly collect information from children.",
   'privacy_policy_sec_10_title': "User Rights",
   'privacy_policy_sec_10_content':
-      "Users may:\n• Delete app data\n• Disable cloud synchronization\n• Remove passcodes\n• Export their data\n• Uninstall the application anytime",
+      "Users may:\n• Clear transactions or perform a full app data reset in Settings\n• Connect or disconnect Google Drive backups\n• Set up or remove passcode & biometric protection\n• Export transaction statements (PDF / CSV)\n• Uninstall the application anytime",
   'privacy_policy_sec_11_title': "Changes to This Privacy Policy",
   'privacy_policy_sec_11_content':
       "We may update this Privacy Policy periodically. Users are encouraged to review this page regularly.",
   'privacy_policy_sec_12_title': "Contact Information",
   'privacy_policy_sec_12_content':
       "For questions regarding this Privacy Policy:\n\nEmail: support.finloop@gmail.com",
-  'title_export_pdf_statement': "Export PDF Statement",
+  'title_export_pdf_statement': "Export Data",
   'desc_export_pdf_statement': "Generate a printable PDF statement",
   'label_start_date': "Start Date",
   'label_end_date': "End Date",

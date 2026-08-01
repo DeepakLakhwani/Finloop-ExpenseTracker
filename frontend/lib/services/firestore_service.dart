@@ -862,34 +862,38 @@ class FirestoreService {
           .collection('accounts')
           .doc(toAccountId);
 
-      final accountSnap = await accountRef.get();
-      final toAccountSnap = await toAccountRef.get();
-
       if (isAddition) {
-        if (accountSnap.exists) {
-          batch.update(accountRef, {'balance': FieldValue.increment(-amount)});
-        }
-        if (toAccountSnap.exists) {
-          batch.update(toAccountRef, {'balance': FieldValue.increment(amount)});
-        }
+        batch.set(
+          accountRef,
+          {'balance': FieldValue.increment(-amount)},
+          SetOptions(merge: true),
+        );
+        batch.set(
+          toAccountRef,
+          {'balance': FieldValue.increment(amount)},
+          SetOptions(merge: true),
+        );
       } else {
-        if (accountSnap.exists) {
-          batch.update(accountRef, {'balance': FieldValue.increment(amount)});
-        }
-        if (toAccountSnap.exists) {
-          batch.update(toAccountRef, {
-            'balance': FieldValue.increment(-amount),
-          });
-        }
+        batch.set(
+          accountRef,
+          {'balance': FieldValue.increment(amount)},
+          SetOptions(merge: true),
+        );
+        batch.set(
+          toAccountRef,
+          {'balance': FieldValue.increment(-amount)},
+          SetOptions(merge: true),
+        );
       }
     } else {
       double change = type == 'Income' ? amount : -amount;
       if (!isAddition) change = -change;
 
-      final accountSnap = await accountRef.get();
-      if (accountSnap.exists) {
-        batch.update(accountRef, {'balance': FieldValue.increment(change)});
-      }
+      batch.set(
+        accountRef,
+        {'balance': FieldValue.increment(change)},
+        SetOptions(merge: true),
+      );
     }
   }
 
@@ -1062,5 +1066,95 @@ class FirestoreService {
 
   Future<void> submitFeedback(Map<String, dynamic> feedbackData) async {
     await _db.collection('feedback').add(feedbackData);
+  }
+
+  // --- Clear Data Operations ---
+
+  Future<void> clearTransactionsOnly() async {
+    final uid = _uid;
+    if (uid == null) return;
+
+    // 1. Delete all transactions
+    final txSnap = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('transactions')
+        .get();
+
+    WriteBatch batch = _db.batch();
+    int count = 0;
+    for (var doc in txSnap.docs) {
+      batch.delete(doc.reference);
+      count++;
+      if (count >= 450) {
+        await batch.commit();
+        batch = _db.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
+
+    // 2. Reset account balances to 0
+    final accSnap = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('accounts')
+        .get();
+
+    batch = _db.batch();
+    count = 0;
+    for (var doc in accSnap.docs) {
+      batch.update(doc.reference, {'balance': 0.0});
+      count++;
+      if (count >= 450) {
+        await batch.commit();
+        batch = _db.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) {
+      await batch.commit();
+    }
+  }
+
+  Future<void> clearAllUserData() async {
+    final uid = _uid;
+    if (uid == null) return;
+
+    final collections = [
+      'transactions',
+      'accounts',
+      'main_accounts',
+      'categories',
+      'budgets',
+      'notes',
+    ];
+
+    for (var col in collections) {
+      final snap =
+          await _db.collection('users').doc(uid).collection(col).get();
+
+      WriteBatch batch = _db.batch();
+      int count = 0;
+      for (var doc in snap.docs) {
+        batch.delete(doc.reference);
+        count++;
+        if (count >= 450) {
+          await batch.commit();
+          batch = _db.batch();
+          count = 0;
+        }
+      }
+      if (count > 0) {
+        await batch.commit();
+      }
+    }
+
+    // Re-initialize standard default categories & accounts
+    await _createDefaultCategories();
+    await _createDefaultMainAccounts();
+    await _createDefaultAccounts();
   }
 }

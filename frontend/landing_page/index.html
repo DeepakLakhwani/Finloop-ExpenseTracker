@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinLoop - Smart Personal Expense Tracker & Budget Planner</title>
+  <meta name="description" content="FinLoop is a simple, beautiful, and secure personal finance tracker with AES-256 encrypted Google Drive backups, 10+ languages support, and smart budget planning.">
+  <meta name="theme-color" content="#1565C0">
+  
+  <!-- Open Graph / Meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FinLoop - Smart Personal Expense Tracker">
+  <meta property="og:description" content="Simple, beautiful, and encrypted personal finance manager. Track spending, set budgets, and backup securely.">
+  <meta property="og:image" content="assets/app_logo.png">
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="#" class="nav-brand">
+        <img src="assets/app_logo.png" alt="FinLoop Logo" class="nav-logo">
+        <span class="brand-name">FinLoop</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#languages">Languages</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <a href="#download" class="btn btn-primary nav-cta">Download App</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg-glow"></div>
+    <div class="container hero-container">
+      <div class="hero-content">
+        <div class="badge">
+          <i class="fa-solid fa-shield-halved"></i> 100% Encrypted & Private
+        </div>
+        <h1 class="hero-title">Master Your Money with <span class="gradient-text">FinLoop</span></h1>
+        <p class="hero-subtitle">
+          The ultimate personal expense tracker and budget planner. Effortlessly track income, analyze spending trends, and secure your financial data with client-side AES-256 encryption.
+        </p>
+        
+        <div class="hero-cta-buttons" id="download">
+          <a href="#" class="btn btn-download google-play-btn">
+            <i class="fa-brands fa-google-play"></i>
+            <div class="btn-text">
+              <span class="btn-small">GET IT ON</span>
+              <span class="btn-large">Google Play</span>
+            </div>
+          </a>
+          <a href="#" class="btn btn-secondary direct-apk-btn">
+            <i class="fa-solid fa-download"></i>
+            <span>Download APK</span>
+          </a>
+        </div>
+
+        <div class="hero-trust">
+          <div class="trust-item"><i class="fa-solid fa-check"></i> Free to Use</div>
+          <div class="trust-item"><i class="fa-solid fa-check"></i> No Ads Spams</div>
+          <div class="trust-item"><i class="fa-solid fa-check"></i> Offline First</div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="app-icon-wrapper">
+          <img src="assets/app_logo.png" alt="FinLoop App Icon" class="hero-app-logo">
+          <div class="logo-ring"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Highlights Counter -->
+  <section class="stats-bar">
+    <div class="container stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-lock"></i></div>
+        <div class="stat-info">
+          <h3>AES-256</h3>
+          <p>Encrypted Cloud Backups</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-language"></i></div>
+        <div class="stat-info">
+          <h3>10+ Languages</h3>
+          <p>Global Multilingual Support</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-chart-pie"></i></div>
+        <div class="stat-info">
+          <h3>Smart Budgets</h3>
+          <p>Category Expense Limits</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-file-csv"></i></div>
+        <div class="stat-info">
+          <h3>PDF & CSV</h3>
+          <p>Instant Data Statements</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">POWERFUL FEATURES</span>
+        <h2 class="section-title">Everything You Need for Financial Freedom</h2>
+        <p class="section-subtitle">Designed for speed, simplicity, and complete control over your money.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1: AES-256 Secure Backup -->
+        <div class="feature-card highlight-card">
+          <div class="feature-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <span class="feature-badge">SECURITY FIRST</span>
+          <h3>AES-256 E2E Encrypted Google Drive Backup</h3>
+          <p>Your financial privacy is sacred. FinLoop automatically encrypts your data on-device using client-side AES-256 encryption before uploading it to your personal Google Drive. Nobody else can access your data.</p>
+        </div>
+
+        <!-- Feature 2: 10+ Languages Supported -->
+        <div class="feature-card highlight-card" id="languages">
+          <div class="feature-icon"><i class="fa-solid fa-globe"></i></div>
+          <span class="feature-badge">GLOBAL ACCESS</span>
+          <h3>10+ Languages Supported</h3>
+          <p>FinLoop speaks your language. Effortlessly switch between English, Spanish, Hindi, French, German, Chinese, Japanese, Portuguese, Arabic, and more with instant localized translations.</p>
+        </div>
+
+        <!-- Feature 3: Budget Planning -->
+        <div class="feature-card highlight-card">
+          <div class="feature-icon"><i class="fa-solid fa-calculator"></i></div>
+          <span class="feature-badge">BUDGET MANAGER</span>
+          <h3>Smart Budget Planning & Overspend Alerts</h3>
+          <p>Set daily, weekly, or monthly category spending targets (Food, Shopping, Bills, Transport). Get instant visual alerts when reaching your budget limits so you never overspend again.</p>
+        </div>
+
+        <!-- Feature 4: PDF & CSV Export -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-file-export"></i></div>
+          <h3>PDF & CSV Data Statements</h3>
+          <p>Need printable statements for tax accounting or personal records? Export your transaction history to beautifully styled PDF files or raw CSV spreadsheets in 1-tap.</p>
+        </div>
+
+        <!-- Feature 5: Multi-Account Management -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-wallet"></i></div>
+          <h3>Multi-Account & Wallet Support</h3>
+          <p>Manage all your bank accounts, credit cards, digital wallets, and cash in one centralized dashboard with total net-worth tracking.</p>
+        </div>
+
+        <!-- Feature 6: Biometric Lock -->
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-fingerprint"></i></div>
+          <h3>Biometric & Passcode Protection</h3>
+          <p>Lock FinLoop with Fingerprint, Face ID, or custom PIN passcode to prevent unauthorized eyes from viewing your personal financial records.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security Commitment Banner -->
+  <section class="security-banner" id="security">
+    <div class="container">
+      <div class="security-box">
+        <div class="security-icon"><i class="fa-solid fa-user-shield"></i></div>
+        <div class="security-content">
+          <h2>100% Private. Your Data Remains Yours.</h2>
+          <p>Unlike other finance apps, FinLoop operates offline-first. We do not sell your transaction data to advertisers, track your personal identity, or store raw bank details on central servers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">FREQUENTLY ASKED QUESTIONS</span>
+        <h2 class="section-title">Got Questions? We Have Answers</h2>
+      </div>
+
+      <div class="faq-accordion">
+        <div class="faq-item">
+          <div class="faq-question">
+            <h3>Is FinLoop completely free to use?</h3>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes! FinLoop offers full access to expense tracking, category budgeting, PDF/CSV statement exports, and encrypted Google Drive backups for free.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h3>How safe is my backup data on Google Drive?</h3>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>All backups are encrypted directly on your device using AES-256 encryption before uploading. Only you hold the decryption key linked to your account.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h3>Which languages does FinLoop support?</h3>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>FinLoop supports 10+ major languages including English, Spanish, Hindi, French, German, Chinese, Japanese, Portuguese, Arabic, and Russian.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h3>Can I export my data to Excel or PDF?</h3>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-answer">
+            <p>Yes, you can export customized transaction date ranges directly into formatted PDF statements or CSV spreadsheets anytime.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <img src="assets/app_logo.png" alt="FinLoop Logo" class="footer-logo">
+        <span class="brand-name">FinLoop</span>
+        <p>Smart, simple, and encrypted personal expense tracking for everyone.</p>
+      </div>
+
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <a href="#features">Features</a>
+          <a href="#security">Security</a>
+          <a href="#languages">Languages</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <a href="mailto:support.finloop@gmail.com">support.finloop@gmail.com</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; 2026 FinLoop. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

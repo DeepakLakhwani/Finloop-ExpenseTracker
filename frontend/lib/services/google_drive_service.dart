@@ -227,12 +227,17 @@ class GoogleDriveService {
     try {
       GoogleSignInAccount? account = _googleSignIn.currentUser;
       account ??= await _googleSignIn.signInSilently();
-
       account ??= await _googleSignIn.signIn();
 
       if (account != null) {
         try {
-          final hasScope = await _googleSignIn.canAccessScopes([drive.DriveApi.driveAppdataScope]);
+          bool hasScope = false;
+          try {
+            hasScope = await _googleSignIn.canAccessScopes([drive.DriveApi.driveAppdataScope]);
+          } catch (e) {
+            // canAccessScopes is not implemented on Android (scopes are requested during signIn)
+            hasScope = true;
+          }
           if (!hasScope) {
             await _googleSignIn.requestScopes([drive.DriveApi.driveAppdataScope]);
           }
@@ -244,9 +249,11 @@ class GoogleDriveService {
         await prefs.setString(_accountEmailKey, account.email);
       }
       return account;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('========== GOOGLE SIGN IN ERROR ==========');
       debugPrint('Error selecting Google account: $e');
-      return null;
+      debugPrintStack(stackTrace: st);
+      rethrow;
     }
   }
 
@@ -263,9 +270,11 @@ class GoogleDriveService {
         await prefs.setString(_accountEmailKey, account.email);
       }
       return account;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('========== GOOGLE SWITCH ACCOUNT ERROR ==========');
       debugPrint('Error switching Google account: $e');
-      return null;
+      debugPrintStack(stackTrace: st);
+      rethrow;
     }
   }
 
@@ -292,9 +301,11 @@ class GoogleDriveService {
       final authHeaders = await account.authHeaders;
       final authenticateClient = GoogleDriveAuthClient(authHeaders);
       return drive.DriveApi(authenticateClient);
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('========== GOOGLE DRIVE API CLIENT ERROR ==========');
       debugPrint('Error getting Drive API client: $e');
-      return null;
+      debugPrintStack(stackTrace: st);
+      rethrow;
     }
   }
 

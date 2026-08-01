@@ -27,12 +27,11 @@ class SettingsTile extends StatelessWidget {
     // Crisp, prominent icon color matching the text.
     final finalIconColor = iconColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.85);
 
-    return Container(
-      color: Colors.transparent, // Let the Card handle the background color
+    return SizedBox(
+      height: 56,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20, // Spacious padding matching the reference image
-          vertical: 6,
+          horizontal: 18,
         ),
         horizontalTitleGap: 16, // Elegant gap between icon and title
         onTap: onTap,

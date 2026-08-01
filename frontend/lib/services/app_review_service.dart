@@ -103,6 +103,40 @@ class AppReviewService {
     }
   }
 
+  static bool _inAppReviewRequestedThisSession = false;
+
+  /// Explicitly trigger the In-App Review popup card inside the app when the user clicks "Rate Finloop".
+  /// If Google Play quota suppresses the popup (e.g. on subsequent clicks), falls back to opening store listing
+  /// so the user button click always works.
+  static Future<void> requestInAppReviewDirectly() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyHasRated, true);
+
+      // If in-app review was already requested once in this session, Google Play quota will suppress subsequent popups.
+      // Fallback to openStoreListing so the user button never stays unresponsive.
+      if (_inAppReviewRequestedThisSession) {
+        debugPrint('[AppReviewService] In-app review already attempted this session. Opening store listing fallback...');
+        await openStoreListing();
+        return;
+      }
+
+      final inAppReview = InAppReview.instance;
+      if (await inAppReview.isAvailable()) {
+        _inAppReviewRequestedThisSession = true;
+        debugPrint('[AppReviewService] Triggering in-app review popup card...');
+        await inAppReview.requestReview();
+        debugPrint('[AppReviewService] In-app review card triggered.');
+      } else {
+        debugPrint('[AppReviewService] In-app review unavailable, opening store listing...');
+        await openStoreListing();
+      }
+    } catch (e) {
+      debugPrint('[AppReviewService] Error opening in-app review card: $e. Falling back to store listing...');
+      await openStoreListing();
+    }
+  }
+
   /// Redirect the user directly to the app store page.
   /// Also flags hasRated to true to prevent future passive prompts.
   static Future<void> openStoreListing() async {

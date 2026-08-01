@@ -71,6 +71,7 @@ class _BackupScreenState extends State<BackupScreen> {
         setState(() {
           _googleAccountEmail = null;
         });
+        _showWarningSnackBar('Google Account selection cancelled');
       }
     } catch (e) {
       debugPrint('Error selecting Google account: $e');
@@ -78,7 +79,7 @@ class _BackupScreenState extends State<BackupScreen> {
       setState(() {
         _googleAccountEmail = null;
       });
-      _showErrorSnackBar('Unable to connect Google Account');
+      _showErrorSnackBar('Google Sign-In failed: $e');
     }
   }
 
@@ -97,6 +98,8 @@ class _BackupScreenState extends State<BackupScreen> {
       }
     } catch (e) {
       debugPrint('Error switching Google account: $e');
+      if (!mounted) return;
+      _showErrorSnackBar('Switch Google Account failed: $e');
     }
   }
 
