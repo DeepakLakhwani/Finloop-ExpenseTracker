@@ -30,8 +30,10 @@ class _SplashScreenState extends State<SplashScreen> {
       _errorMessage = null;
     });
 
-    // Wait for 2 seconds for the splash branding effect
-    await Future.delayed(const Duration(seconds: 2));
+    final firestoreService = context.read<FirestoreService>();
+
+    // Wait for 1 second for the splash branding effect
+    await Future.delayed(const Duration(seconds: 1));
 
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -42,7 +44,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
       // Initialize the user doc and seed default categories & accounts
       if (FirebaseAuth.instance.currentUser != null) {
-        final firestoreService = context.read<FirestoreService>();
         await firestoreService.initializeUser();
       } else {
         throw Exception(
@@ -231,8 +232,8 @@ class _AnimatedBrandName extends StatefulWidget {
 
 class _AnimatedBrandNameState extends State<_AnimatedBrandName>
     with TickerProviderStateMixin {
-  static const Duration _letterDuration = Duration(milliseconds: 600);
-  static const Duration _staggerDelay = Duration(milliseconds: 100);
+  static const Duration _letterDuration = Duration(milliseconds: 400);
+  static const Duration _staggerDelay = Duration(milliseconds: 60);
 
   late final List<AnimationController> _controllers;
   late final List<Animation<double>> _slideAnimations;
