@@ -52,6 +52,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
   int _touchedIndex = -1;
   int _selectedTab = 1; // 0 = Income, 1 = Expense
+  late final PageController _pageController;
   bool _isLoading = true;
   bool _hasError = false;
 
@@ -63,6 +64,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedTab);
     _subscribeToData();
     _startDwellTimer();
   }
@@ -79,6 +81,7 @@ class _ChartsScreenState extends State<ChartsScreen> {
 
   @override
   void dispose() {
+    _pageController.dispose();
     _dwellTimer?.cancel();
     _txSub?.cancel();
     _accSub?.cancel();
@@ -156,17 +159,20 @@ class _ChartsScreenState extends State<ChartsScreen> {
     );
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Header(month: DateTime.now(), isIncome: _selectedTab == 0),
-            const SizedBox(height: 16),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: _Header(month: DateTime.now(), isIncome: _selectedTab == 0),
+          ),
+          const SizedBox(height: 16),
 
-            // Simple Tab Selector (Income Left, Expense Right, no background color)
-            Container(
-              margin: const EdgeInsets.only(bottom: 24),
+          // Simple Tab Selector (Income Left, Expense Right, with tap animation)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -183,10 +189,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
                     child: GestureDetector(
                       onTap: () {
                         if (_selectedTab != 0) {
-                          setState(() {
-                            _selectedTab = 0;
-                            _touchedIndex = -1;
-                          });
+                          _pageController.animateToPage(
+                            0,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
                         }
                       },
                       child: Column(
@@ -229,10 +236,11 @@ class _ChartsScreenState extends State<ChartsScreen> {
                     child: GestureDetector(
                       onTap: () {
                         if (_selectedTab != 1) {
-                          setState(() {
-                            _selectedTab = 1;
-                            _touchedIndex = -1;
-                          });
+                          _pageController.animateToPage(
+                            1,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
                         }
                       },
                       child: Column(
@@ -274,76 +282,105 @@ class _ChartsScreenState extends State<ChartsScreen> {
                 ],
               ),
             ),
+          ),
 
-            if (_selectedTab == 0) ...[
-              // Income Analytics
-              _DistributionCard(
-                pieData: analytics.incomePieData,
-                totalExpenses: analytics.totalCurrentMonthIncome,
-                currency: currency,
-                touchedIndex: _touchedIndex,
-                onTouch: (i) => setState(() => _touchedIndex = i),
-                categories: _userCategories,
-                isIncome: true,
-              ),
-              const SizedBox(height: 12),
-              _MonthlyTrendsCard(
-                months: analytics.trendMonths,
-                dataValues: analytics.monthlyIncome,
-                maxY: analytics.incomeMaxY,
-                currency: currency,
-                formatY: _formatY,
-                isIncome: true,
-              ),
-              const SizedBox(height: 12),
-              _AvailableBudgetCard(
-                balance: analytics.totalBalance,
-                currency: currency,
-              ),
-            ] else ...[
-              // Expense Analytics
-              _DistributionCard(
-                pieData: analytics.pieData,
-                totalExpenses: analytics.totalCurrentMonthExpenses,
-                currency: currency,
-                touchedIndex: _touchedIndex,
-                onTouch: (i) => setState(() => _touchedIndex = i),
-                categories: _userCategories,
-                isIncome: false,
-              ),
-              const SizedBox(height: 12),
-              if (_allBudgets.isNotEmpty) ...[
-                _BudgetsCard(
-                  budgets: _allBudgets,
-                  transactions: _allTransactions,
-                  currency: currency,
-                  categories: _userCategories,
+          // Swipeable Tab Content (PageView)
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _selectedTab = index;
+                  _touchedIndex = -1;
+                });
+              },
+              children: [
+                // Income Analytics
+                SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _DistributionCard(
+                        pieData: analytics.incomePieData,
+                        totalExpenses: analytics.totalCurrentMonthIncome,
+                        currency: currency,
+                        touchedIndex: _touchedIndex,
+                        onTouch: (i) => setState(() => _touchedIndex = i),
+                        categories: _userCategories,
+                        isIncome: true,
+                      ),
+                      const SizedBox(height: 12),
+                      _MonthlyTrendsCard(
+                        months: analytics.trendMonths,
+                        dataValues: analytics.monthlyIncome,
+                        maxY: analytics.incomeMaxY,
+                        currency: currency,
+                        formatY: _formatY,
+                        isIncome: true,
+                      ),
+                      const SizedBox(height: 12),
+                      _AvailableBudgetCard(
+                        balance: analytics.totalBalance,
+                        currency: currency,
+                      ),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
+
+                // Expense Analytics
+                SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _DistributionCard(
+                        pieData: analytics.pieData,
+                        totalExpenses: analytics.totalCurrentMonthExpenses,
+                        currency: currency,
+                        touchedIndex: _touchedIndex,
+                        onTouch: (i) => setState(() => _touchedIndex = i),
+                        categories: _userCategories,
+                        isIncome: false,
+                      ),
+                      const SizedBox(height: 12),
+                      if (_allBudgets.isNotEmpty) ...[
+                        _BudgetsCard(
+                          budgets: _allBudgets,
+                          transactions: _allTransactions,
+                          currency: currency,
+                          categories: _userCategories,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      _MonthlyTrendsCard(
+                        months: analytics.trendMonths,
+                        dataValues: analytics.monthlyExpenses,
+                        maxY: analytics.maxY,
+                        currency: currency,
+                        formatY: _formatY,
+                        isIncome: false,
+                      ),
+                      const SizedBox(height: 12),
+                      _SmartInsightCard(
+                        text: () {
+                          final info = analytics.insightInfo;
+                          final localized = context.translate(info.key);
+                          if (info.percent != null) {
+                            return localized.replaceAll('{percent}', info.percent!);
+                          }
+                          return localized;
+                        }(),
+                      ),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
               ],
-              _MonthlyTrendsCard(
-                months: analytics.trendMonths,
-                dataValues: analytics.monthlyExpenses,
-                maxY: analytics.maxY,
-                currency: currency,
-                formatY: _formatY,
-                isIncome: false,
-              ),
-              const SizedBox(height: 12),
-              _SmartInsightCard(
-                text: () {
-                  final info = analytics.insightInfo;
-                  final localized = context.translate(info.key);
-                  if (info.percent != null) {
-                    return localized.replaceAll('{percent}', info.percent!);
-                  }
-                  return localized;
-                }(),
-              ),
-            ],
-            const SizedBox(height: 100),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -434,6 +471,11 @@ IconData _getCategoryIcon(String? iconName) {
       return Icons.local_cafe_outlined;
     case 'build':
       return Icons.build_outlined;
+    case 'content_cut':
+    case 'grooming':
+      return Icons.content_cut_outlined;
+    case 'spa':
+      return Icons.spa_outlined;
     case 'swap_horiz':
       return Icons.swap_horiz;
     default:

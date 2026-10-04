@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +41,8 @@ void main() async {
     debugPrint("Firebase initialization error: $e");
   }
 
-  // Initialize Google Mobile Ads SDK
-  await AdService.initialize();
+  // Initialize Google Mobile Ads SDK asynchronously in background without blocking app launch
+  unawaited(AdService.initialize());
 
   runApp(
     MultiProvider(
@@ -154,10 +155,19 @@ class _FinloopAppState extends State<FinloopApp> with WidgetsBindingObserver {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
+        DocumentSnapshot<Map<String, dynamic>> userDoc;
+        try {
+          userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get(const GetOptions(source: Source.serverAndCache))
+              .timeout(const Duration(seconds: 2));
+        } catch (_) {
+          userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get(const GetOptions(source: Source.cache));
+        }
         if (userDoc.exists && mounted) {
           final data = userDoc.data()!;
           context.read<ThemeProvider>().loadSettings(

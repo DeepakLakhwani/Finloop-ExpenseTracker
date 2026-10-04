@@ -26,7 +26,15 @@ class _AccountActionScreenState extends State<AccountActionScreen> {
   Future<void> _fetchAccounts() async {
     try {
       final firestore = context.read<FirestoreService>();
-      final accounts = await firestore.getAccounts().first;
+      List<Map<String, dynamic>> accounts;
+      try {
+        accounts = await firestore
+            .getAccounts()
+            .first
+            .timeout(const Duration(seconds: 2));
+      } catch (_) {
+        accounts = await firestore.getAccountsList();
+      }
       if (!mounted) return;
       setState(() {
         _accounts = accounts;

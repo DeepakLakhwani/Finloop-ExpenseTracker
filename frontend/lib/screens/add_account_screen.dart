@@ -57,15 +57,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     _name = widget.initialAccount?['name'] ?? '';
     _type = widget.initialAccount?['type'] ?? widget.prefilledType ?? 'Cash';
 
-    final initialBalance =
-        (double.tryParse(
-          widget.initialAccount?['balance']?.toString() ?? '0.0',
-        ) ??
-        0.0);
+    final hasInitialAccount = widget.initialAccount != null;
+    final initialBalance = hasInitialAccount
+        ? (double.tryParse(widget.initialAccount?['balance']?.toString() ?? ''))
+        : null;
 
-    // FIX #1: Initialize controller for balance
+    // Use empty string for new account so placeholder hint '0.00' is shown
     _balanceController = TextEditingController(
-      text: initialBalance.toStringAsFixed(2),
+      text: initialBalance != null ? initialBalance.toStringAsFixed(2) : '',
     );
 
     if (_type == 'Credit Card' || _type == 'Card') {
@@ -75,7 +74,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       _issuerController.text = widget.initialAccount?['cardIssuer'] ?? '';
       _statementDate = widget.initialAccount?['statementDate'] ?? 15;
       _dueDate = widget.initialAccount?['dueDate'] ?? 30;
-      _dueMonthOffset = widget.initialAccount?['dueMonthOffset'] ??
+      _dueMonthOffset =
+          widget.initialAccount?['dueMonthOffset'] ??
           ((_dueDate <= _statementDate) ? 1 : 0);
       _selectedColorHex = widget.initialAccount?['color'] ?? '#1E3A8A';
     }
@@ -108,8 +108,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     super.dispose();
   }
 
-  // FIX #2: Helper getters so values are always read from controllers (single source of truth)
-  double get _balance => double.tryParse(_balanceController.text) ?? 0.0;
+  double get _balance => double.tryParse(_balanceController.text.trim()) ?? 0.0;
   double get _creditLimit => double.tryParse(_limitController.text) ?? 0.0;
   double get _usedAmount => double.tryParse(_usedAmountController.text) ?? 0.0;
 
@@ -154,7 +153,11 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         if (_type == 'Credit Card' || _type == 'Card') {
           await firestore.updateAccount(initialId, accountData);
         } else {
-          final oldBalance = double.tryParse(widget.initialAccount?['balance']?.toString() ?? '0.0') ?? 0.0;
+          final oldBalance =
+              double.tryParse(
+                widget.initialAccount?['balance']?.toString() ?? '0.0',
+              ) ??
+              0.0;
           final diff = _balance - oldBalance;
           if (diff != 0) {
             // Update account details keeping the old balance to avoid double-update
@@ -169,16 +172,21 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             Map<String, dynamic>? openingTx;
             for (var tx in txs) {
               final catId = tx['category_id']?.toString();
-              final catName = tx['category_name']?.toString().toLowerCase() ?? '';
+              final catName =
+                  tx['category_name']?.toString().toLowerCase() ?? '';
               final desc = tx['description']?.toString().toLowerCase() ?? '';
-              if (catId == 'opening_balance' || catName == 'opening balance' || desc == 'opening balance') {
+              if (catId == 'opening_balance' ||
+                  catName == 'opening balance' ||
+                  desc == 'opening balance') {
                 openingTx = tx;
                 break;
               }
             }
 
             if (openingTx != null) {
-              final oldAmount = double.tryParse(openingTx['amount']?.toString() ?? '0.0') ?? 0.0;
+              final oldAmount =
+                  double.tryParse(openingTx['amount']?.toString() ?? '0.0') ??
+                  0.0;
               final newAmount = oldAmount + diff;
               final newTxData = Map<String, dynamic>.from(openingTx);
               newTxData['amount'] = newAmount;
@@ -195,7 +203,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
               final currentUser = FirebaseAuth.instance.currentUser;
               if (currentUser != null) {
-                final openingCategory = await firestore.getOpeningBalanceCategory();
+                final openingCategory = await firestore
+                    .getOpeningBalanceCategory();
                 if (openingCategory != null) {
                   categoryId = openingCategory['id'].toString();
                   categoryName = openingCategory['name'] ?? 'Opening Balance';
@@ -387,336 +396,351 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Credit card live preview
-                    if (_type == 'Credit Card' || _type == 'Card') ...[
-                      CardPreview(
-                        currency: currency,
-                        limitText: _limitController.text,
-                        usedText: _usedAmountController.text,
-                        issuerText: _issuerController.text,
-                        // FIX #4: _name is kept live via onChanged below so preview
-                        // always reflects what the user is typing.
-                        nameText: _name,
-                        colorHex: _selectedColorHex,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // ── Account Name ──────────────────────────────────────────
-                    _buildRow(
-                      icon: Icons.subtitles_outlined,
-                      child: TextFormField(
-                        initialValue: _name,
-                        style: _fieldTextStyle(context),
-                        decoration: _underlineDecoration(
-                          label: context.translate('label_account_name'),
-                          hint: context.translate('hint_account_name'),
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Credit card live preview
+                      if (_type == 'Credit Card' || _type == 'Card') ...[
+                        CardPreview(
+                          currency: currency,
+                          limitText: _limitController.text,
+                          usedText: _usedAmountController.text,
+                          issuerText: _issuerController.text,
+                          // FIX #4: _name is kept live via onChanged below so preview
+                          // always reflects what the user is typing.
+                          nameText: _name,
+                          colorHex: _selectedColorHex,
                         ),
-                        validator: (val) => val == null || val.trim().isEmpty
-                            ? context.translate('err_invalid_name')
-                            : null,
-                        // FIX #4: onChanged keeps _name live for CardPreview
-                        onChanged: (val) => setState(() => _name = val.trim()),
-                        onSaved: (val) => _name = val?.trim() ?? '',
-                      ),
-                    ),
+                        const SizedBox(height: 24),
+                      ],
 
-                    const SizedBox(height: 20),
-
-                    // ── Account Type ──────────────────────────────────────────
-                    _buildRow(
-                      icon: Icons.account_balance_outlined,
-                      child: DropdownButtonFormField<String>(
-                        value: _type,
-                        style: _fieldTextStyle(context),
-                        dropdownColor: _dropdownColor(context),
-                        decoration: _underlineDecoration(
-                          label: context.translate('label_account_type'),
-                        ),
-                        items: _buildDropdownItems(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _type = val);
-                        },
-                      ),
-                    ),
-
-                    // ── Non-credit-card: Balance field ────────────────────────
-                    if (_type != 'Credit Card' && _type != 'Card') ...[
-                      const SizedBox(height: 20),
+                      // ── Account Name ──────────────────────────────────────────
                       _buildRow(
-                        icon: Icons.savings_outlined,
+                        icon: Icons.subtitles_outlined,
                         child: TextFormField(
-                          // FIX #1: use controller instead of initialValue + onSaved
-                          controller: _balanceController,
+                          initialValue: _name,
                           style: _fieldTextStyle(context),
                           decoration: _underlineDecoration(
-                            label: context.translate('label_balance'),
-                            prefix: Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Text(
-                                currency,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
+                            label: context.translate('label_account_name'),
+                            hint: context.translate('hint_account_name'),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          validator: (val) =>
-                              val == null || double.tryParse(val) == null
-                              ? context.translate('err_invalid_amount')
+                          validator: (val) => val == null || val.trim().isEmpty
+                              ? context.translate('err_invalid_name')
                               : null,
-                          // FIX #1: no onSaved needed — controller always has current value
+                          // FIX #4: onChanged keeps _name live for CardPreview
+                          onChanged: (val) =>
+                              setState(() => _name = val.trim()),
+                          onSaved: (val) => _name = val?.trim() ?? '',
                         ),
                       ),
-                    ] else ...[
-                      // ── Credit Card specific fields ───────────────────────
 
-                      // Card Issuer
                       const SizedBox(height: 20),
+
+                      // ── Account Type ──────────────────────────────────────────
                       _buildRow(
-                        icon: Icons.business_outlined,
-                        child: TextFormField(
-                          controller: _issuerController,
+                        icon: Icons.account_balance_outlined,
+                        child: DropdownButtonFormField<String>(
+                          value: _type,
                           style: _fieldTextStyle(context),
-                          decoration: _underlineDecoration(
-                            label: context.translate('label_card_issuer'),
-                            hint: context.translate('hint_card_issuer'),
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-
-                      // Credit Limit
-                      const SizedBox(height: 20),
-                      _buildRow(
-                        icon: Icons.credit_score_outlined,
-                        child: TextFormField(
-                          controller: _limitController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          style: _fieldTextStyle(context),
-                          decoration: _underlineDecoration(
-                            label: context.translate('label_credit_limit'),
-                            prefixText: '$currency ',
-                          ),
-                          validator: (val) {
-                            final parsed = double.tryParse(val ?? '');
-                            if (parsed == null || parsed <= 0) {
-                              return context.translate('err_invalid_limit');
-                            }
-                            return null;
-                          },
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-
-                      // Already Used Amount
-                      const SizedBox(height: 20),
-                      _buildRow(
-                        icon: Icons.money_off_outlined,
-                        child: TextFormField(
-                          controller: _usedAmountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          style: _fieldTextStyle(context),
-                          decoration: _underlineDecoration(
-                            label: context.translate('label_used_amount'),
-                            prefixText: '$currency ',
-                          ),
-                          // FIX #5: Validate that usedAmount is numeric when provided
-                          // and does not exceed the credit limit.
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return null;
-                            final used = double.tryParse(val);
-                            if (used == null || used < 0) {
-                              return context.translate('err_invalid_amount');
-                            }
-                            final limit =
-                                double.tryParse(_limitController.text) ?? 0;
-                            if (used > limit) {
-                              return context.translate(
-                                'err_used_exceeds_limit',
-                              );
-                            }
-                            return null;
-                          },
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-
-                      // Billing Cycle
-                      const SizedBox(height: 24),
-                      Text(
-                        context.translate('header_billing_cycle'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.neutral,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              initialValue: _statementDate,
-                              menuMaxHeight: 280,
-                              dropdownColor: _dropdownColor(context),
-                              style: _fieldTextStyle(context),
-                              decoration: _underlineDecoration(
-                                label: context.translate(
-                                  'label_statement_date',
-                                ),
-                                labelSize: 12,
-                              ),
-                              items: List.generate(
-                                31,
-                                (i) => DropdownMenuItem<int>(
-                                  value: i + 1,
-                                  child: Text(
-                                    context
-                                        .translate('label_day_count')
-                                        .replaceAll('{day}', '${i + 1}'),
-                                  ),
-                                ),
-                              ),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _statementDate = val;
-                                    _dueMonthOffset = (_dueDate <= _statementDate) ? 1 : 0;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              initialValue: _dueDate,
-                              menuMaxHeight: 280,
-                              dropdownColor: _dropdownColor(context),
-                              style: _fieldTextStyle(context),
-                              decoration: _underlineDecoration(
-                                label: context.translate('label_due_date'),
-                                labelSize: 12,
-                              ),
-                              items: List.generate(
-                                31,
-                                (i) => DropdownMenuItem<int>(
-                                  value: i + 1,
-                                  child: Text(
-                                    context
-                                        .translate('label_day_count')
-                                        .replaceAll('{day}', '${i + 1}'),
-                                  ),
-                                ),
-                              ),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _dueDate = val;
-                                    _dueMonthOffset = (_dueDate <= _statementDate) ? 1 : 0;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildRow(
-                        icon: Icons.calendar_today_outlined,
-                        child: DropdownButtonFormField<int>(
-                          value: _dueMonthOffset,
                           dropdownColor: _dropdownColor(context),
-                          style: _fieldTextStyle(context),
                           decoration: _underlineDecoration(
-                            label: context.translate('label_due_month_offset'),
+                            label: context.translate('label_account_type'),
                           ),
-                          items: [
-                            DropdownMenuItem<int>(
-                              value: 0,
-                              child: Text(context.translate('option_same_month')),
+                          items: _buildDropdownItems(),
+                          onChanged: (val) {
+                            if (val != null) setState(() => _type = val);
+                          },
+                        ),
+                      ),
+
+                      // ── Non-credit-card: Balance field ────────────────────────
+                      if (_type != 'Credit Card' && _type != 'Card') ...[
+                        const SizedBox(height: 20),
+                        _buildRow(
+                          icon: Icons.savings_outlined,
+                          child: TextFormField(
+                            // Use controller with placeholder hint instead of hardcoded value
+                            controller: _balanceController,
+                            style: _fieldTextStyle(context),
+                            decoration: _underlineDecoration(
+                              label: context.translate('label_balance'),
+                              hint: '0.00',
+                              prefix: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Text(
+                                  currency,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
                             ),
-                            DropdownMenuItem<int>(
-                              value: 1,
-                              child: Text(context.translate('option_next_month')),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
                             ),
-                            DropdownMenuItem<int>(
-                              value: 2,
-                              child: Text(context.translate('option_second_month')),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty)
+                                return null;
+                              return double.tryParse(val.trim()) == null
+                                  ? context.translate('err_invalid_amount')
+                                  : null;
+                            },
+                          ),
+                        ),
+                      ] else ...[
+                        // ── Credit Card specific fields ───────────────────────
+
+                        // Card Issuer
+                        const SizedBox(height: 20),
+                        _buildRow(
+                          icon: Icons.business_outlined,
+                          child: TextFormField(
+                            controller: _issuerController,
+                            style: _fieldTextStyle(context),
+                            decoration: _underlineDecoration(
+                              label: context.translate('label_card_issuer'),
+                              hint: context.translate('hint_card_issuer'),
+                            ),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+
+                        // Credit Limit
+                        const SizedBox(height: 20),
+                        _buildRow(
+                          icon: Icons.credit_score_outlined,
+                          child: TextFormField(
+                            controller: _limitController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            style: _fieldTextStyle(context),
+                            decoration: _underlineDecoration(
+                              label: context.translate('label_credit_limit'),
+                              prefixText: '$currency ',
+                            ),
+                            validator: (val) {
+                              final parsed = double.tryParse(val ?? '');
+                              if (parsed == null || parsed <= 0) {
+                                return context.translate('err_invalid_limit');
+                              }
+                              return null;
+                            },
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+
+                        // Already Used Amount
+                        const SizedBox(height: 20),
+                        _buildRow(
+                          icon: Icons.money_off_outlined,
+                          child: TextFormField(
+                            controller: _usedAmountController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            style: _fieldTextStyle(context),
+                            decoration: _underlineDecoration(
+                              label: context.translate('label_used_amount'),
+                              prefixText: '$currency ',
+                            ),
+                            // FIX #5: Validate that usedAmount is numeric when provided
+                            // and does not exceed the credit limit.
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty)
+                                return null;
+                              final used = double.tryParse(val);
+                              if (used == null || used < 0) {
+                                return context.translate('err_invalid_amount');
+                              }
+                              final limit =
+                                  double.tryParse(_limitController.text) ?? 0;
+                              if (used > limit) {
+                                return context.translate(
+                                  'err_used_exceeds_limit',
+                                );
+                              }
+                              return null;
+                            },
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+
+                        // Billing Cycle
+                        const SizedBox(height: 24),
+                        Text(
+                          context.translate('header_billing_cycle'),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.neutral,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<int>(
+                                initialValue: _statementDate,
+                                menuMaxHeight: 280,
+                                dropdownColor: _dropdownColor(context),
+                                style: _fieldTextStyle(context),
+                                decoration: _underlineDecoration(
+                                  label: context.translate(
+                                    'label_statement_date',
+                                  ),
+                                  labelSize: 12,
+                                ),
+                                items: List.generate(
+                                  31,
+                                  (i) => DropdownMenuItem<int>(
+                                    value: i + 1,
+                                    child: Text(
+                                      context
+                                          .translate('label_day_count')
+                                          .replaceAll('{day}', '${i + 1}'),
+                                    ),
+                                  ),
+                                ),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() {
+                                      _statementDate = val;
+                                      _dueMonthOffset =
+                                          (_dueDate <= _statementDate) ? 1 : 0;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: DropdownButtonFormField<int>(
+                                initialValue: _dueDate,
+                                menuMaxHeight: 280,
+                                dropdownColor: _dropdownColor(context),
+                                style: _fieldTextStyle(context),
+                                decoration: _underlineDecoration(
+                                  label: context.translate('label_due_date'),
+                                  labelSize: 12,
+                                ),
+                                items: List.generate(
+                                  31,
+                                  (i) => DropdownMenuItem<int>(
+                                    value: i + 1,
+                                    child: Text(
+                                      context
+                                          .translate('label_day_count')
+                                          .replaceAll('{day}', '${i + 1}'),
+                                    ),
+                                  ),
+                                ),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() {
+                                      _dueDate = val;
+                                      _dueMonthOffset =
+                                          (_dueDate <= _statementDate) ? 1 : 0;
+                                    });
+                                  }
+                                },
+                              ),
                             ),
                           ],
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => _dueMonthOffset = val);
-                            }
+                        ),
+                        const SizedBox(height: 20),
+                        _buildRow(
+                          icon: Icons.calendar_today_outlined,
+                          child: DropdownButtonFormField<int>(
+                            value: _dueMonthOffset,
+                            dropdownColor: _dropdownColor(context),
+                            style: _fieldTextStyle(context),
+                            decoration: _underlineDecoration(
+                              label: context.translate(
+                                'label_due_month_offset',
+                              ),
+                            ),
+                            items: [
+                              DropdownMenuItem<int>(
+                                value: 0,
+                                child: Text(
+                                  context.translate('option_same_month'),
+                                ),
+                              ),
+                              DropdownMenuItem<int>(
+                                value: 1,
+                                child: Text(
+                                  context.translate('option_next_month'),
+                                ),
+                              ),
+                              DropdownMenuItem<int>(
+                                value: 2,
+                                child: Text(
+                                  context.translate('option_second_month'),
+                                ),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _dueMonthOffset = val);
+                              }
+                            },
+                          ),
+                        ),
+
+                        // Card Theme
+                        const SizedBox(height: 28),
+                        Text(
+                          context.translate('header_card_theme'),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.neutral,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ColorSelector(
+                          colors: _premiumColors,
+                          selectedColorHex: _selectedColorHex,
+                          onColorSelected: (colorHex) {
+                            setState(() => _selectedColorHex = colorHex);
                           },
                         ),
-                      ),
+                      ],
 
-                      // Card Theme
-                      const SizedBox(height: 28),
-                      Text(
-                        context.translate('header_card_theme'),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.neutral,
+                      const SizedBox(height: 40),
+
+                      // ── Submit button ─────────────────────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            isEditing
+                                ? context.translate('btn_save_changes')
+                                : context.translate('btn_create_account'),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      ColorSelector(
-                        colors: _premiumColors,
-                        selectedColorHex: _selectedColorHex,
-                        onColorSelected: (colorHex) {
-                          setState(() => _selectedColorHex = colorHex);
-                        },
                       ),
                     ],
-
-                    const SizedBox(height: 40),
-
-                    // ── Submit button ─────────────────────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Text(
-                          isEditing
-                              ? context.translate('btn_save_changes')
-                              : context.translate('btn_create_account'),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
     );
   }
 

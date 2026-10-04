@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:characters/characters.dart';
 import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
 import '../providers/settings_provider.dart';
@@ -45,25 +44,35 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
     final firestore = context.read<FirestoreService>();
 
     try {
-      final accounts = await firestore.getAccounts().first;
-      if (!mounted) return;
-
-      final matchingList = accounts.where((acc) => acc['id'] == _account['id']);
-      final Map<String, dynamic>? updatedAccount = matchingList.isNotEmpty
-          ? matchingList.first
-          : null;
-
-      if (updatedAccount == null) {
-        if (mounted) Navigator.pop(context, true);
-        return;
-      }
-
-      // ✅ Fix #3: null-safe account ID
-      final accountId = _account['id']?.toString() ?? '';
+      final accountId = _account['id']?.toString() ??
+          _account['accountId']?.toString() ??
+          '';
       if (accountId.isEmpty) {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
+
+      List<Map<String, dynamic>> accounts = [];
+      try {
+        accounts = await firestore
+            .getAccounts()
+            .first
+            .timeout(const Duration(seconds: 2));
+      } catch (_) {
+        accounts = await firestore.getAccountsList();
+      }
+
+      Map<String, dynamic>? updatedAccount;
+      if (accounts.isNotEmpty) {
+        final matchingList = accounts.where((acc) {
+          final id = acc['id']?.toString() ?? acc['accountId']?.toString();
+          return id == accountId;
+        });
+        if (matchingList.isNotEmpty) {
+          updatedAccount = matchingList.first;
+        }
+      }
+      updatedAccount ??= _account;
 
       final newEntries = await firestore.getAccountTransactions(accountId);
       if (!mounted) return;
@@ -75,7 +84,7 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
       });
 
       setState(() {
-        _account = updatedAccount;
+        _account = updatedAccount!;
         _entries = newEntries;
         _isLoading = false;
       });
@@ -593,7 +602,8 @@ class _AccountEntriesScreenState extends State<AccountEntriesScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => AddTransactionScreen(
-                prefilledAccountId: _account['id']?.toString(),
+                prefilledAccountId: _account['id']?.toString() ??
+                    _account['accountId']?.toString(),
               ),
             ),
           );

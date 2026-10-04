@@ -73,6 +73,11 @@ class CategorySelectionDialog extends StatelessWidget {
         return Icons.local_cafe_outlined;
       case 'build':
         return Icons.build_outlined;
+      case 'content_cut':
+      case 'grooming':
+        return Icons.content_cut_outlined;
+      case 'spa':
+        return Icons.spa_outlined;
       case 'swap_horiz':
         return Icons.swap_horiz;
       default:

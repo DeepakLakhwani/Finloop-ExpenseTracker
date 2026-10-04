@@ -60,6 +60,11 @@ class ManageCategoriesScreen extends StatelessWidget {
         return Icons.local_cafe_outlined;
       case 'build':
         return Icons.build_outlined;
+      case 'content_cut':
+      case 'grooming':
+        return Icons.content_cut_outlined;
+      case 'spa':
+        return Icons.spa_outlined;
       default:
         return Icons.category_outlined;
     }

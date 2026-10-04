@@ -537,7 +537,7 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
 
     try {
       final firestore = context.read<FirestoreService>();
-      final accountId = acc['id']?.toString() ?? '';
+      final accountId = acc['id']?.toString() ?? acc['accountId']?.toString() ?? '';
       final entries = await firestore.getAccountTransactions(accountId);
 
       // Sort newest-first using the shared _toDateTime helper.
@@ -548,22 +548,13 @@ class _ManageAccountsScreenState extends State<ManageAccountsScreen> {
       if (!mounted) return;
       Navigator.pop(context); // dismiss loader
 
-      if (entries.isEmpty) {
-        await Navigator.push<void>(
-          context,
-          MaterialPageRoute<void>(
-            builder: (_) => AddAccountScreen(initialAccount: acc),
-          ),
-        );
-      } else {
-        await Navigator.push<void>(
-          context,
-          MaterialPageRoute<void>(
-            builder: (_) =>
-                AccountEntriesScreen(account: acc, entries: entries),
-          ),
-        );
-      }
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              AccountEntriesScreen(account: acc, entries: entries),
+        ),
+      );
     } catch (e, st) {
       debugPrint('[ManageAccounts] Error loading account entries: $e\n$st');
       if (mounted) {
@@ -909,7 +900,9 @@ class _DueCard extends StatelessWidget {
                 MaterialPageRoute<void>(
                   builder: (_) => AddTransactionScreen(
                     initialType: 'Transfer',
-                    prefilledToAccountId: acc['id']?.toString() ?? '',
+                    prefilledToAccountId: acc['id']?.toString() ??
+                        acc['accountId']?.toString() ??
+                        '',
                   ),
                 ),
               ),

@@ -11,6 +11,48 @@ class FirestoreService {
   String? _lastUid;
   Future<void>? _initFuture;
 
+  // --- Safe Offline-First Query Helpers ---
+
+  /// Safely executes a query with a short network timeout and falls back to
+  /// local offline cache if the server is unreachable, slow, or offline.
+  Future<QuerySnapshot<Map<String, dynamic>>> _safeGet(
+    Query<Map<String, dynamic>> query, {
+    Duration timeout = const Duration(milliseconds: 1500),
+  }) async {
+    try {
+      return await query
+          .get(const GetOptions(source: Source.serverAndCache))
+          .timeout(timeout);
+    } catch (_) {
+      try {
+        return await query.get(const GetOptions(source: Source.cache));
+      } catch (cacheErr) {
+        debugPrint('Safe query cache error: $cacheErr');
+        rethrow;
+      }
+    }
+  }
+
+  /// Safely fetches a document reference with a short network timeout and falls back
+  /// to local offline cache if the server is unreachable, slow, or offline.
+  Future<DocumentSnapshot<Map<String, dynamic>>> _safeDocGet(
+    DocumentReference<Map<String, dynamic>> docRef, {
+    Duration timeout = const Duration(milliseconds: 1500),
+  }) async {
+    try {
+      return await docRef
+          .get(const GetOptions(source: Source.serverAndCache))
+          .timeout(timeout);
+    } catch (_) {
+      try {
+        return await docRef.get(const GetOptions(source: Source.cache));
+      } catch (cacheErr) {
+        debugPrint('Safe doc cache error: $cacheErr');
+        rethrow;
+      }
+    }
+  }
+
   // --- User & Initial Setup ---
 
   Future<void> initializeUser() async {
@@ -32,7 +74,7 @@ class FirestoreService {
 
   Future<void> _runInitialization(String uid) async {
     try {
-      final userDoc = await _db.collection('users').doc(uid).get();
+      final userDoc = await _safeDocGet(_db.collection('users').doc(uid));
       if (!userDoc.exists) {
         await _db.collection('users').doc(uid).set({
           'email': _auth.currentUser?.email,
@@ -48,56 +90,61 @@ class FirestoreService {
       }
 
       // Check and seed main accounts if empty
-      final mainAccountsSnap = await _db
-          .collection('users')
-          .doc(uid)
-          .collection('main_accounts')
-          .limit(1)
-          .get();
+      final mainAccountsSnap = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('main_accounts')
+            .limit(1),
+      );
       if (mainAccountsSnap.docs.isEmpty) {
         await _createDefaultMainAccounts();
       }
 
       // Check and seed sub-accounts if empty
-      final accountsSnap = await _db
-          .collection('users')
-          .doc(uid)
-          .collection('accounts')
-          .limit(1)
-          .get();
+      final accountsSnap = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('accounts')
+            .limit(1),
+      );
       if (accountsSnap.docs.isEmpty) {
         await _createDefaultAccounts();
       }
 
       // Migration: update 'Bank Account' / 'Bank' main accounts to 'Account'
-      final legacyMainAccounts = await _db
-          .collection('users')
-          .doc(uid)
-          .collection('main_accounts')
-          .where('name', whereIn: ['Bank Account', 'Bank'])
-          .get();
+      final legacyMainAccounts = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('main_accounts')
+            .where('name', whereIn: ['Bank Account', 'Bank']),
+      );
       for (var doc in legacyMainAccounts.docs) {
         await doc.reference.update({'name': 'Account'});
       }
 
       // Migration: update 'Bank Account' / 'Bank' sub-accounts type to 'Account'
-      final legacyAccounts = await _db
-          .collection('users')
-          .doc(uid)
-          .collection('accounts')
-          .where('type', whereIn: ['Bank Account', 'Bank'])
-          .get();
+      final legacyAccounts = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('accounts')
+            .where('type', whereIn: ['Bank Account', 'Bank']),
+      );
       for (var doc in legacyAccounts.docs) {
         await doc.reference.update({'type': 'Account'});
       }
 
       // Migration: if they have a sub-account named 'Account' or 'Accounts', rename it to 'Bank Account'
-      final legacySubAccounts = await _db
-          .collection('users')
-          .doc(uid)
-          .collection('accounts')
-          .where('type', isEqualTo: 'Account')
-          .get();
+      final legacySubAccounts = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('accounts')
+            .where('type', isEqualTo: 'Account'),
+      );
       for (var doc in legacySubAccounts.docs) {
         final name = doc.data()['name']?.toString();
         if (name == 'Account' || name == 'Accounts') {
@@ -114,10 +161,15 @@ class FirestoreService {
   Future<bool> hasSeededDummyData() async {
     final uid = _uid;
     if (uid == null) return true;
-    final userDoc = await _db.collection('users').doc(uid).get();
-    if (!userDoc.exists) return false;
-    final data = userDoc.data();
-    return data?['hasSeededDummyData'] == true;
+    try {
+      final userDoc = await _safeDocGet(_db.collection('users').doc(uid));
+      if (!userDoc.exists) return false;
+      final data = userDoc.data();
+      return data?['hasSeededDummyData'] == true;
+    } catch (e) {
+      debugPrint("Error checking seeded dummy data: $e");
+      return true; // Default to true on error so we don't attempt to re-seed dummy data offline
+    }
   }
 
   Future<void> setHasSeededDummyData() async {
@@ -131,10 +183,15 @@ class FirestoreService {
   Future<bool> hasCleanedDummyData() async {
     final uid = _uid;
     if (uid == null) return true;
-    final userDoc = await _db.collection('users').doc(uid).get();
-    if (!userDoc.exists) return false;
-    final data = userDoc.data();
-    return data?['hasCleanedDummyData'] == true;
+    try {
+      final userDoc = await _safeDocGet(_db.collection('users').doc(uid));
+      if (!userDoc.exists) return false;
+      final data = userDoc.data();
+      return data?['hasCleanedDummyData'] == true;
+    } catch (e) {
+      debugPrint("Error checking cleaned dummy data: $e");
+      return true;
+    }
   }
 
   Future<void> setHasCleanedDummyData() async {
@@ -523,12 +580,15 @@ class FirestoreService {
   Future<List<Map<String, dynamic>>> getMainAccountsList() async {
     final uid = _uid;
     if (uid == null) return [];
-    final snap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('main_accounts')
-        .get();
-    return snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+    try {
+      final snap = await _safeGet(
+        _db.collection('users').doc(uid).collection('main_accounts'),
+      );
+      return snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+    } catch (e) {
+      debugPrint("Error getting main accounts list: $e");
+      return [];
+    }
   }
 
   Future<void> createMainAccount(Map<String, dynamic> accountData) async {
@@ -569,11 +629,9 @@ class FirestoreService {
     final uid = _uid;
     if (uid == null) return {'totalBalance': 0.0, 'accountCount': 0};
     try {
-      final snapshot = await _db
-          .collection('users')
-          .doc(uid)
-          .collection('accounts')
-          .get();
+      final snapshot = await _safeGet(
+        _db.collection('users').doc(uid).collection('accounts'),
+      );
       double totalBalance = 0;
       int accountCount = snapshot.docs.length;
 
@@ -605,11 +663,9 @@ class FirestoreService {
         .asyncMap((snapshot) async {
           if (snapshot.docs.isEmpty) {
             await _createDefaultCategories();
-            final newSnap = await _db
-                .collection('users')
-                .doc(uid)
-                .collection('categories')
-                .get();
+            final newSnap = await _safeGet(
+              _db.collection('users').doc(uid).collection('categories'),
+            );
             return newSnap.docs
                 .map((doc) => {'id': doc.id, ...doc.data()})
                 .toList();
@@ -703,15 +759,20 @@ class FirestoreService {
   Future<Map<String, dynamic>?> getOpeningBalanceCategory() async {
     final uid = _uid;
     if (uid == null) return null;
-    final snap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('categories')
-        .where('name', isEqualTo: 'Opening Balance')
-        .limit(1)
-        .get();
-    if (snap.docs.isNotEmpty) {
-      return {'id': snap.docs.first.id, ...snap.docs.first.data()};
+    try {
+      final snap = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('categories')
+            .where('name', isEqualTo: 'Opening Balance')
+            .limit(1),
+      );
+      if (snap.docs.isNotEmpty) {
+        return {'id': snap.docs.first.id, ...snap.docs.first.data()};
+      }
+    } catch (e) {
+      debugPrint("Error getting opening balance category: $e");
     }
     return null;
   }
@@ -761,7 +822,7 @@ class FirestoreService {
 
   Future<void> createTransaction(Map<String, dynamic> txData) async {
     final uid = _uid;
-    if (uid == null) return;
+    if (uid == null) throw Exception("User not logged in");
     final batch = _db.batch();
     final txRef = _db
         .collection('users')
@@ -787,7 +848,7 @@ class FirestoreService {
     Map<String, dynamic> oldData,
   ) async {
     final uid = _uid;
-    if (uid == null) return;
+    if (uid == null) throw Exception("User not logged in");
     final batch = _db.batch();
     final txRef = _db
         .collection('users')
@@ -815,7 +876,7 @@ class FirestoreService {
 
   Future<void> deleteTransaction(Map<String, dynamic> txData) async {
     final uid = _uid;
-    if (uid == null) return;
+    if (uid == null) throw Exception("User not logged in");
     final batch = _db.batch();
     final txRef = _db
         .collection('users')
@@ -848,7 +909,8 @@ class FirestoreService {
         .doc(uid)
         .collection('accounts')
         .doc(accountId);
-    final amount = (txData['amount'] as num).toDouble();
+    final amount =
+        double.tryParse(txData['amount']?.toString() ?? '0.0') ?? 0.0;
     final type = txData['type'];
 
     if (type == 'Transfer') {
@@ -903,111 +965,163 @@ class FirestoreService {
     final uid = _uid;
     if (uid == null) return [];
 
-    final snap1 = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('transactions')
-        .where('account_id', isEqualTo: accountId)
-        .get();
+    try {
+      final query1 = _db
+          .collection('users')
+          .doc(uid)
+          .collection('transactions')
+          .where('account_id', isEqualTo: accountId);
 
-    final snap2 = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('transactions')
-        .where('to_account_id', isEqualTo: accountId)
-        .get();
+      final query2 = _db
+          .collection('users')
+          .doc(uid)
+          .collection('transactions')
+          .where('to_account_id', isEqualTo: accountId);
 
-    final results = [
-      ...snap1.docs.map((doc) => {'id': doc.id, ...doc.data()}),
-      ...snap2.docs.map((doc) => {'id': doc.id, ...doc.data()}),
-    ];
+      final results = await Future.wait([
+        _safeGet(query1),
+        _safeGet(query2),
+      ]);
 
-    return results;
+      final Map<String, Map<String, dynamic>> docMap = {};
+      for (final doc in results[0].docs) {
+        docMap[doc.id] = {'id': doc.id, ...doc.data()};
+      }
+      for (final doc in results[1].docs) {
+        docMap[doc.id] = {'id': doc.id, ...doc.data()};
+      }
+
+      final list = docMap.values.toList();
+      list.sort((a, b) {
+        final aDate = a['date'];
+        final bDate = b['date'];
+        DateTime aDt;
+        DateTime bDt;
+        if (aDate is Timestamp) {
+          aDt = aDate.toDate();
+        } else if (aDate is DateTime) {
+          aDt = aDate;
+        } else if (aDate is String) {
+          aDt = DateTime.tryParse(aDate) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        } else {
+          aDt = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+
+        if (bDate is Timestamp) {
+          bDt = bDate.toDate();
+        } else if (bDate is DateTime) {
+          bDt = bDate;
+        } else if (bDate is String) {
+          bDt = DateTime.tryParse(bDate) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        } else {
+          bDt = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+
+        return bDt.compareTo(aDt);
+      });
+
+      return list;
+    } catch (e) {
+      debugPrint('Error getting account transactions: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getAccountsList() async {
     final uid = _uid;
     if (uid == null) return [];
-    final snap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('accounts')
-        .get();
-    return snap.docs.map((doc) {
-      final data = doc.data();
-      if (data['type'] == 'Cash/Cash wallet') {
-        data['type'] = 'Cash';
-      }
-      return {'id': doc.id, ...data};
-    }).toList();
+    try {
+      final snap = await _safeGet(
+        _db.collection('users').doc(uid).collection('accounts'),
+      );
+      return snap.docs.map((doc) {
+        final data = doc.data();
+        if (data['type'] == 'Cash/Cash wallet') {
+          data['type'] = 'Cash';
+        }
+        return {'id': doc.id, ...data};
+      }).toList();
+    } catch (e) {
+      debugPrint("Error getting accounts list: $e");
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getCategoriesList() async {
     final uid = _uid;
     if (uid == null) return [];
-    final snap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('categories')
-        .get();
+    try {
+      final snap = await _safeGet(
+        _db.collection('users').doc(uid).collection('categories'),
+      );
 
-    final List<Map<String, dynamic>> results = [];
-    for (var doc in snap.docs) {
-      final data = doc.data();
-      final String nameStr = data['name']?.toString() ?? '';
+      final List<Map<String, dynamic>> results = [];
+      for (var doc in snap.docs) {
+        final data = doc.data();
+        final String nameStr = data['name']?.toString() ?? '';
 
-      // Assign keys to existing/legacy default categories on-the-fly if missing
-      if (data['key'] == null) {
-        final cleanName = nameStr
-            .replaceAll(RegExp(r'[^\s\w\&]'), '')
-            .replaceAll(RegExp(r'\s+'), ' ')
-            .trim()
-            .toLowerCase();
-        final Map<String, String> nameToKeyMap = {
-          'salary & work': 'cat_salary',
-          'petty cash': 'cat_petty_cash',
-          'bonus': 'cat_bonus',
-          'rewards': 'cat_rewards',
-          'opening balance': 'cat_opening_balance',
-          'home & living': 'cat_home_living',
-          'food & dining': 'cat_food_dining',
-          'transportation': 'cat_transportation',
-          'shopping': 'cat_shopping',
-          'entertainment': 'cat_entertainment',
-          'health & fitness': 'cat_health_fitness',
-          'education': 'cat_education',
-          'finance': 'cat_finance',
-          'family': 'cat_family',
-          'travel': 'cat_travel',
-          'transfer': 'cat_transfer',
-        };
+        // Assign keys to existing/legacy default categories on-the-fly if missing
+        if (data['key'] == null) {
+          final cleanName = nameStr
+              .replaceAll(RegExp(r'[^\s\w\&]'), '')
+              .replaceAll(RegExp(r'\s+'), ' ')
+              .trim()
+              .toLowerCase();
+          final Map<String, String> nameToKeyMap = {
+            'salary & work': 'cat_salary',
+            'petty cash': 'cat_petty_cash',
+            'bonus': 'cat_bonus',
+            'rewards': 'cat_rewards',
+            'opening balance': 'cat_opening_balance',
+            'home & living': 'cat_home_living',
+            'food & dining': 'cat_food_dining',
+            'transportation': 'cat_transportation',
+            'shopping': 'cat_shopping',
+            'entertainment': 'cat_entertainment',
+            'health & fitness': 'cat_health_fitness',
+            'education': 'cat_education',
+            'finance': 'cat_finance',
+            'family': 'cat_family',
+            'travel': 'cat_travel',
+            'transfer': 'cat_transfer',
+          };
 
-        final matchedKey = nameToKeyMap[cleanName];
-        if (matchedKey != null) {
-          data['key'] = matchedKey;
-          await _db
-              .collection('users')
-              .doc(uid)
-              .collection('categories')
-              .doc(doc.id)
-              .update({'key': matchedKey});
+          final matchedKey = nameToKeyMap[cleanName];
+          if (matchedKey != null) {
+            data['key'] = matchedKey;
+            _db
+                .collection('users')
+                .doc(uid)
+                .collection('categories')
+                .doc(doc.id)
+                .update({'key': matchedKey});
+          }
         }
+        results.add({'id': doc.id, ...data});
       }
-      results.add({'id': doc.id, ...data});
+      return results;
+    } catch (e) {
+      debugPrint("Error getting categories list: $e");
+      return [];
     }
-    return results;
   }
 
   Future<List<Map<String, dynamic>>> getTransactionsList() async {
     final uid = _uid;
     if (uid == null) return [];
-    final snap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('transactions')
-        .orderBy('date', descending: true)
-        .get();
-    return snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+    try {
+      final snap = await _safeGet(
+        _db
+            .collection('users')
+            .doc(uid)
+            .collection('transactions')
+            .orderBy('date', descending: true),
+      );
+      return snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+    } catch (e) {
+      debugPrint("Error getting transactions list: $e");
+      return [];
+    }
   }
 
   Stream<DocumentSnapshot> getScratchpadSnapshot() {
@@ -1075,11 +1189,9 @@ class FirestoreService {
     if (uid == null) return;
 
     // 1. Delete all transactions
-    final txSnap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('transactions')
-        .get();
+    final txSnap = await _safeGet(
+      _db.collection('users').doc(uid).collection('transactions'),
+    );
 
     WriteBatch batch = _db.batch();
     int count = 0;
@@ -1097,11 +1209,9 @@ class FirestoreService {
     }
 
     // 2. Reset account balances to 0
-    final accSnap = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('accounts')
-        .get();
+    final accSnap = await _safeGet(
+      _db.collection('users').doc(uid).collection('accounts'),
+    );
 
     batch = _db.batch();
     count = 0;
@@ -1133,8 +1243,9 @@ class FirestoreService {
     ];
 
     for (var col in collections) {
-      final snap =
-          await _db.collection('users').doc(uid).collection(col).get();
+      final snap = await _safeGet(
+        _db.collection('users').doc(uid).collection(col),
+      );
 
       WriteBatch batch = _db.batch();
       int count = 0;

@@ -122,7 +122,13 @@ class AdService {
     }
     try {
       _log("Initializing AdMob SDK...");
-      await MobileAds.instance.initialize();
+      await MobileAds.instance.initialize().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () {
+          _log("AdMob SDK initialization timed out (likely due to DNS ad blocker or network delay).");
+          return InitializationStatus({});
+        },
+      );
 
       // Register developer test device IDs so Google AdMob serves test ads to physical devices
       await MobileAds.instance.updateRequestConfiguration(
@@ -151,8 +157,9 @@ class AdService {
   static void preloadInterstitial() {
     if (!adsEnabled ||
         _preloadedInterstitialAd != null ||
-        _isPreloadingInterstitial)
+        _isPreloadingInterstitial) {
       return;
+    }
 
     _isPreloadingInterstitial = true;
     _log("Preloading Interstitial Ad in background...");
@@ -244,7 +251,13 @@ class AdService {
       },
     );
 
-    ad.show();
+    try {
+      ad.show();
+    } catch (e) {
+      _log("Error showing Interstitial Ad: $e");
+      isAdShowing = false;
+      onAdClosed();
+    }
   }
 
   // ==========================================
@@ -253,8 +266,9 @@ class AdService {
 
   /// Preloads a Rewarded Ad and stores it in cache
   static void preloadRewarded() {
-    if (!adsEnabled || _preloadedRewardedAd != null || _isPreloadingRewarded)
+    if (!adsEnabled || _preloadedRewardedAd != null || _isPreloadingRewarded) {
       return;
+    }
 
     _isPreloadingRewarded = true;
     _log("Preloading Rewarded Ad in background...");
@@ -339,14 +353,20 @@ class AdService {
       },
     );
 
-    ad.show(
-      onUserEarnedReward: (adWithoutReward, reward) {
-        _log(
-          "User successfully earned reward: ${reward.amount} ${reward.type}",
-        );
-        earnedReward = true;
-      },
-    );
+    try {
+      ad.show(
+        onUserEarnedReward: (adWithoutReward, reward) {
+          _log(
+            "User successfully earned reward: ${reward.amount} ${reward.type}",
+          );
+          earnedReward = true;
+        },
+      );
+    } catch (e) {
+      _log("Error showing Rewarded Ad: $e");
+      isAdShowing = false;
+      onAdFailed();
+    }
   }
 
   // ==========================================

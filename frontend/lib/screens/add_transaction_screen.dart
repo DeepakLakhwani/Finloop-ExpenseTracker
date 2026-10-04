@@ -56,6 +56,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isPickingImage = false;
 
   bool get isEditing => widget.initialTransaction != null;
+  bool get _isFromParticularAccount =>
+      widget.prefilledAccountId != null &&
+      widget.prefilledAccountId!.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -83,11 +86,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _selectedDate = DateTime.tryParse(dateVal) ?? DateTime.now();
       }
     } else {
-      if (widget.prefilledAccountId != null) {
-        _selectedAccountId = widget.prefilledAccountId;
+      if (widget.prefilledAccountId != null &&
+          widget.prefilledAccountId!.trim().isNotEmpty) {
+        _selectedAccountId = widget.prefilledAccountId!.trim();
       }
-      if (widget.prefilledToAccountId != null) {
-        _toAccountId = widget.prefilledToAccountId;
+      if (widget.prefilledToAccountId != null &&
+          widget.prefilledToAccountId!.trim().isNotEmpty) {
+        _toAccountId = widget.prefilledToAccountId!.trim();
       }
     }
     _fetchData();
@@ -108,28 +113,36 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     setState(() => _isLoadingData = true);
     try {
       final firestore = context.read<FirestoreService>();
-      // FIX: Wrap .first in try/catch; a stream error or empty completion would
-      // previously crash silently. Timeout added to avoid hanging indefinitely.
-      final results = await Future.wait([
-        firestore.getAccounts().first,
-        firestore.getCategories().first,
-      ]).timeout(const Duration(seconds: 15));
+      List<Map<String, dynamic>> accounts = [];
+      List<Map<String, dynamic>> categories = [];
+
+      try {
+        final results = await Future.wait([
+          firestore.getAccounts().first,
+          firestore.getCategories().first,
+        ]).timeout(const Duration(seconds: 2));
+        accounts = List<Map<String, dynamic>>.from(results[0]);
+        categories = List<Map<String, dynamic>>.from(results[1]);
+      } catch (_) {
+        // In offline mode or stream timeout, immediately fallback to local cache
+        final cachedResults = await Future.wait([
+          firestore.getAccountsList(),
+          firestore.getCategoriesList(),
+        ]);
+        accounts = cachedResults[0];
+        categories = cachedResults[1];
+      }
 
       if (!mounted) return;
       setState(() {
-        _accounts = List<Map<String, dynamic>>.from(results[0]);
-        _categories = List<Map<String, dynamic>>.from(results[1]);
+        _accounts = accounts;
+        _categories = categories;
         _isLoadingData = false;
       });
     } catch (e) {
       debugPrint('Error fetching data: $e');
       if (mounted) {
         setState(() => _isLoadingData = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${context.translate('error_load_data')}: $e'),
-          ),
-        );
       }
     }
   }
@@ -253,9 +266,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // FIX: Safe lookup helper — replaces bare firstWhere which throws StateError
   Map<String, dynamic>? _findById(List<dynamic> list, String? id) {
     if (id == null) return null;
+    final cleanId = id.toString().trim();
+    if (cleanId.isEmpty) return null;
     try {
-      return list.firstWhere((item) => item['id'].toString() == id)
-          as Map<String, dynamic>;
+      return list.firstWhere((item) {
+        final itemId = item['id']?.toString().trim();
+        final accountId = item['accountId']?.toString().trim();
+        final categoryId = item['categoryId']?.toString().trim();
+        return itemId == cleanId ||
+            accountId == cleanId ||
+            categoryId == cleanId;
+      }) as Map<String, dynamic>;
     } catch (_) {
       return null;
     }
@@ -288,13 +309,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           activeColor: _getActiveColor(),
           onCategorySelected: (id) {
             setState(() => _selectedCategoryId = id);
+
+            // If adding from a particular account (or an account is already selected),
+            // NEVER ask for account again — directly move to notes field.
+            if (_isFromParticularAccount || _selectedAccountId != null) {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  _noteFocusNode.requestFocus();
+                }
+              });
+              return;
+            }
+
+            // Only prompt for account if adding from the general transactions screen
             if (autoNext) {
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (mounted) {
-                  _showAccountSelectionDialog(
-                    isToAccount: false,
-                    autoNext: true,
-                  );
+                  if (_selectedAccountId == null) {
+                    _showAccountSelectionDialog(
+                      isToAccount: false,
+                      autoNext: true,
+                    );
+                  } else {
+                    _noteFocusNode.requestFocus();
+                  }
                 }
               });
             }
@@ -332,11 +370,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             if (autoNext) {
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (mounted) {
-                  if (_type == 'Transfer' && !isToAccount) {
-                    _showAccountSelectionDialog(
-                      isToAccount: true,
-                      autoNext: true,
-                    );
+                  if (_type == 'Transfer') {
+                    if (!isToAccount && _toAccountId == null) {
+                      _showAccountSelectionDialog(
+                        isToAccount: true,
+                        autoNext: true,
+                      );
+                    } else if (isToAccount && _selectedAccountId == null) {
+                      _showAccountSelectionDialog(
+                        isToAccount: false,
+                        autoNext: true,
+                      );
+                    } else {
+                      _noteFocusNode.requestFocus();
+                    }
                   } else {
                     _noteFocusNode.requestFocus();
                   }
@@ -597,12 +644,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 Navigator.pop(context);
 
                                 if (_type != 'Transfer') {
-                                  _showCategorySelectionDialog(autoNext: true);
+                                  if (_selectedCategoryId == null) {
+                                    _showCategorySelectionDialog(autoNext: true);
+                                  } else if (!_isFromParticularAccount && _selectedAccountId == null) {
+                                    _showAccountSelectionDialog(
+                                      isToAccount: false,
+                                      autoNext: true,
+                                    );
+                                  } else {
+                                    _noteFocusNode.requestFocus();
+                                  }
                                 } else {
-                                  _showAccountSelectionDialog(
-                                    isToAccount: false,
-                                    autoNext: true,
-                                  );
+                                  if (_selectedAccountId == null) {
+                                    _showAccountSelectionDialog(
+                                      isToAccount: false,
+                                      autoNext: true,
+                                    );
+                                  } else if (_toAccountId == null) {
+                                    _showAccountSelectionDialog(
+                                      isToAccount: true,
+                                      autoNext: true,
+                                    );
+                                  } else {
+                                    _noteFocusNode.requestFocus();
+                                  }
                                 }
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1053,17 +1118,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       _buildFormRow(
                         label: context.translate('label_category'),
                         child: GestureDetector(
-                          onTap: _showCategorySelectionDialog,
+                          onTap: () => _showCategorySelectionDialog(autoNext: true),
                           child: Text(
                             (() {
                               final cat = _findById(
                                 _categories,
                                 _selectedCategoryId,
                               );
-                              if (cat == null)
+                              if (cat == null) {
                                 return context.translate(
                                   'select_category_hint',
                                 );
+                              }
                               return context.getLocalizedCategory(
                                 cat['key']?.toString(),
                                 cat['name']?.toString() ?? 'Unknown',
@@ -1298,7 +1364,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               SizedBox(height: 8),
                               Text(
                                 'Uploading attachment...',
-                                style: const TextStyle(fontSize: 12),
+                                style: TextStyle(fontSize: 12),
                               ),
                             ],
                           ),
@@ -1338,8 +1404,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   },
                                   loadingBuilder:
                                       (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
+                                        if (loadingProgress == null) {
                                           return child;
+                                        }
                                         return const Center(
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
@@ -1442,8 +1509,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  IconData _getTypeIcon(String type) {
+    switch (type) {
+      case 'Income':
+        return Icons.arrow_downward_rounded;
+      case 'Expense':
+        return Icons.arrow_upward_rounded;
+      case 'Transfer':
+        return Icons.swap_horiz_rounded;
+      default:
+        return Icons.swap_horiz_rounded;
+    }
+  }
+
   Widget _buildToggleItem(String label) {
     final bool isSelected = _type == label;
+    final itemColor = isSelected
+        ? _getActiveColor()
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
+
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() {
@@ -1466,19 +1550,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               width: 1.2,
             ),
           ),
-          child: Center(
-            child: Text(
-              context.translate(label.toLowerCase()),
-              style: TextStyle(
-                color: isSelected
-                    ? _getActiveColor()
-                    : Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.6),
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _getTypeIcon(label),
+                size: 16,
+                color: itemColor,
               ),
-            ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  context.translate(label.toLowerCase()),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: itemColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

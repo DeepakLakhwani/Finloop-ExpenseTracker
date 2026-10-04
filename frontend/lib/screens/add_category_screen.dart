@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/firestore_service.dart';
 import '../providers/language_provider.dart';
+import '../theme/app_colors.dart';
 
 class AddCategoryScreen extends StatefulWidget {
   final String type; // 'Income' or 'Expense'
@@ -61,6 +62,8 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     {'code': 'fitness_center', 'icon': Icons.fitness_center_outlined},
     {'code': 'local_cafe', 'icon': Icons.local_cafe_outlined},
     {'code': 'build', 'icon': Icons.build_outlined},
+    {'code': 'content_cut', 'icon': Icons.content_cut_outlined},
+    {'code': 'spa', 'icon': Icons.spa_outlined},
   ];
 
   @override
@@ -300,7 +303,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
               ElevatedButton(
                 onPressed: _isSaving ? null : _saveCategory,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: activeColor,
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
